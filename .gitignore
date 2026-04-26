@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Swift module cache
+.swift-module-cache/
+
+# XcodeGen can regenerate the project
+# Uncomment the next line if you prefer not to track the generated project:
+# *.xcodeproj/
