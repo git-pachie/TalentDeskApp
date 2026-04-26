@@ -1,0 +1,16 @@
+@host = https://localhost:5001
+
+### Send a push notification
+POST {{host}}/api/pushnotification/send
+Content-Type: application/json
+
+{
+  "deviceToken": "YOUR_DEVICE_TOKEN_HERE",
+  "title": "TalentDesk",
+  "body": "You have a new client registration!",
+  "badge": 1,
+  "sound": "default",
+  "customData": {
+    "clientId": "abc-123"
+  }
+}

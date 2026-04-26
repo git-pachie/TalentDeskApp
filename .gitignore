@@ -13,3 +13,11 @@ xcuserdata/
 # XcodeGen can regenerate the project
 # Uncomment the next line if you prefer not to track the generated project:
 # *.xcodeproj/
+
+# APNs private keys
+Keys/
+*.p8
+
+# .NET
+bin/
+obj/

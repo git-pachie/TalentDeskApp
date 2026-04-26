@@ -1,7 +1,9 @@
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     @Environment(AppSettingsStore.self) private var settingsStore
+    @Environment(PushNotificationManager.self) private var pushManager
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
@@ -35,6 +37,49 @@ struct SettingsView: View {
                     Label("Appearance", systemImage: "paintbrush.fill")
                 } footer: {
                     Text("Choose Light, Dark, or follow your device setting.")
+                }
+
+                // Push Notifications
+                Section {
+                    switch pushManager.permissionStatus {
+                    case .authorized:
+                        Label("Notifications Enabled", systemImage: "checkmark.circle.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(.green)
+                    case .denied:
+                        Label("Notifications Denied", systemImage: "xmark.circle.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(.red)
+                        Text("Enable in Settings → Notifications → Talent Desk")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    default:
+                        Button("Enable Push Notifications") {
+                            pushManager.requestPermission()
+                        }
+                        .font(.subheadline)
+                    }
+
+                    if let token = pushManager.deviceToken {
+                        LabeledContent("Device Token") {
+                            Text(token)
+                                .font(.caption2)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        }
+                        Button("Copy Token") {
+                            UIPasteboard.general.string = token
+                        }
+                        .font(.caption)
+                    }
+
+                    if let error = pushManager.registrationError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                } header: {
+                    Label("Push Notifications", systemImage: "bell.fill")
                 }
 
                 // About
@@ -71,4 +116,5 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
+        .environment(PushNotificationManager())
 }

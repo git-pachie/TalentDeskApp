@@ -20,7 +20,9 @@
 		8B641DA365958C54FEE48E28 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE86EEE3AF9795FFCA95651 /* SettingsView.swift */; };
 		8CEFD33F35DC4F9B449FEE1C /* ClientSkillsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C4371A6E1641918A3891A3C /* ClientSkillsSheet.swift */; };
 		9EB10D760DE3C986CF5E8674 /* RegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2322094B3DE17584D0976F5 /* RegistrationView.swift */; };
+		B2A4BFACCF7C6361839122FC /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D21A327E8347889D72ED88C /* PushNotificationManager.swift */; };
 		B47F76ADF25CE46E3489E254 /* ClientAddressSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25821DD4E67A9BC69EAEEDF8 /* ClientAddressSheet.swift */; };
+		B5805E1A5391830843C18770 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 827D0371CA182B24D344295C /* AppDelegate.swift */; };
 		C69CF313A92834E68CBD7801 /* ClientEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C61982B56924AAC14E3C5EC6 /* ClientEditView.swift */; };
 		D6C01E4ADAF2F570F7D47FA1 /* ClientPhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3865338AD17B1538FAB13BA /* ClientPhotoView.swift */; };
 		D994F04817BFFC449B2F639F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D67905E6B97FD87053EFBAE6 /* Assets.xcassets */; };
@@ -35,11 +37,13 @@
 		1FC63E65469ABDD66D3B9405 /* ClientRegistration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientRegistration.swift; sourceTree = "<group>"; };
 		25821DD4E67A9BC69EAEEDF8 /* ClientAddressSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientAddressSheet.swift; sourceTree = "<group>"; };
 		3C4371A6E1641918A3891A3C /* ClientSkillsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientSkillsSheet.swift; sourceTree = "<group>"; };
+		3D21A327E8347889D72ED88C /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
 		4645D3627ECB338F514868F2 /* AppSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSplashView.swift; sourceTree = "<group>"; };
 		47404BCAD6B5ABBE9669E66F /* ClientSkillEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientSkillEditorSheet.swift; sourceTree = "<group>"; };
 		5B13787325CA39240ADAC2F2 /* ClientListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientListView.swift; sourceTree = "<group>"; };
 		62782EC6105B3A022E5914E0 /* AppFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFlowView.swift; sourceTree = "<group>"; };
 		7935B6546B63A9FD60C4B629 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		827D0371CA182B24D344295C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		8700A2A95E90D04C4AFAD37F /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		90EDCF110C1FC83CAFCC7A7F /* ClientPhotoPickerSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientPhotoPickerSection.swift; sourceTree = "<group>"; };
 		AB388CA1AE45F89A8D59AD10 /* AppRegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRegistrationView.swift; sourceTree = "<group>"; };
@@ -50,6 +54,7 @@
 		D67905E6B97FD87053EFBAE6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DEF86A3B388FD5B5CE65B50A /* HomeDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeDashboardView.swift; sourceTree = "<group>"; };
 		E2322094B3DE17584D0976F5 /* RegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistrationView.swift; sourceTree = "<group>"; };
+		E83B7CAC2637EF8925CE7F89 /* ClientRegistrationApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ClientRegistrationApp.entitlements; sourceTree = "<group>"; };
 		F404AE6C7F5912788D6AF39A /* AppSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSession.swift; sourceTree = "<group>"; };
 		F85D2BF4AE30AFA547E48DE7 /* ClientDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -74,6 +79,7 @@
 		B750AB04A7B8A1CC93733BA3 /* ClientRegistrationApp */ = {
 			isa = PBXGroup;
 			children = (
+				827D0371CA182B24D344295C /* AppDelegate.swift */,
 				62782EC6105B3A022E5914E0 /* AppFlowView.swift */,
 				AB388CA1AE45F89A8D59AD10 /* AppRegistrationView.swift */,
 				F404AE6C7F5912788D6AF39A /* AppSession.swift */,
@@ -86,11 +92,13 @@
 				90EDCF110C1FC83CAFCC7A7F /* ClientPhotoPickerSection.swift */,
 				D3865338AD17B1538FAB13BA /* ClientPhotoView.swift */,
 				1FC63E65469ABDD66D3B9405 /* ClientRegistration.swift */,
+				E83B7CAC2637EF8925CE7F89 /* ClientRegistrationApp.entitlements */,
 				B69CCB3955085A10B43977B2 /* ClientRegistrationApp.swift */,
 				47404BCAD6B5ABBE9669E66F /* ClientSkillEditorSheet.swift */,
 				3C4371A6E1641918A3891A3C /* ClientSkillsSheet.swift */,
 				DEF86A3B388FD5B5CE65B50A /* HomeDashboardView.swift */,
 				1328340FB0FDB53324573C8A /* Info.plist */,
+				3D21A327E8347889D72ED88C /* PushNotificationManager.swift */,
 				E2322094B3DE17584D0976F5 /* RegistrationView.swift */,
 				8700A2A95E90D04C4AFAD37F /* RootTabView.swift */,
 				CAE86EEE3AF9795FFCA95651 /* SettingsView.swift */,
@@ -178,6 +186,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B5805E1A5391830843C18770 /* AppDelegate.swift in Sources */,
 				5AEAA35A33A67F7EDF0FD452 /* AppFlowView.swift in Sources */,
 				1E0F680DEE084C948B83D739 /* AppRegistrationView.swift in Sources */,
 				0A8B71F6840F40E7BD2017F3 /* AppSession.swift in Sources */,
@@ -194,6 +203,7 @@
 				F59F3FFF189F0884B66E72EA /* ClientSkillEditorSheet.swift in Sources */,
 				8CEFD33F35DC4F9B449FEE1C /* ClientSkillsSheet.swift in Sources */,
 				5C6FE420811A48B113B034C8 /* HomeDashboardView.swift in Sources */,
+				B2A4BFACCF7C6361839122FC /* PushNotificationManager.swift in Sources */,
 				9EB10D760DE3C986CF5E8674 /* RegistrationView.swift in Sources */,
 				892C58F434C8C377EF73ABE7 /* RootTabView.swift in Sources */,
 				8B641DA365958C54FEE48E28 /* SettingsView.swift in Sources */,
@@ -260,7 +270,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.ClientRegistrationApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sanshare.talentdesk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -319,7 +329,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.ClientRegistrationApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sanshare.talentdesk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -333,6 +343,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ClientRegistrationApp/ClientRegistrationApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = R3F22UC8DK;
@@ -355,6 +366,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ClientRegistrationApp/ClientRegistrationApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = R3F22UC8DK;
