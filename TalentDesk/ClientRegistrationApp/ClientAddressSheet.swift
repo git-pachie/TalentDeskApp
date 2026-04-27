@@ -13,23 +13,44 @@ struct ClientAddressSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Address") {
+            VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Address", systemImage: "mappin.circle")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppTheme.accent)
+
                     TextField("Street, city, state, zip", text: addressBinding, axis: .vertical)
                         .lineLimit(3...6)
                         .font(.subheadline)
+                        .foregroundStyle(AppTheme.darkText)
+                        .padding(12)
+                        .background(AppTheme.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(AppTheme.cardBorder, lineWidth: 1)
+                        )
                 }
+                .dashboardCard()
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+
+                Spacer()
             }
+            .background(AppTheme.accent.opacity(0.2))
             .navigationTitle("Address")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                         .font(.subheadline)
+                        .foregroundStyle(AppTheme.accent)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save", action: saveAddress)
                         .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppTheme.accent)
                 }
             }
         }

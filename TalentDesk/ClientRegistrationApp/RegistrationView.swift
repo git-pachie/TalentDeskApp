@@ -20,28 +20,37 @@ struct RegistrationView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                ClientPhotoPickerSection(photoData: $photoData)
+        ScrollView {
+            VStack(spacing: 0) {
+                AppScreenHeader(title: "Add Client", subtitle: "Register a new client profile")
 
-                Section {
-                    TextField("First Name", text: $firstName)
-                        .textInputAutocapitalization(.words)
-                    TextField("Last Name", text: $lastName)
-                        .textInputAutocapitalization(.words)
-                    TextField("Age", text: $age)
-                        .keyboardType(.numberPad)
-                    TextField("Mobile", text: $mobile)
-                        .keyboardType(.phonePad)
-                    TextField("Email", text: $email)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                } header: {
-                    Label("Client Information", systemImage: "person.text.rectangle")
-                }
+                VStack(spacing: 16) {
+                    // Photo
+                    ClientPhotoPickerSection(photoData: $photoData)
+                        .dashboardCard()
 
-                Section {
+                    // Form fields
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("Client Information", systemImage: "person.text.rectangle")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppTheme.accent)
+
+                        formField(placeholder: "First Name", text: $firstName)
+                            .textInputAutocapitalization(.words)
+                        formField(placeholder: "Last Name", text: $lastName)
+                            .textInputAutocapitalization(.words)
+                        formField(placeholder: "Age", text: $age)
+                            .keyboardType(.numberPad)
+                        formField(placeholder: "Mobile", text: $mobile)
+                            .keyboardType(.phonePad)
+                        formField(placeholder: "Email", text: $email)
+                            .keyboardType(.emailAddress)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
+                    .dashboardCard()
+
+                    // Submit button
                     Button(action: submitClient) {
                         HStack {
                             Spacer()
@@ -50,27 +59,81 @@ struct RegistrationView: View {
                             Spacer()
                         }
                     }
+                    .buttonStyle(AppPrimaryButtonStyle())
                     .disabled(!isFormValid)
-                }
+                    .opacity(isFormValid ? 1 : 0.5)
 
-                if let submittedClient {
-                    Section("Last Registered") {
-                        LabeledContent("Name", value: "\(submittedClient.firstName) \(submittedClient.lastName)")
-                        LabeledContent("Age", value: "\(submittedClient.age)")
-                        LabeledContent("Email", value: submittedClient.email)
+                    // Last registered
+                    if let submittedClient {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Label("Last Registered", systemImage: "checkmark.circle")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(AppTheme.accent)
+
+                            HStack {
+                                Text("Name")
+                                    .foregroundStyle(AppTheme.subtitleText)
+                                Spacer()
+                                Text("\(submittedClient.firstName) \(submittedClient.lastName)")
+                                    .foregroundStyle(AppTheme.darkText)
+                            }
+                            .font(.subheadline)
+
+                            HStack {
+                                Text("Age")
+                                    .foregroundStyle(AppTheme.subtitleText)
+                                Spacer()
+                                Text("\(submittedClient.age)")
+                                    .foregroundStyle(AppTheme.darkText)
+                            }
+                            .font(.subheadline)
+
+                            HStack {
+                                Text("Email")
+                                    .foregroundStyle(AppTheme.subtitleText)
+                                Spacer()
+                                Text(submittedClient.email)
+                                    .foregroundStyle(AppTheme.darkText)
+                            }
+                            .font(.subheadline)
+                        }
+                        .dashboardCard()
                     }
                 }
-            }
-            .navigationTitle("Add Client")
-            .navigationBarTitleDisplayMode(.large)
-            .alert("Client Registered", isPresented: $showingSubmissionAlert) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                if let submittedClient {
-                    Text("\(submittedClient.firstName) \(submittedClient.lastName) was saved.")
-                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 16)
             }
         }
+        .background(AppTheme.surface)
+        .ignoresSafeArea(edges: .top)
+        .alert("Client Registered", isPresented: $showingSubmissionAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            if let submittedClient {
+                Text("\(submittedClient.firstName) \(submittedClient.lastName) was saved.")
+            }
+        }
+    }
+
+    private func formField(placeholder: String, text: Binding<String>) -> some View {
+        ZStack(alignment: .leading) {
+            if text.wrappedValue.isEmpty {
+                Text(placeholder)
+                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.mutedText)
+            }
+            TextField("", text: text)
+                .font(.subheadline)
+                .foregroundStyle(AppTheme.darkText)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(AppTheme.cardBorder, lineWidth: 1)
+        )
     }
 
     private func submitClient() {

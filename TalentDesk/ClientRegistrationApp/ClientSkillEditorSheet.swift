@@ -24,21 +24,31 @@ struct ClientSkillEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Skill") {
-                    TextField("Skill name", text: $skillName)
-                        .font(.subheadline)
-                    TextField("Hourly Rate", text: $hourlyRate)
+            VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Skill", systemImage: "star.circle")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppTheme.accent)
+
+                    sheetField(placeholder: "Skill name", text: $skillName)
+                    sheetField(placeholder: "Hourly Rate", text: $hourlyRate)
                         .keyboardType(.decimalPad)
-                        .font(.subheadline)
                 }
+                .dashboardCard()
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+
+                Spacer()
             }
+            .background(AppTheme.accent.opacity(0.2))
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                         .font(.subheadline)
+                        .foregroundStyle(AppTheme.accent)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") {
@@ -52,11 +62,33 @@ struct ClientSkillEditorSheet: View {
                         dismiss()
                     }
                     .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppTheme.accent)
                     .disabled(trimmedSkill.isEmpty)
                 }
             }
         }
         .presentationDetents([.medium])
+    }
+
+    private func sheetField(placeholder: String, text: Binding<String>) -> some View {
+        ZStack(alignment: .leading) {
+            if text.wrappedValue.isEmpty {
+                Text(placeholder)
+                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.mutedText)
+            }
+            TextField("", text: text)
+                .font(.subheadline)
+                .foregroundStyle(AppTheme.darkText)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(AppTheme.cardBorder, lineWidth: 1)
+        )
     }
 
     private func trimmedOptional(_ value: String) -> String? {

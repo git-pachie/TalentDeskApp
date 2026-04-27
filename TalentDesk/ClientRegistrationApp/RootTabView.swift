@@ -16,10 +16,12 @@ struct RootTabView: View {
                     Label("Add", systemImage: "plus.circle.fill")
                 }
 
-            ClientListView(clientStore: clientStore)
-                .tabItem {
-                    Label("Clients", systemImage: "person.2.fill")
-                }
+            NavigationStack {
+                ClientListView(clientStore: clientStore)
+            }
+            .tabItem {
+                Label("Clients", systemImage: "person.2.fill")
+            }
 
             SettingsView()
                 .tabItem {

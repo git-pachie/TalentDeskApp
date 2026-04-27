@@ -19,44 +19,65 @@ struct ClientSkillsSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            VStack(spacing: 0) {
                 if draftClient.skills.isEmpty {
+                    Spacer()
                     ContentUnavailableView(
                         "No Skills",
                         systemImage: "list.bullet.clipboard",
                         description: Text("Tap + to add skills.")
                     )
+                    .foregroundStyle(AppTheme.subtitleText)
+                    Spacer()
                 } else {
-                    ForEach(Array(draftClient.skills.enumerated()), id: \.element.id) { index, skill in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(skill.name)
-                                    .font(.subheadline)
-                                Text(formattedRate(skill.hourlyRate))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            ForEach(Array(draftClient.skills.enumerated()), id: \.element.id) { index, skill in
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(skill.name)
+                                            .font(.subheadline)
+                                            .foregroundStyle(AppTheme.darkText)
+                                        Text(formattedRate(skill.hourlyRate))
+                                            .font(.caption)
+                                            .foregroundStyle(AppTheme.subtitleText)
+                                    }
+                                    Spacer()
+                                    Button("Edit") {
+                                        editingSkillSelection = SkillSelection(id: index)
+                                    }
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(AppTheme.accent)
+                                    .buttonStyle(.borderless)
+                                }
+                                .padding(12)
+                                .background(AppTheme.secondarySurface)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(AppTheme.cardBorder, lineWidth: 1)
+                                )
                             }
-                            Spacer()
-                            Button("Edit") {
-                                editingSkillSelection = SkillSelection(id: index)
-                            }
-                            .font(.caption)
-                            .buttonStyle(.borderless)
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
                     }
-                    .onDelete(perform: deleteSkills)
                 }
             }
+            .background(AppTheme.accent.opacity(0.2))
             .navigationTitle("Skills")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Close") { dismiss() }
                         .font(.subheadline)
+                        .foregroundStyle(AppTheme.accent)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingAddSkill = true } label: {
                         Image(systemName: "plus")
+                            .foregroundStyle(AppTheme.accent)
                     }
                 }
             }
@@ -76,11 +97,6 @@ struct ClientSkillsSheet: View {
                 }
             }
         }
-    }
-
-    private func deleteSkills(at offsets: IndexSet) {
-        draftClient.skills.remove(atOffsets: offsets)
-        persistChanges()
     }
 
     private func persistChanges() {

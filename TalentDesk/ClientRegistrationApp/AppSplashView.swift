@@ -7,6 +7,7 @@ struct AppSplashView: View {
     var body: some View {
         ZStack {
             AppOnboardingBackground()
+                .allowsHitTesting(false)
 
             VStack(spacing: 28) {
                 Spacer()
@@ -14,7 +15,7 @@ struct AppSplashView: View {
                 // Icon
                 ZStack {
                     Circle()
-                        .fill(.white.opacity(0.12))
+                        .fill(AppTheme.accent.opacity(0.15))
                         .frame(width: 80, height: 80)
                         .scaleEffect(animate ? 1.06 : 0.92)
 

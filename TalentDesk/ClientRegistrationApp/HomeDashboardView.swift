@@ -47,29 +47,33 @@ struct HomeDashboardView: View {
     ]
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                // Mint/teal header bar
+                AppScreenHeader(
+                    title: "Talent Desk",
+                    subtitle: "Hello\(sessionStore.profile.map { ", \($0.name)" } ?? "") 👋"
+                )
+
+                // Content
                 VStack(alignment: .leading, spacing: 16) {
-                    // Greeting
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Hello\(sessionStore.profile.map { ", \($0.name)" } ?? "") 👋")
-                            .font(.title3.weight(.semibold))
-                        Text("Here's your activity overview.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
+                    Text("Here's your activity overview.")
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.subtitleText)
+                        .padding(.top, 8)
 
                     // Stat pills
                     HStack(spacing: 10) {
-                        statPill(value: "4", label: "Jobs", color: .blue)
-                        statPill(value: "9", label: "Interviews", color: .orange)
-                        statPill(value: "3", label: "Wins", color: .green)
+                        statPill(value: "4", label: "Jobs", color: AppTheme.statBlue)
+                        statPill(value: "9", label: "Interviews", color: AppTheme.statOrange)
+                        statPill(value: "3", label: "Wins", color: AppTheme.statGreen)
                     }
 
                     // Hiring chart
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Hiring Activity", systemImage: "chart.bar.fill")
                             .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppTheme.darkText)
 
                         Chart(hiringTrends) { item in
                             BarMark(
@@ -80,7 +84,20 @@ struct HomeDashboardView: View {
                             .cornerRadius(4)
                         }
                         .frame(height: 150)
-                        .chartYAxis { AxisMarks(position: .leading) }
+                        .chartYAxis {
+                            AxisMarks(position: .leading) { _ in
+                                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                                    .foregroundStyle(AppTheme.cardBorder)
+                                AxisValueLabel()
+                                    .foregroundStyle(AppTheme.mutedText)
+                            }
+                        }
+                        .chartXAxis {
+                            AxisMarks { _ in
+                                AxisValueLabel()
+                                    .foregroundStyle(AppTheme.subtitleText)
+                            }
+                        }
                     }
                     .dashboardCard()
 
@@ -88,6 +105,7 @@ struct HomeDashboardView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Opportunity Trend", systemImage: "chart.xyaxis.line")
                             .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppTheme.darkText)
 
                         Chart(revenueTrend) { item in
                             LineMark(
@@ -101,10 +119,23 @@ struct HomeDashboardView: View {
                                 x: .value("Week", item.week),
                                 y: .value("Value", item.value)
                             )
-                            .foregroundStyle(AppTheme.accent.opacity(0.12))
+                            .foregroundStyle(AppTheme.accent.opacity(0.15))
                         }
                         .frame(height: 130)
-                        .chartYAxis { AxisMarks(position: .leading) }
+                        .chartYAxis {
+                            AxisMarks(position: .leading) { _ in
+                                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                                    .foregroundStyle(AppTheme.cardBorder)
+                                AxisValueLabel()
+                                    .foregroundStyle(AppTheme.mutedText)
+                            }
+                        }
+                        .chartXAxis {
+                            AxisMarks { _ in
+                                AxisValueLabel()
+                                    .foregroundStyle(AppTheme.subtitleText)
+                            }
+                        }
                     }
                     .dashboardCard()
 
@@ -112,39 +143,41 @@ struct HomeDashboardView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Label("Available Jobs", systemImage: "briefcase.fill")
                             .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppTheme.darkText)
 
                         ForEach(jobs) { job in
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(job.title)
                                         .font(.subheadline.weight(.medium))
+                                        .foregroundStyle(AppTheme.darkText)
                                     Text("\(job.company) · \(job.location)")
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(AppTheme.subtitleText)
                                 }
                                 Spacer()
                                 Text(job.rate)
                                     .font(.caption.weight(.semibold))
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(AppTheme.accent.opacity(0.1))
+                                    .background(AppTheme.accent.opacity(0.15))
                                     .foregroundStyle(AppTheme.accent)
                                     .clipShape(Capsule())
                             }
                             if job.id != jobs.last?.id {
                                 Divider()
+                                    .overlay(AppTheme.cardBorder)
                             }
                         }
                     }
                     .dashboardCard()
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                .padding(.bottom, 16)
             }
-            .background(Color(.systemGroupedBackground))
-            .navigationTitle("Home")
-            .navigationBarTitleDisplayMode(.large)
         }
+        .background(AppTheme.surface)
+        .ignoresSafeArea(edges: .top)
     }
 
     private func statPill(value: String, label: String, color: Color) -> some View {
@@ -154,12 +187,16 @@ struct HomeDashboardView: View {
                 .foregroundStyle(color)
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.subtitleText)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
-        .background(color.opacity(0.08))
+        .background(color.opacity(0.12))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(AppTheme.cardBorder, lineWidth: 1)
+        )
     }
 }
 

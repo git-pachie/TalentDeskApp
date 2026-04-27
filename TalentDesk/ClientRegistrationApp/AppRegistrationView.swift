@@ -15,6 +15,7 @@ struct AppRegistrationView: View {
     var body: some View {
         ZStack {
             AppOnboardingBackground()
+                .allowsHitTesting(false)
 
             ScrollView {
                 VStack(spacing: 24) {
@@ -65,15 +66,27 @@ struct AppRegistrationView: View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.accent)
                 .frame(width: 20)
-            TextField(placeholder, text: text)
-                .font(.subheadline)
+            ZStack(alignment: .leading) {
+                if text.wrappedValue.isEmpty {
+                    Text(placeholder)
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.mutedText)
+                }
+                TextField("", text: text)
+                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.darkText)
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(.white.opacity(0.6))
+        .background(AppTheme.secondarySurface)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(AppTheme.cardBorder, lineWidth: 1)
+        )
     }
 
     private func register() {

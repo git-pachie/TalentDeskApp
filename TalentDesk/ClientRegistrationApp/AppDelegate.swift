@@ -10,6 +10,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     ) -> Bool {
         print("🚀 AppDelegate didFinishLaunching")
 
+        // MARK: - Global appearance
+        configureGlobalAppearance()
+
         // Set self as notification delegate so we can show alerts in foreground
         UNUserNotificationCenter.current().delegate = self
 
@@ -82,5 +85,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     ) {
         print("🔔 User tapped notification: \(response.notification.request.content.title)")
         completionHandler()
+    }
+
+    // MARK: - Global UI Appearance
+
+    private func configureGlobalAppearance() {
+        let accentColor = UIColor(AppTheme.accent)
+        UINavigationBar.appearance().tintColor = accentColor
+        UITabBar.appearance().tintColor = accentColor
     }
 }
