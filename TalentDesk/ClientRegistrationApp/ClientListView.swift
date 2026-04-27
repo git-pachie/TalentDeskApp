@@ -70,6 +70,10 @@ struct ClientListView: View {
                                             .font(.caption)
                                             .foregroundStyle(AppTheme.subtitleText)
                                             .lineLimit(1)
+                                        Text(client.mobile)
+                                            .font(.caption)
+                                            .foregroundStyle(AppTheme.mutedText)
+                                            .lineLimit(1)
                                     }
                                     Spacer()
                                     Image(systemName: "chevron.right")

@@ -1,10 +1,14 @@
 import SwiftUI
 
 struct ClientDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     @Bindable var clientStore: ClientStore
     let clientID: UUID
     @State private var showingAddressSheet = false
     @State private var showingSkillsSheet = false
+    @State private var showingAddSkillSheet = false
+    @State private var showingDeleteConfirmation = false
+    @State private var showingEditSheet = false
 
     private var client: ClientRegistration? {
         clientStore.client(withID: clientID)
@@ -70,11 +74,19 @@ struct ClientDetailView: View {
                                 }
                             }
 
-                            Button(client.skills.isEmpty ? "Add Skills" : "Manage Skills") {
-                                showingSkillsSheet = true
+                            if client.skills.isEmpty {
+                                Button("Add Skills") {
+                                    showingAddSkillSheet = true
+                                }
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(AppTheme.accent)
+                            } else {
+                                Button("Manage Skills") {
+                                    showingSkillsSheet = true
+                                }
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(AppTheme.accent)
                             }
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(AppTheme.accent)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .dashboardCard()
@@ -103,6 +115,39 @@ struct ClientDetailView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .dashboardCard()
+
+                        // Edit
+                        Button {
+                            showingEditSheet = true
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Label("Edit Client", systemImage: "pencil.line")
+                                    .font(.subheadline.weight(.semibold))
+                                Spacer()
+                            }
+                        }
+                        .buttonStyle(AppPrimaryButtonStyle())
+
+                        // Delete
+                        Button(role: .destructive) {
+                            showingDeleteConfirmation = true
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Label("Delete Client", systemImage: "trash.fill")
+                                    .font(.subheadline.weight(.semibold))
+                                Spacer()
+                            }
+                            .padding(.vertical, 14)
+                            .background(Color.red.opacity(0.12))
+                            .foregroundStyle(.red)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                            )
+                        }
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 16)
@@ -111,12 +156,31 @@ struct ClientDetailView: View {
                 .background(AppTheme.surface)
                 .ignoresSafeArea(edges: .top)
                 .navigationBarHidden(true)
+                .alert(
+                    "Delete Client",
+                    isPresented: $showingDeleteConfirmation
+                ) {
+                    Button("Yes", role: .destructive) {
+                        if let index = clientStore.clients.firstIndex(where: { $0.id == clientID }) {
+                            clientStore.clients.remove(at: index)
+                        }
+                        dismiss()
+                    }
+                    Button("No", role: .cancel) { }
+                } message: {
+                    Text("Are you sure you want to delete this client? This action cannot be undone.")
+                }
                 .toolbar {
-                    NavigationLink("Edit") {
-                        ClientEditView(clientStore: clientStore, client: client)
+                    Button("Edit") {
+                        showingEditSheet = true
                     }
                     .font(.subheadline)
                     .foregroundStyle(AppTheme.accent)
+                }
+                .sheet(isPresented: $showingEditSheet) {
+                    if let c = clientStore.client(withID: clientID) {
+                        ClientEditSheet(clientStore: clientStore, client: c)
+                    }
                 }
                 .sheet(isPresented: $showingAddressSheet) {
                     if let c = clientStore.client(withID: clientID) {
@@ -126,6 +190,15 @@ struct ClientDetailView: View {
                 .sheet(isPresented: $showingSkillsSheet) {
                     if let c = clientStore.client(withID: clientID) {
                         ClientSkillsSheet(clientStore: clientStore, client: c)
+                    }
+                }
+                .sheet(isPresented: $showingAddSkillSheet) {
+                    if let c = clientStore.client(withID: clientID) {
+                        ClientSkillEditorSheet(title: "Add Skill") { skill in
+                            var updated = c
+                            updated.skills.append(skill)
+                            clientStore.update(updated)
+                        }
                     }
                 }
             } else {

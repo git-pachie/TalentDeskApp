@@ -23,6 +23,7 @@
 		B2A4BFACCF7C6361839122FC /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D21A327E8347889D72ED88C /* PushNotificationManager.swift */; };
 		B47F76ADF25CE46E3489E254 /* ClientAddressSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25821DD4E67A9BC69EAEEDF8 /* ClientAddressSheet.swift */; };
 		B5805E1A5391830843C18770 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 827D0371CA182B24D344295C /* AppDelegate.swift */; };
+		C5DCEF75FE06C3652748C181 /* ClientEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCB558BB8151FC863852E40B /* ClientEditSheet.swift */; };
 		C69CF313A92834E68CBD7801 /* ClientEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C61982B56924AAC14E3C5EC6 /* ClientEditView.swift */; };
 		D6C01E4ADAF2F570F7D47FA1 /* ClientPhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3865338AD17B1538FAB13BA /* ClientPhotoView.swift */; };
 		D994F04817BFFC449B2F639F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D67905E6B97FD87053EFBAE6 /* Assets.xcassets */; };
@@ -57,6 +58,7 @@
 		E83B7CAC2637EF8925CE7F89 /* ClientRegistrationApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ClientRegistrationApp.entitlements; sourceTree = "<group>"; };
 		F404AE6C7F5912788D6AF39A /* AppSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSession.swift; sourceTree = "<group>"; };
 		F85D2BF4AE30AFA547E48DE7 /* ClientDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientDetailView.swift; sourceTree = "<group>"; };
+		FCB558BB8151FC863852E40B /* ClientEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientEditSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -87,6 +89,7 @@
 				7935B6546B63A9FD60C4B629 /* AppTheme.swift */,
 				25821DD4E67A9BC69EAEEDF8 /* ClientAddressSheet.swift */,
 				F85D2BF4AE30AFA547E48DE7 /* ClientDetailView.swift */,
+				FCB558BB8151FC863852E40B /* ClientEditSheet.swift */,
 				C61982B56924AAC14E3C5EC6 /* ClientEditView.swift */,
 				5B13787325CA39240ADAC2F2 /* ClientListView.swift */,
 				90EDCF110C1FC83CAFCC7A7F /* ClientPhotoPickerSection.swift */,
@@ -194,6 +197,7 @@
 				F48ED3359CD217BE1F821F10 /* AppTheme.swift in Sources */,
 				B47F76ADF25CE46E3489E254 /* ClientAddressSheet.swift in Sources */,
 				456F4D5DE733557B63BDF9AE /* ClientDetailView.swift in Sources */,
+				C5DCEF75FE06C3652748C181 /* ClientEditSheet.swift in Sources */,
 				C69CF313A92834E68CBD7801 /* ClientEditView.swift in Sources */,
 				27A50CCD58D63B4D00D3963D /* ClientListView.swift in Sources */,
 				47B776BDA3107A8A8B3EF50B /* ClientPhotoPickerSection.swift in Sources */,
