@@ -31,9 +31,7 @@ struct HomeView: View {
 
     private var deliveryHeader: some View {
         HStack(spacing: 8) {
-            Image(systemName: "mappin.circle.fill")
-                .font(.title3)
-                .foregroundStyle(GroceryTheme.primary)
+            GroceryIconView(size: 38)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Delivery to")

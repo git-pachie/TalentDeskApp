@@ -6,6 +6,14 @@ enum GroceryAppearance: String, CaseIterable {
     case light = "Light"
     case dark = "Dark"
 
+    var uiStyle: UIUserInterfaceStyle {
+        switch self {
+        case .system: .unspecified
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+
     var colorScheme: ColorScheme? {
         switch self {
         case .system: nil

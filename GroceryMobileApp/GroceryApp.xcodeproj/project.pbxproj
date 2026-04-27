@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		00D7CF3A5B463F37B1D962A5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6FBAE2F7518394ED96E13E8E /* Assets.xcassets */; };
+		09E83913754A95E0C951CAF0 /* GroceryIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C57BC52CF69CC2813EAAA6 /* GroceryIconView.swift */; };
 		0ED7C45036FC88C5219CE034 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FC3DE4A5DD01BFB62F63F4B /* HomeView.swift */; };
 		15A24ADE330EBF2D582BDCB7 /* FreshProductsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B984D389BC03AFE4F13248F /* FreshProductsView.swift */; };
 		160EB909EE9A7E06A70A9ED8 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3819165FCB949446C822F5AE /* FavoritesView.swift */; };
@@ -24,6 +25,7 @@
 /* Begin PBXFileReference section */
 		0592BBB696803D14DF1EBF01 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		15131D11154377B83279018F /* ItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailView.swift; sourceTree = "<group>"; };
+		32C57BC52CF69CC2813EAAA6 /* GroceryIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryIconView.swift; sourceTree = "<group>"; };
 		3819165FCB949446C822F5AE /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
 		3F78C7A0EC42D20B90652CB3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		3FC3DE4A5DD01BFB62F63F4B /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -32,7 +34,7 @@
 		6FBAE2F7518394ED96E13E8E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7B984D389BC03AFE4F13248F /* FreshProductsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreshProductsView.swift; sourceTree = "<group>"; };
 		9AD09A1387052CAF55476046 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		C2B2F306173B9522B893756F /* GroceryApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GroceryApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C2B2F306173B9522B893756F /* GroceryApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GroceryApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CEE3DB089C5E749112202AC8 /* GroceryTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryTheme.swift; sourceTree = "<group>"; };
 		E517CD60BD5B4404358709B8 /* GrocerySettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrocerySettingsStore.swift; sourceTree = "<group>"; };
 		E6D618AF3AEBC2B719B9550E /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
@@ -53,6 +55,7 @@
 				3819165FCB949446C822F5AE /* FavoritesView.swift */,
 				7B984D389BC03AFE4F13248F /* FreshProductsView.swift */,
 				6E58E5D3B62AD6BE1681CBE9 /* GroceryApp.swift */,
+				32C57BC52CF69CC2813EAAA6 /* GroceryIconView.swift */,
 				44022E1F231796944125A18C /* GroceryModels.swift */,
 				E517CD60BD5B4404358709B8 /* GrocerySettingsStore.swift */,
 				CEE3DB089C5E749112202AC8 /* GroceryTheme.swift */,
@@ -156,6 +159,7 @@
 				160EB909EE9A7E06A70A9ED8 /* FavoritesView.swift in Sources */,
 				15A24ADE330EBF2D582BDCB7 /* FreshProductsView.swift in Sources */,
 				404A04F9A4C29E1C29FCBECD /* GroceryApp.swift in Sources */,
+				09E83913754A95E0C951CAF0 /* GroceryIconView.swift in Sources */,
 				410EC636C2044D9C5A9ED8CA /* GroceryModels.swift in Sources */,
 				E2224E0D43422F8DD3C582C5 /* GrocerySettingsStore.swift in Sources */,
 				BBCFDC38B00940437481CAF0 /* GroceryTheme.swift in Sources */,
@@ -243,6 +247,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = R3F22UC8DK;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = GroceryApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -263,6 +268,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = R3F22UC8DK;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = GroceryApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;

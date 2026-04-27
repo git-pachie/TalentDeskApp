@@ -8,9 +8,7 @@ struct ProfileView: View {
             List {
                 Section {
                     HStack(spacing: 14) {
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 50))
-                            .foregroundStyle(GroceryTheme.primary)
+                        GroceryIconView(size: 50)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Guest User")
                                 .font(.system(.headline, design: .rounded))
@@ -24,12 +22,15 @@ struct ProfileView: View {
 
                 // Appearance
                 Section {
-                    @Bindable var settings = settingsStore
                     HStack(spacing: 8) {
                         ForEach(GroceryAppearance.allCases, id: \.self) { mode in
                             Button {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    settings.appearance = mode
+                                print("🎨 Tapped: \(mode.rawValue)")
+                                settingsStore.appearance = mode
+                                if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                                    for window in scene.windows {
+                                        window.overrideUserInterfaceStyle = mode.uiStyle
+                                    }
                                 }
                             } label: {
                                 VStack(spacing: 6) {
@@ -41,12 +42,12 @@ struct ProfileView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
                                 .background(
-                                    settings.appearance == mode
+                                    settingsStore.appearance == mode
                                         ? GroceryTheme.primary.opacity(0.15)
                                         : Color(.systemGray6)
                                 )
                                 .foregroundStyle(
-                                    settings.appearance == mode
+                                    settingsStore.appearance == mode
                                         ? GroceryTheme.primary
                                         : .secondary
                                 )
@@ -54,13 +55,14 @@ struct ProfileView: View {
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                                         .stroke(
-                                            settings.appearance == mode
+                                            settingsStore.appearance == mode
                                                 ? GroceryTheme.primary
                                                 : Color.clear,
                                             lineWidth: 1.5
                                         )
                                 )
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
