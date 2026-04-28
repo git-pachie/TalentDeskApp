@@ -12,6 +12,7 @@
 		0ED7C45036FC88C5219CE034 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FC3DE4A5DD01BFB62F63F4B /* HomeView.swift */; };
 		15A24ADE330EBF2D582BDCB7 /* FreshProductsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B984D389BC03AFE4F13248F /* FreshProductsView.swift */; };
 		160EB909EE9A7E06A70A9ED8 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3819165FCB949446C822F5AE /* FavoritesView.swift */; };
+		1A36F7F0B114A4A61F90DD59 /* VoucherDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DE71F679B9DFB0617B5E149 /* VoucherDetailView.swift */; };
 		2D805E3C99A2E671E6316993 /* CachedAsyncImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBBA3243EF37AB308781DBF5 /* CachedAsyncImage.swift */; };
 		3BF46FA692B0C2266BB51A8F /* CartStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 716800607EF6CC44CA4654A8 /* CartStore.swift */; };
 		3D6E178A422C87E0050B6DB3 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F78C7A0EC42D20B90652CB3 /* ProfileView.swift */; };
@@ -19,6 +20,7 @@
 		404A04F9A4C29E1C29FCBECD /* GroceryApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E58E5D3B62AD6BE1681CBE9 /* GroceryApp.swift */; };
 		410EC636C2044D9C5A9ED8CA /* GroceryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44022E1F231796944125A18C /* GroceryModels.swift */; };
 		53415025056D8D1F1346B972 /* CartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F745D1941478ED8788B06836 /* CartView.swift */; };
+		59B441502807ED271DD04638 /* VouchersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6063FD5F60A7660C2E856304 /* VouchersView.swift */; };
 		6B770BADB3E34DE83B088A29 /* CheckoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2488A56BFB585BE0CD136C3F /* CheckoutView.swift */; };
 		859095C0D794D6E5FC4BF4A7 /* OrderDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA04ED4688EAB3DE330CD298 /* OrderDetailView.swift */; };
 		8B36905E46B36B27EC6D27CE /* ItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15131D11154377B83279018F /* ItemDetailView.swift */; };
@@ -36,12 +38,14 @@
 		0592BBB696803D14DF1EBF01 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		15131D11154377B83279018F /* ItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailView.swift; sourceTree = "<group>"; };
 		2488A56BFB585BE0CD136C3F /* CheckoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckoutView.swift; sourceTree = "<group>"; };
+		2DE71F679B9DFB0617B5E149 /* VoucherDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoucherDetailView.swift; sourceTree = "<group>"; };
 		32C57BC52CF69CC2813EAAA6 /* GroceryIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryIconView.swift; sourceTree = "<group>"; };
 		3819165FCB949446C822F5AE /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
 		3F78C7A0EC42D20B90652CB3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		3FC3DE4A5DD01BFB62F63F4B /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		44022E1F231796944125A18C /* GroceryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryModels.swift; sourceTree = "<group>"; };
 		5210D0584F3E13A6B46771EE /* OrdersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrdersView.swift; sourceTree = "<group>"; };
+		6063FD5F60A7660C2E856304 /* VouchersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchersView.swift; sourceTree = "<group>"; };
 		6E58E5D3B62AD6BE1681CBE9 /* GroceryApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryApp.swift; sourceTree = "<group>"; };
 		6FBAE2F7518394ED96E13E8E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		716800607EF6CC44CA4654A8 /* CartStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartStore.swift; sourceTree = "<group>"; };
@@ -49,7 +53,7 @@
 		8E5E3A20C312CA0FAC686880 /* PaymentMethodsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodsView.swift; sourceTree = "<group>"; };
 		9AD09A1387052CAF55476046 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A1483E779A0296AD806C4D15 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
-		C2B2F306173B9522B893756F /* GroceryApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GroceryApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C2B2F306173B9522B893756F /* GroceryApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GroceryApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA04ED4688EAB3DE330CD298 /* OrderDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderDetailView.swift; sourceTree = "<group>"; };
 		CEE3DB089C5E749112202AC8 /* GroceryTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryTheme.swift; sourceTree = "<group>"; };
 		DBBA3243EF37AB308781DBF5 /* CachedAsyncImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedAsyncImage.swift; sourceTree = "<group>"; };
@@ -95,6 +99,8 @@
 				0592BBB696803D14DF1EBF01 /* RootTabView.swift */,
 				E6D618AF3AEBC2B719B9550E /* SearchView.swift */,
 				A1483E779A0296AD806C4D15 /* ShareSheet.swift */,
+				2DE71F679B9DFB0617B5E149 /* VoucherDetailView.swift */,
+				6063FD5F60A7660C2E856304 /* VouchersView.swift */,
 				DB2DDFEE79623843D9E99849 /* Resources */,
 			);
 			path = GroceryApp;
@@ -208,6 +214,8 @@
 				973E91AF2A91386FF35DB7D0 /* RootTabView.swift in Sources */,
 				E1D895F0F6712F44E4C94FA8 /* SearchView.swift in Sources */,
 				DD80E3784F74EFC02E02BE9B /* ShareSheet.swift in Sources */,
+				1A36F7F0B114A4A61F90DD59 /* VoucherDetailView.swift in Sources */,
+				59B441502807ED271DD04638 /* VouchersView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -287,7 +295,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = R3F22UC8DK;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = GroceryApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -308,7 +315,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = R3F22UC8DK;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = GroceryApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;

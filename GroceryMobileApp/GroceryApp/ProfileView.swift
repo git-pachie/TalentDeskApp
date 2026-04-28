@@ -88,6 +88,11 @@ struct ProfileView: View {
                     } label: {
                         Label("Payment Methods", systemImage: "creditcard")
                     }
+                    NavigationLink {
+                        VouchersView()
+                    } label: {
+                        Label("Vouchers", systemImage: "ticket")
+                    }
                 }
 
                 Section("Settings") {
