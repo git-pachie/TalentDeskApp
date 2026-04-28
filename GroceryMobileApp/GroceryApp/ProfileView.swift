@@ -73,9 +73,21 @@ struct ProfileView: View {
                 }
 
                 Section("Account") {
-                    Label("Orders", systemImage: "bag")
-                    Label("Addresses", systemImage: "mappin.circle")
-                    Label("Payment Methods", systemImage: "creditcard")
+                    NavigationLink {
+                        OrdersView()
+                    } label: {
+                        Label("Orders", systemImage: "bag")
+                    }
+                    NavigationLink {
+                        AddressListView()
+                    } label: {
+                        Label("Addresses", systemImage: "mappin.circle")
+                    }
+                    NavigationLink {
+                        PaymentMethodsView()
+                    } label: {
+                        Label("Payment Methods", systemImage: "creditcard")
+                    }
                 }
 
                 Section("Settings") {

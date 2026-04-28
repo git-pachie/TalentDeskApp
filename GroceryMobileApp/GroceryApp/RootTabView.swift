@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct RootTabView: View {
+    @Environment(CartStore.self) private var cartStore
     @State private var selectedTab = 0
 
     var body: some View {
@@ -12,11 +13,12 @@ struct RootTabView: View {
                 }
                 .tag(0)
 
-            SearchView()
+            CartView()
                 .tabItem {
                     Image(systemName: "cart.fill")
                     Text("Cart")
                 }
+                .badge(cartStore.totalItems)
                 .tag(1)
 
             FavoritesView()
@@ -41,4 +43,5 @@ struct RootTabView: View {
     RootTabView()
         .environment(GrocerySettingsStore())
         .environment(FavoritesStore())
+        .environment(CartStore())
 }

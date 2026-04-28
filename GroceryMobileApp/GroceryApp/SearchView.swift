@@ -178,4 +178,5 @@ struct SearchView: View {
         SearchView()
     }
     .environment(FavoritesStore())
+    .environment(CartStore())
 }

@@ -4,10 +4,11 @@ import SwiftUI
 struct GroceryApp: App {
     @State private var settingsStore = GrocerySettingsStore()
     @State private var favoritesStore = FavoritesStore()
+    @State private var cartStore = CartStore()
 
     var body: some Scene {
         WindowGroup {
-            ThemeRoot(settingsStore: settingsStore, favoritesStore: favoritesStore)
+            ThemeRoot(settingsStore: settingsStore, favoritesStore: favoritesStore, cartStore: cartStore)
         }
     }
 }
@@ -15,11 +16,13 @@ struct GroceryApp: App {
 struct ThemeRoot: View {
     let settingsStore: GrocerySettingsStore
     let favoritesStore: FavoritesStore
+    let cartStore: CartStore
 
     var body: some View {
         RootTabView()
             .environment(settingsStore)
             .environment(favoritesStore)
+            .environment(cartStore)
             .task(id: settingsStore.appearance) {
                 setWindowStyle(settingsStore.appearance.uiStyle)
             }

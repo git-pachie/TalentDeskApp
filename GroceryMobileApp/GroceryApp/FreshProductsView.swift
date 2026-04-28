@@ -63,6 +63,7 @@ struct FreshProductsView: View {
 struct ProductCard: View {
     let product: GroceryProduct
     @Environment(FavoritesStore.self) private var favoritesStore
+    @Environment(CartStore.self) private var cartStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -131,12 +132,14 @@ struct ProductCard: View {
 
                 Spacer()
 
-                Button { } label: {
-                    Image(systemName: "cart.badge.plus")
+                Button {
+                    cartStore.add(product)
+                } label: {
+                    Image(systemName: cartStore.isInCart(product) ? "cart.fill" : "cart.badge.plus")
                         .font(.system(size: 13, weight: .medium))
                         .padding(7)
-                        .background(GroceryTheme.primaryLight)
-                        .foregroundStyle(GroceryTheme.primary)
+                        .background(cartStore.isInCart(product) ? GroceryTheme.primary : GroceryTheme.primaryLight)
+                        .foregroundStyle(cartStore.isInCart(product) ? .white : GroceryTheme.primary)
                         .clipShape(RoundedRectangle(cornerRadius: 7))
                 }
             }
@@ -153,4 +156,5 @@ struct ProductCard: View {
         FreshProductsView()
     }
     .environment(FavoritesStore())
+    .environment(CartStore())
 }

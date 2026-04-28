@@ -4,6 +4,7 @@ struct ItemDetailView: View {
     let product: GroceryProduct
     @State private var quantity = 1
     @Environment(FavoritesStore.self) private var favoritesStore
+    @Environment(CartStore.self) private var cartStore
     @State private var selectedImageIndex = 0
 
     private var thumbnailURLs: [String] {
@@ -271,7 +272,9 @@ struct ItemDetailView: View {
     // MARK: - Add to Cart
 
     private var addToCartButton: some View {
-        Button { } label: {
+        Button {
+            cartStore.add(product, quantity: quantity)
+        } label: {
             HStack {
                 Image(systemName: "cart.badge.plus")
                 Text("Add to Cart — $\(quantity * Int(product.price))")
@@ -291,4 +294,5 @@ struct ItemDetailView: View {
         ItemDetailView(product: SampleData.deals.first!)
     }
     .environment(FavoritesStore())
+    .environment(CartStore())
 }
