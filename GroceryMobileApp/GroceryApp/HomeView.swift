@@ -2,10 +2,19 @@ import SwiftUI
 
 struct HomeView: View {
     @State private var showingAddressPicker = false
-    @State private var deliveryAddress = "Home, New York"
+    @State private var selectedAddressIndex = 0
     @State private var refreshID = UUID()
 
-    private let addresses = ["Home, New York", "Office, Manhattan", "Mom's, Brooklyn", "Gym, Queens"]
+    private let addresses: [(label: String, address: String, contact: String)] = [
+        ("Home", "123 Main St, New York, NY 10001", "+1 (555) 123-4567"),
+        ("Office", "456 Park Ave, Manhattan, NY 10022", "+1 (555) 987-6543"),
+        ("Mom's", "789 Oak Dr, Brooklyn, NY 11201", "+1 (555) 456-7890"),
+        ("Gym", "321 Fitness Blvd, Queens, NY 11375", "+1 (555) 321-0987"),
+    ]
+
+    private var currentAddress: (label: String, address: String, contact: String) {
+        addresses[selectedAddressIndex]
+    }
 
     var body: some View {
         NavigationStack {
@@ -51,31 +60,52 @@ struct HomeView: View {
                         .font(.caption)
                         .foregroundStyle(GroceryTheme.muted)
                     HStack(spacing: 4) {
-                        Text(deliveryAddress)
+                        Text(currentAddress.label)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(GroceryTheme.title)
                         Image(systemName: "chevron.down")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(GroceryTheme.title)
                     }
+                    Text(currentAddress.address)
+                        .font(.system(.caption2, design: .rounded))
+                        .foregroundStyle(GroceryTheme.muted)
+                        .lineLimit(1)
                 }
             }
             .buttonStyle(.plain)
             .sheet(isPresented: $showingAddressPicker) {
                 NavigationView {
-                    List(addresses, id: \.self) { address in
+                    List(Array(addresses.enumerated()), id: \.offset) { index, addr in
                         Button {
-                            deliveryAddress = address
+                            selectedAddressIndex = index
                             showingAddressPicker = false
                         } label: {
-                            HStack {
+                            HStack(alignment: .top, spacing: 12) {
                                 Image(systemName: "mappin.circle.fill")
+                                    .font(.title3)
                                     .foregroundStyle(GroceryTheme.primary)
-                                Text(address)
-                                    .foregroundStyle(GroceryTheme.title)
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(addr.label)
+                                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                        .foregroundStyle(GroceryTheme.title)
+                                    Text(addr.address)
+                                        .font(.system(.caption, design: .rounded))
+                                        .foregroundStyle(GroceryTheme.subtitle)
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "phone.fill")
+                                            .font(.caption2)
+                                        Text(addr.contact)
+                                            .font(.system(.caption2, design: .rounded))
+                                    }
+                                    .foregroundStyle(GroceryTheme.primary)
+                                }
+
                                 Spacer()
-                                if address == deliveryAddress {
-                                    Image(systemName: "checkmark")
+
+                                if index == selectedAddressIndex {
+                                    Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(GroceryTheme.primary)
                                 }
                             }
@@ -89,7 +119,7 @@ struct HomeView: View {
                         }
                     }
                 }
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
             }
 
             Spacer()
@@ -101,7 +131,7 @@ struct HomeView: View {
             }
 
             NavigationLink {
-                SearchView()
+                CartView()
             } label: {
                 Image(systemName: "cart")
                     .font(.title3)

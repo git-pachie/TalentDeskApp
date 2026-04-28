@@ -28,13 +28,10 @@ struct ItemDetailView: View {
         return urls
     }
 
-    private let relatedProducts: [(url: String, name: String)] = [
-        ("https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=200", "Carrots"),
-        ("https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=200", "Broccoli"),
-        ("https://images.unsplash.com/photo-1546470427-0d4db154ceb8?w=200", "Tomatoes"),
-        ("https://images.unsplash.com/photo-1587132137056-bfbf0166836e?w=200", "Oranges"),
-        ("https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=200", "Grapes"),
-    ]
+    private var relatedProducts: [GroceryProduct] {
+        SampleData.allProducts.filter { $0.id != product.id && $0.category == product.category }.prefix(5).map { $0 }
+        + SampleData.allProducts.filter { $0.id != product.id && $0.category != product.category }.prefix(2).map { $0 }
+    }
 
     var body: some View {
         ScrollView {
@@ -244,24 +241,32 @@ struct ItemDetailView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(relatedProducts, id: \.name) { item in
-                        VStack(spacing: 6) {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(Color(.systemGray6))
-                                .frame(width: 80, height: 80)
-                                .overlay {
-                                    if let url = URL(string: item.url) {
-                                        AsyncImage(url: url) { image in
-                                            image.resizable().scaledToFill()
-                                        } placeholder: {
-                                            ProgressView().scaleEffect(0.5)
+                    ForEach(relatedProducts) { item in
+                        NavigationLink {
+                            ItemDetailView(product: item)
+                        } label: {
+                            VStack(spacing: 6) {
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(Color(.systemGray6))
+                                    .frame(width: 80, height: 80)
+                                    .overlay {
+                                        if let urlString = item.imageURL, let url = URL(string: urlString) {
+                                            CachedAsyncImage(url: url, emoji: item.emoji)
+                                        } else {
+                                            Text(item.emoji)
+                                                .font(.system(size: 40))
                                         }
                                     }
-                                }
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            Text(item.name)
-                                .font(.system(.caption2, design: .rounded))
-                                .foregroundStyle(GroceryTheme.subtitle)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                Text(item.name)
+                                    .font(.system(.caption2, design: .rounded))
+                                    .foregroundStyle(GroceryTheme.subtitle)
+                                    .lineLimit(1)
+                                Text("$\(Int(item.price))")
+                                    .font(.system(.caption2, design: .rounded, weight: .bold))
+                                    .foregroundStyle(GroceryTheme.primary)
+                            }
+                            .frame(width: 80)
                         }
                     }
                 }

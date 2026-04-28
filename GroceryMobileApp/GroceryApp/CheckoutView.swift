@@ -2,13 +2,33 @@ import SwiftUI
 
 struct CheckoutView: View {
     @Environment(CartStore.self) private var cartStore
-    @State private var deliveryAddress = "Home, New York"
+    @State private var selectedAddressIndex = 0
     @State private var paymentMethod = "Credit Card"
     @State private var showingConfirmation = false
     @State private var showingAddressPicker = false
     @State private var showingPaymentPicker = false
+    @State private var showingVoucherSheet = false
+    @State private var appliedVoucher: (code: String, discount: Double)?
+    @State private var orderPlaced = false
+    @State private var successScale: CGFloat = 0
+    @State private var placedOrder: OrderItem?
+    @State private var navigateToOrder = false
+    @State private var orderRemarks = ""
 
-    private let addresses = ["Home, New York", "Office, Manhattan", "Mom's, Brooklyn", "Gym, Queens"]
+    private let availableVouchers = [
+        (code: "FRESH10", description: "10% off your order", discount: 0.10),
+        (code: "SAVE5", description: "$5 off orders above $20", discount: 5.0),
+        (code: "NEWUSER", description: "$8 off first order", discount: 8.0),
+        (code: "FREESHIP", description: "Free delivery", discount: 5.0),
+    ]
+
+    private let deliveryAddresses: [(label: String, address: String, instructions: String, contact: String)] = [
+        ("Home", "123 Main St, New York, NY 10001", "Leave at the front door. Do not ring the bell.", "+1 (555) 123-4567"),
+        ("Office", "456 Park Ave, Manhattan, NY 10022", "Ask for reception at lobby. Floor 12.", "+1 (555) 987-6543"),
+        ("Mom's", "789 Oak Dr, Brooklyn, NY 11201", "Ring doorbell twice. Gate code: 4521.", "+1 (555) 456-7890"),
+        ("Gym", "321 Fitness Blvd, Queens, NY 11375", "Leave with front desk staff.", "+1 (555) 321-0987"),
+    ]
+
     private let paymentMethods = [
         ("Credit Card", "creditcard.fill"),
         ("Debit Card", "creditcard"),
@@ -17,8 +37,22 @@ struct CheckoutView: View {
     ]
 
     private let deliveryFee: Double = 5
+    private let platformFee: Double = 2
+    private let otherCharges: Double = 1
     private var subtotal: Double { cartStore.totalPrice }
-    private var total: Double { subtotal + deliveryFee }
+    private var voucherDiscount: Double {
+        guard let voucher = appliedVoucher else { return 0 }
+        // If discount < 1, treat as percentage
+        if voucher.discount < 1 {
+            return subtotal * voucher.discount
+        }
+        return voucher.discount
+    }
+    private var total: Double { max(0, subtotal + deliveryFee + platformFee + otherCharges - voucherDiscount) }
+
+    private var currentAddress: (label: String, address: String, instructions: String, contact: String) {
+        deliveryAddresses[selectedAddressIndex]
+    }
 
     var body: some View {
         ScrollView {
@@ -31,33 +65,85 @@ struct CheckoutView: View {
                 // Delivery address
                 Button { showingAddressPicker = true } label: {
                     sectionCard(title: "Delivery Address", icon: "mappin.circle.fill") {
-                        HStack {
-                            Text(deliveryAddress)
-                                .font(.system(.subheadline, design: .rounded))
-                                .foregroundStyle(GroceryTheme.title)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text(currentAddress.label)
+                                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                    .foregroundStyle(GroceryTheme.title)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(GroceryTheme.muted)
+                            }
+                            Text(currentAddress.address)
+                                .font(.system(.caption, design: .rounded))
+                                .foregroundStyle(GroceryTheme.subtitle)
+                                .multilineTextAlignment(.leading)
+
+                            HStack(spacing: 4) {
+                                Image(systemName: "phone.fill")
+                                    .font(.caption2)
+                                Text(currentAddress.contact)
+                                    .font(.system(.caption, design: .rounded))
+                            }
+                            .foregroundStyle(GroceryTheme.primary)
+
+                            if !currentAddress.instructions.isEmpty {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "text.bubble.fill")
+                                        .font(.caption2)
+                                    Text(currentAddress.instructions)
+                                        .font(.system(.caption2, design: .rounded))
+                                }
                                 .foregroundStyle(GroceryTheme.muted)
+                            }
                         }
                     }
                 }
                 .buttonStyle(.plain)
                 .sheet(isPresented: $showingAddressPicker) {
                     NavigationView {
-                        List(addresses, id: \.self) { address in
+                        List(Array(deliveryAddresses.enumerated()), id: \.offset) { index, addr in
                             Button {
-                                deliveryAddress = address
+                                selectedAddressIndex = index
                                 showingAddressPicker = false
                             } label: {
-                                HStack {
+                                HStack(alignment: .top, spacing: 12) {
                                     Image(systemName: "mappin.circle.fill")
+                                        .font(.title3)
                                         .foregroundStyle(GroceryTheme.primary)
-                                    Text(address)
-                                        .foregroundStyle(GroceryTheme.title)
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(addr.label)
+                                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                            .foregroundStyle(GroceryTheme.title)
+                                        Text(addr.address)
+                                            .font(.system(.caption, design: .rounded))
+                                            .foregroundStyle(GroceryTheme.subtitle)
+
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "phone.fill")
+                                                .font(.caption2)
+                                            Text(addr.contact)
+                                                .font(.system(.caption2, design: .rounded))
+                                        }
+                                        .foregroundStyle(GroceryTheme.primary)
+
+                                        if !addr.instructions.isEmpty {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "text.bubble")
+                                                    .font(.caption2)
+                                                Text(addr.instructions)
+                                                    .font(.system(.caption2, design: .rounded))
+                                            }
+                                            .foregroundStyle(GroceryTheme.muted)
+                                        }
+                                    }
+
                                     Spacer()
-                                    if address == deliveryAddress {
-                                        Image(systemName: "checkmark")
+
+                                    if index == selectedAddressIndex {
+                                        Image(systemName: "checkmark.circle.fill")
                                             .foregroundStyle(GroceryTheme.primary)
                                     }
                                 }
@@ -71,7 +157,7 @@ struct CheckoutView: View {
                             }
                         }
                     }
-                    .presentationDetents([.medium])
+                    .presentationDetents([.large])
                 }
 
                 // Payment method
@@ -121,12 +207,52 @@ struct CheckoutView: View {
                     .presentationDetents([.medium])
                 }
 
+                // Voucher
+                Button { showingVoucherSheet = true } label: {
+                    sectionCard(title: "Voucher", icon: "ticket.fill") {
+                        HStack {
+                            if let voucher = appliedVoucher {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(voucher.code)
+                                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                        .foregroundStyle(GroceryTheme.primary)
+                                    Text("-$\(Int(voucherDiscount)) applied")
+                                        .font(.system(.caption, design: .rounded))
+                                        .foregroundStyle(GroceryTheme.primary)
+                                }
+                            } else {
+                                Text("Apply a voucher code")
+                                    .font(.system(.subheadline, design: .rounded))
+                                    .foregroundStyle(GroceryTheme.subtitle)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(GroceryTheme.muted)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .sheet(isPresented: $showingVoucherSheet) {
+                    voucherSheet
+                }
+
+                // Order remarks
+                sectionCard(title: "Order Remarks", icon: "text.bubble.fill") {
+                    TextField("Any special instructions for this order?", text: $orderRemarks, axis: .vertical)
+                        .font(.system(.subheadline, design: .rounded))
+                        .lineLimit(2...4)
+                        .padding(10)
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+
                 // Price breakdown
                 priceBreakdown
 
                 // Place order button
                 Button {
-                    showingConfirmation = true
+                    placeOrder()
                 } label: {
                     HStack {
                         Image(systemName: "bag.fill")
@@ -145,13 +271,113 @@ struct CheckoutView: View {
         .background(GroceryTheme.background)
         .navigationTitle("Checkout")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Order Placed!", isPresented: $showingConfirmation) {
-            Button("OK") {
-                cartStore.items.removeAll()
+        .overlay {
+            if orderPlaced {
+                successOverlay
             }
-        } message: {
-            Text("Your order of \(cartStore.totalItems) item(s) totaling $\(Int(total)) has been placed successfully.")
         }
+        .navigationDestination(isPresented: $navigateToOrder) {
+            if let order = placedOrder {
+                OrderDetailView(order: order)
+            }
+        }
+    }
+
+    // MARK: - Place Order
+
+    private func placeOrder() {
+        let orderNumber = "#GR-\(Int.random(in: 2000...9999))"
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        let dateStr = formatter.string(from: Date())
+
+        placedOrder = OrderItem(
+            orderNumber: orderNumber,
+            date: dateStr,
+            items: cartStore.totalItems,
+            total: total,
+            status: .processing,
+            orderRemarks: orderRemarks.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
+            orderPlaced = true
+            successScale = 1
+        }
+
+        cartStore.items.removeAll()
+    }
+
+    // MARK: - Success Overlay
+
+    private var successOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.5)
+                .ignoresSafeArea()
+
+            VStack(spacing: 20) {
+                // Animated checkmark
+                ZStack {
+                    Circle()
+                        .fill(GroceryTheme.primary.opacity(0.15))
+                        .frame(width: 120, height: 120)
+                        .scaleEffect(successScale)
+
+                    Circle()
+                        .fill(GroceryTheme.primary)
+                        .frame(width: 80, height: 80)
+                        .scaleEffect(successScale)
+
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 36, weight: .bold))
+                        .foregroundStyle(.white)
+                        .scaleEffect(successScale)
+                }
+
+                Text("Order Placed!")
+                    .font(.system(.title2, design: .rounded, weight: .bold))
+                    .foregroundStyle(.white)
+
+                if let order = placedOrder {
+                    Text("Order \(order.orderNumber)")
+                        .font(.system(.subheadline, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.8))
+
+                    Text("$\(Int(order.total)) • \(order.items) item(s)")
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+
+                VStack(spacing: 10) {
+                    Button {
+                        orderPlaced = false
+                        navigateToOrder = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "shippingbox.fill")
+                            Text("View Order Status")
+                                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(.white)
+                        .foregroundStyle(GroceryTheme.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+
+                    Button {
+                        orderPlaced = false
+                    } label: {
+                        Text("Continue Shopping")
+                            .font(.system(.subheadline, design: .rounded, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                }
+                .padding(.horizontal, 40)
+                .padding(.top, 10)
+            }
+        }
+        .transition(.opacity)
     }
 
     // MARK: - Order Summary
@@ -215,26 +441,35 @@ struct CheckoutView: View {
     // MARK: - Price Breakdown
 
     private var priceBreakdown: some View {
-        VStack(spacing: 10) {
-            HStack {
-                Text("Subtotal")
-                    .font(.system(.subheadline, design: .rounded))
-                    .foregroundStyle(GroceryTheme.subtitle)
-                Spacer()
-                Text("$\(Int(subtotal))")
-                    .font(.system(.subheadline, design: .rounded, weight: .medium))
-                    .foregroundStyle(GroceryTheme.title)
+        VStack(spacing: 8) {
+            Label("Payment Summary", systemImage: "list.bullet.rectangle")
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                .foregroundStyle(GroceryTheme.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            priceRow("Subtotal", value: "$\(Int(subtotal))")
+            priceRow("Delivery Fee", value: "$\(Int(deliveryFee))")
+            priceRow("Platform Fee", value: "$\(Int(platformFee))")
+            priceRow("Other Charges", value: "$\(Int(otherCharges))")
+
+            if let voucher = appliedVoucher {
+                HStack {
+                    HStack(spacing: 4) {
+                        Image(systemName: "ticket.fill")
+                            .font(.caption2)
+                        Text("Voucher (\(voucher.code))")
+                            .font(.system(.caption, design: .rounded))
+                    }
+                    .foregroundStyle(GroceryTheme.primary)
+                    Spacer()
+                    Text("-$\(Int(voucherDiscount))")
+                        .font(.system(.caption, design: .rounded, weight: .medium))
+                        .foregroundStyle(GroceryTheme.primary)
+                }
             }
-            HStack {
-                Text("Delivery Fee")
-                    .font(.system(.subheadline, design: .rounded))
-                    .foregroundStyle(GroceryTheme.subtitle)
-                Spacer()
-                Text("$\(Int(deliveryFee))")
-                    .font(.system(.subheadline, design: .rounded, weight: .medium))
-                    .foregroundStyle(GroceryTheme.title)
-            }
+
             Divider()
+
             HStack {
                 Text("Total")
                     .font(.system(.subheadline, design: .rounded, weight: .bold))
@@ -249,6 +484,85 @@ struct CheckoutView: View {
         .background(GroceryTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: .black.opacity(0.04), radius: 4, y: 2)
+    }
+
+    private func priceRow(_ label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(.caption, design: .rounded))
+                .foregroundStyle(GroceryTheme.subtitle)
+            Spacer()
+            Text(value)
+                .font(.system(.caption, design: .rounded, weight: .medium))
+                .foregroundStyle(GroceryTheme.title)
+        }
+    }
+
+    // MARK: - Voucher Sheet
+
+    private var voucherSheet: some View {
+        NavigationView {
+            List {
+                // Applied voucher remove option
+                if appliedVoucher != nil {
+                    Section {
+                        Button {
+                            appliedVoucher = nil
+                            showingVoucherSheet = false
+                        } label: {
+                            Label("Remove Applied Voucher", systemImage: "xmark.circle")
+                                .foregroundStyle(GroceryTheme.badge)
+                        }
+                    }
+                }
+
+                Section("Available Vouchers") {
+                    ForEach(availableVouchers, id: \.code) { voucher in
+                        Button {
+                            appliedVoucher = (code: voucher.code, discount: voucher.discount)
+                            showingVoucherSheet = false
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "ticket.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(GroceryTheme.primary)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(voucher.code)
+                                        .font(.system(.subheadline, design: .rounded, weight: .bold))
+                                        .foregroundStyle(GroceryTheme.title)
+                                    Text(voucher.description)
+                                        .font(.system(.caption, design: .rounded))
+                                        .foregroundStyle(GroceryTheme.muted)
+                                }
+
+                                Spacer()
+
+                                if appliedVoucher?.code == voucher.code {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(GroceryTheme.primary)
+                                } else {
+                                    Text("Apply")
+                                        .font(.system(.caption, design: .rounded, weight: .semibold))
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(GroceryTheme.primaryLight)
+                                        .foregroundStyle(GroceryTheme.primary)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Vouchers")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { showingVoucherSheet = false }
+                }
+            }
+        }
     }
 }
 

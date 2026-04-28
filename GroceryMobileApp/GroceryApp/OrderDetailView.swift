@@ -2,13 +2,18 @@ import SwiftUI
 import PhotosUI
 
 struct OrderDetailView: View {
-    let order: OrderItem
+    @State private var order: OrderItem
     @State private var rating: Int = 0
     @State private var remarks: String = ""
     @State private var showingRatingSubmitted = false
     @State private var reviewPhotos: [Data] = []
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var isReviewSubmitted = false
+    @State private var lastRefreshDate = Date()
+
+    init(order: OrderItem) {
+        self._order = State(initialValue: order)
+    }
 
     private var deliveryFee: Double { 5 }
     private var platformFee: Double { 2 }
@@ -16,15 +21,25 @@ struct OrderDetailView: View {
     private var otherCharges: Double { 1 }
     private var grandTotal: Double { order.total + deliveryFee + platformFee + voucher + otherCharges }
 
-    private let sampleProducts: [(emoji: String, name: String, qty: Int, price: Int)] = [
-        ("🍅", "Orange Tomatoes", 2, 12),
-        ("🥑", "Ripe Avocado", 1, 8),
-        ("🍎", "Red Apples", 1, 10),
+    private let sampleProducts: [(emoji: String, name: String, qty: Int, price: Int, remarks: String)] = [
+        ("🍅", "Orange Tomatoes", 2, 12, "Ripe ones please"),
+        ("🥑", "Ripe Avocado", 1, 8, ""),
+        ("🍎", "Red Apples", 1, 10, "No bruised ones"),
     ]
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                // Last updated
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption2)
+                    Text("Updated \(lastRefreshDate.formatted(date: .omitted, time: .shortened))")
+                        .font(.system(.caption2, design: .rounded))
+                }
+                .foregroundStyle(GroceryTheme.muted)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+
                 // Order header
                 orderHeader
 
@@ -37,6 +52,15 @@ struct OrderDetailView: View {
                 itemsSection
 
                 Divider()
+
+                // Order remarks
+                if !order.orderRemarks.isEmpty {
+                    infoCard(title: "Order Remarks", icon: "text.bubble.fill") {
+                        Text(order.orderRemarks)
+                            .font(.system(.subheadline, design: .rounded))
+                            .foregroundStyle(GroceryTheme.title)
+                    }
+                }
 
                 // Delivery address
                 infoCard(title: "Delivery Address", icon: "mappin.circle.fill") {
@@ -89,6 +113,9 @@ struct OrderDetailView: View {
             .padding(16)
         }
         .background(GroceryTheme.background)
+        .refreshable {
+            await refreshOrderStatus()
+        }
         .navigationTitle("Order Details")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -105,6 +132,41 @@ struct OrderDetailView: View {
             Button("OK") { }
         } message: {
             Text("Your \(rating)-star rating\(reviewPhotos.isEmpty ? "" : " with \(reviewPhotos.count) photo(s)") has been submitted.")
+        }
+    }
+
+    // MARK: - Refresh Order Status
+
+    private func refreshOrderStatus() async {
+        // Simulate network delay
+        try? await Task.sleep(for: .seconds(1))
+
+        lastRefreshDate = Date()
+
+        // Simulate status progression
+        withAnimation(.easeInOut) {
+            switch order.status {
+            case .processing:
+                order = OrderItem(
+                    orderNumber: order.orderNumber,
+                    date: order.date,
+                    items: order.items,
+                    total: order.total,
+                    status: .shipped,
+                    orderRemarks: order.orderRemarks
+                )
+            case .shipped:
+                order = OrderItem(
+                    orderNumber: order.orderNumber,
+                    date: order.date,
+                    items: order.items,
+                    total: order.total,
+                    status: .delivered,
+                    orderRemarks: order.orderRemarks
+                )
+            default:
+                break
+            }
         }
     }
 
@@ -460,22 +522,34 @@ struct OrderDetailView: View {
                 .foregroundStyle(GroceryTheme.title)
 
             ForEach(sampleProducts, id: \.name) { item in
-                HStack(spacing: 10) {
-                    Text(item.emoji)
-                        .font(.title2)
-                        .frame(width: 36)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(item.name)
-                            .font(.system(.caption, design: .rounded, weight: .medium))
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 10) {
+                        Text(item.emoji)
+                            .font(.title2)
+                            .frame(width: 36)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.name)
+                                .font(.system(.caption, design: .rounded, weight: .medium))
+                                .foregroundStyle(GroceryTheme.title)
+                            Text("x\(item.qty)")
+                                .font(.system(.caption2, design: .rounded))
+                                .foregroundStyle(GroceryTheme.muted)
+                        }
+                        Spacer()
+                        Text("$\(item.price * item.qty)")
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
                             .foregroundStyle(GroceryTheme.title)
-                        Text("x\(item.qty)")
-                            .font(.system(.caption2, design: .rounded))
-                            .foregroundStyle(GroceryTheme.muted)
                     }
-                    Spacer()
-                    Text("$\(item.price * item.qty)")
-                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                        .foregroundStyle(GroceryTheme.title)
+                    if !item.remarks.isEmpty {
+                        HStack(spacing: 4) {
+                            Image(systemName: "text.bubble.fill")
+                                .font(.system(size: 9))
+                            Text(item.remarks)
+                                .font(.system(.caption2, design: .rounded))
+                        }
+                        .foregroundStyle(GroceryTheme.primary)
+                        .padding(.leading, 46)
+                    }
                 }
                 if item.name != sampleProducts.last?.name {
                     Divider()

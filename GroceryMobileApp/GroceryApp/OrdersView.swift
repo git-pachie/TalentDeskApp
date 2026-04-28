@@ -7,6 +7,16 @@ struct OrderItem: Identifiable {
     let items: Int
     let total: Double
     let status: OrderStatus
+    let orderRemarks: String
+
+    init(orderNumber: String, date: String, items: Int, total: Double, status: OrderStatus, orderRemarks: String = "") {
+        self.orderNumber = orderNumber
+        self.date = date
+        self.items = items
+        self.total = total
+        self.status = status
+        self.orderRemarks = orderRemarks
+    }
 }
 
 enum OrderStatus: String {
