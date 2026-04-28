@@ -1,6 +1,11 @@
 import SwiftUI
 
 struct HomeView: View {
+    @State private var showingAddressPicker = false
+    @State private var deliveryAddress = "Home, New York"
+
+    private let addresses = ["Home, New York", "Office, Manhattan", "Mom's, Brooklyn", "Gym, Queens"]
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -33,18 +38,53 @@ struct HomeView: View {
         HStack(spacing: 8) {
             GroceryIconView(size: 38)
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Delivery to")
-                    .font(.caption)
-                    .foregroundStyle(GroceryTheme.muted)
-                HStack(spacing: 4) {
-                    Text("Home, New York")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(GroceryTheme.title)
-                    Image(systemName: "chevron.down")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(GroceryTheme.title)
+            Button {
+                showingAddressPicker = true
+            } label: {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Delivery to")
+                        .font(.caption)
+                        .foregroundStyle(GroceryTheme.muted)
+                    HStack(spacing: 4) {
+                        Text(deliveryAddress)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(GroceryTheme.title)
+                        Image(systemName: "chevron.down")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(GroceryTheme.title)
+                    }
                 }
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showingAddressPicker) {
+                NavigationView {
+                    List(addresses, id: \.self) { address in
+                        Button {
+                            deliveryAddress = address
+                            showingAddressPicker = false
+                        } label: {
+                            HStack {
+                                Image(systemName: "mappin.circle.fill")
+                                    .foregroundStyle(GroceryTheme.primary)
+                                Text(address)
+                                    .foregroundStyle(GroceryTheme.title)
+                                Spacer()
+                                if address == deliveryAddress {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(GroceryTheme.primary)
+                                }
+                            }
+                        }
+                    }
+                    .navigationTitle("Delivery Address")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close") { showingAddressPicker = false }
+                        }
+                    }
+                }
+                .presentationDetents([.medium])
             }
 
             Spacer()
@@ -69,18 +109,22 @@ struct HomeView: View {
     // MARK: - Search Bar
 
     private var searchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(GroceryTheme.muted)
-            Text("Search by fresh groceries...")
-                .font(.subheadline)
-                .foregroundStyle(GroceryTheme.muted)
-            Spacer()
+        NavigationLink {
+            SearchView()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(GroceryTheme.muted)
+                Text("Search by fresh groceries...")
+                    .font(.subheadline)
+                    .foregroundStyle(GroceryTheme.muted)
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(Color(.systemGray6))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: - Special Offer Banner (Carousel)
@@ -164,21 +208,33 @@ struct HomeView: View {
                     .foregroundStyle(GroceryTheme.primary)
             }
 
-            HStack(spacing: 0) {
-                ForEach(SampleData.categories) { cat in
-                    VStack(spacing: 6) {
-                        ZStack {
-                            Circle()
-                                .fill(GroceryTheme.primaryLight)
-                                .frame(width: 52, height: 52)
-                            Text(cat.emoji)
-                                .font(.title2)
+            let rows = [
+                GridItem(.fixed(90), spacing: 10),
+                GridItem(.fixed(90), spacing: 10)
+            ]
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHGrid(rows: rows, spacing: 14) {
+                    ForEach(SampleData.categories) { cat in
+                        Button {
+                            print("📂 Category tapped: \(cat.name)")
+                        } label: {
+                            VStack(spacing: 6) {
+                                ZStack {
+                                    Circle()
+                                        .fill(GroceryTheme.primaryLight)
+                                        .frame(width: 52, height: 52)
+                                    Text(cat.emoji)
+                                        .font(.title2)
+                                }
+                                Text(cat.name)
+                                    .font(.caption2)
+                                    .foregroundStyle(GroceryTheme.subtitle)
+                            }
+                            .frame(width: 65)
                         }
-                        Text(cat.name)
-                            .font(.caption2)
-                            .foregroundStyle(GroceryTheme.subtitle)
+                        .buttonStyle(.plain)
                     }
-                    .frame(maxWidth: .infinity)
                 }
             }
         }

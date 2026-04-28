@@ -62,46 +62,56 @@ struct FreshProductsView: View {
 
 struct ProductCard: View {
     let product: GroceryProduct
-    @State private var isFavorite = false
+    @Environment(FavoritesStore.self) private var favoritesStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(.systemGray6))
-                    .frame(height: 140)
-
-                Text(product.emoji)
-                    .font(.system(size: 72))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 140)
-
-                if let discount = product.discount {
-                    Text(discount)
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(GroceryTheme.badge)
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 5))
-                        .padding(8)
+            // Image container
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(.systemGray6))
+                .frame(height: 140)
+                .overlay {
+                    if let urlString = product.imageURL, let url = URL(string: urlString) {
+                        AsyncImage(url: url) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        } placeholder: {
+                            ProgressView()
+                        }
+                    } else {
+                        Text(product.emoji)
+                            .font(.system(size: 72))
+                    }
                 }
-
-                // Heart / Favorite
-                Button {
-                    withAnimation(.bouncy) { isFavorite.toggle() }
-                } label: {
-                    Image(systemName: isFavorite ? "heart.fill" : "heart")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(isFavorite ? GroceryTheme.badge : GroceryTheme.muted)
-                        .padding(7)
-                        .background(GroceryTheme.card)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(alignment: .topLeading) {
+                    if let discount = product.discount {
+                        Text(discount)
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(GroceryTheme.badge)
+                            .foregroundStyle(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 5))
+                            .padding(8)
+                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(8)
-            }
+                .overlay(alignment: .topTrailing) {
+                    Button {
+                        withAnimation(.bouncy) { favoritesStore.toggle(product) }
+                    } label: {
+                        Image(systemName: favoritesStore.isFavorite(product) ? "heart.fill" : "heart")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(favoritesStore.isFavorite(product) ? GroceryTheme.badge : GroceryTheme.muted)
+                            .padding(7)
+                            .background(GroceryTheme.card)
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(8)
+                }
 
             Text(product.name)
                 .font(.system(.subheadline, design: .rounded, weight: .semibold))

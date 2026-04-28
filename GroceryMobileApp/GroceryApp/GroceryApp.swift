@@ -3,20 +3,23 @@ import SwiftUI
 @main
 struct GroceryApp: App {
     @State private var settingsStore = GrocerySettingsStore()
+    @State private var favoritesStore = FavoritesStore()
 
     var body: some Scene {
         WindowGroup {
-            ThemeRoot(settingsStore: settingsStore)
+            ThemeRoot(settingsStore: settingsStore, favoritesStore: favoritesStore)
         }
     }
 }
 
 struct ThemeRoot: View {
     let settingsStore: GrocerySettingsStore
+    let favoritesStore: FavoritesStore
 
     var body: some View {
         RootTabView()
             .environment(settingsStore)
+            .environment(favoritesStore)
             .task(id: settingsStore.appearance) {
                 setWindowStyle(settingsStore.appearance.uiStyle)
             }
