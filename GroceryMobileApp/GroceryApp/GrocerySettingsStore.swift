@@ -35,7 +35,9 @@ enum GroceryAppearance: String, CaseIterable {
 final class GrocerySettingsStore {
     var appearance: GroceryAppearance {
         didSet {
-            UserDefaults.standard.set(appearance.rawValue, forKey: "groceryAppearance")
+            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" {
+                UserDefaults.standard.set(appearance.rawValue, forKey: "groceryAppearance")
+            }
         }
     }
 

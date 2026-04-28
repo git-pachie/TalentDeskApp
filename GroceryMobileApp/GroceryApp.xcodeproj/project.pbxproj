@@ -12,6 +12,7 @@
 		0ED7C45036FC88C5219CE034 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FC3DE4A5DD01BFB62F63F4B /* HomeView.swift */; };
 		15A24ADE330EBF2D582BDCB7 /* FreshProductsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B984D389BC03AFE4F13248F /* FreshProductsView.swift */; };
 		160EB909EE9A7E06A70A9ED8 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3819165FCB949446C822F5AE /* FavoritesView.swift */; };
+		2D805E3C99A2E671E6316993 /* CachedAsyncImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBBA3243EF37AB308781DBF5 /* CachedAsyncImage.swift */; };
 		3D6E178A422C87E0050B6DB3 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F78C7A0EC42D20B90652CB3 /* ProfileView.swift */; };
 		3FB12AA926E57AC4B1116FA1 /* FavoritesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4DA46F4BF936BCE8D9552E2 /* FavoritesStore.swift */; };
 		404A04F9A4C29E1C29FCBECD /* GroceryApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E58E5D3B62AD6BE1681CBE9 /* GroceryApp.swift */; };
@@ -37,6 +38,7 @@
 		9AD09A1387052CAF55476046 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C2B2F306173B9522B893756F /* GroceryApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GroceryApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CEE3DB089C5E749112202AC8 /* GroceryTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryTheme.swift; sourceTree = "<group>"; };
+		DBBA3243EF37AB308781DBF5 /* CachedAsyncImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedAsyncImage.swift; sourceTree = "<group>"; };
 		E517CD60BD5B4404358709B8 /* GrocerySettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrocerySettingsStore.swift; sourceTree = "<group>"; };
 		E6D618AF3AEBC2B719B9550E /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		F4DA46F4BF936BCE8D9552E2 /* FavoritesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesStore.swift; sourceTree = "<group>"; };
@@ -54,6 +56,7 @@
 		7AE275B35BE29066DD87D415 /* GroceryApp */ = {
 			isa = PBXGroup;
 			children = (
+				DBBA3243EF37AB308781DBF5 /* CachedAsyncImage.swift */,
 				F4DA46F4BF936BCE8D9552E2 /* FavoritesStore.swift */,
 				3819165FCB949446C822F5AE /* FavoritesView.swift */,
 				7B984D389BC03AFE4F13248F /* FreshProductsView.swift */,
@@ -159,6 +162,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2D805E3C99A2E671E6316993 /* CachedAsyncImage.swift in Sources */,
 				3FB12AA926E57AC4B1116FA1 /* FavoritesStore.swift in Sources */,
 				160EB909EE9A7E06A70A9ED8 /* FavoritesView.swift in Sources */,
 				15A24ADE330EBF2D582BDCB7 /* FreshProductsView.swift in Sources */,

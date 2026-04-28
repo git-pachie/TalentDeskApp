@@ -1,7 +1,7 @@
 import Foundation
 
-struct GroceryProduct: Identifiable {
-    let id = UUID()
+struct GroceryProduct: Identifiable, Hashable {
+    let id: UUID
     let name: String
     let location: String
     let price: Double
@@ -12,6 +12,7 @@ struct GroceryProduct: Identifiable {
     let imageURL: String?
 
     init(name: String, location: String, price: Double, originalPrice: Double?, discount: String?, emoji: String, category: String, imageURL: String? = nil) {
+        self.id = UUID()
         self.name = name
         self.location = location
         self.price = price
@@ -55,10 +56,10 @@ enum SampleData {
     ]
 
     static let freshProducts: [GroceryProduct] = [
-        GroceryProduct(name: "Organic Carrots", location: "Colando, San Francisco", price: 20, originalPrice: 30, discount: "10% off", emoji: "🥕", category: "Veggie"),
-        GroceryProduct(name: "Orange Bananas", location: "Colando, San Francisco", price: 25, originalPrice: 30, discount: nil, emoji: "🍌", category: "Fruits"),
-        GroceryProduct(name: "Fresh Broccoli", location: "Colando, San Francisco", price: 16, originalPrice: 20, discount: "20% off", emoji: "🥦", category: "Veggie"),
-        GroceryProduct(name: "Water Melon", location: "Colando, San Francisco", price: 18, originalPrice: 24, discount: nil, emoji: "🍉", category: "Fruits"),
+        GroceryProduct(name: "Organic Carrots", location: "Colando, San Francisco", price: 20, originalPrice: 30, discount: "10% off", emoji: "🥕", category: "Veggie", imageURL: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400"),
+        GroceryProduct(name: "Orange Bananas", location: "Colando, San Francisco", price: 25, originalPrice: 30, discount: nil, emoji: "🍌", category: "Fruits", imageURL: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400"),
+        GroceryProduct(name: "Fresh Broccoli", location: "Colando, San Francisco", price: 16, originalPrice: 20, discount: "20% off", emoji: "🥦", category: "Veggie", imageURL: "https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=400"),
+        GroceryProduct(name: "Water Melon", location: "Colando, San Francisco", price: 18, originalPrice: 24, discount: nil, emoji: "🍉", category: "Fruits", imageURL: "https://images.unsplash.com/photo-1589984662646-e7b2e4962f18?w=400"),
     ]
 
     static let searchItems: [String] = [

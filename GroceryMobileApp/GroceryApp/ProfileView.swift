@@ -27,9 +27,11 @@ struct ProfileView: View {
                             Button {
                                 print("🎨 Tapped: \(mode.rawValue)")
                                 settingsStore.appearance = mode
-                                if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                                    for window in scene.windows {
-                                        window.overrideUserInterfaceStyle = mode.uiStyle
+                                if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" {
+                                    if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                                        for window in scene.windows {
+                                            window.overrideUserInterfaceStyle = mode.uiStyle
+                                        }
                                     }
                                 }
                             } label: {
@@ -90,4 +92,5 @@ struct ProfileView: View {
 #Preview {
     ProfileView()
         .environment(GrocerySettingsStore())
+        .environment(FavoritesStore())
 }

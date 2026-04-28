@@ -72,13 +72,7 @@ struct ProductCard: View {
                 .frame(height: 140)
                 .overlay {
                     if let urlString = product.imageURL, let url = URL(string: urlString) {
-                        AsyncImage(url: url) { image in
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        } placeholder: {
-                            ProgressView()
-                        }
+                        CachedAsyncImage(url: url, emoji: product.emoji)
                     } else {
                         Text(product.emoji)
                             .font(.system(size: 72))
@@ -158,4 +152,5 @@ struct ProductCard: View {
     NavigationStack {
         FreshProductsView()
     }
+    .environment(FavoritesStore())
 }

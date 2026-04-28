@@ -177,4 +177,5 @@ struct SearchView: View {
     NavigationStack {
         SearchView()
     }
+    .environment(FavoritesStore())
 }

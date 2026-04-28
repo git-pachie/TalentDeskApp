@@ -2,15 +2,14 @@ import SwiftUI
 
 struct FavoritesView: View {
     @Environment(FavoritesStore.self) private var favoritesStore
-
-    private var favoriteProducts: [GroceryProduct] {
-        favoritesStore.favorites(from: SampleData.allProducts)
-    }
+    @State private var refreshID = UUID()
 
     var body: some View {
         NavigationStack {
             Group {
-                if favoriteProducts.isEmpty {
+                let favorites = SampleData.allProducts.filter { favoritesStore.isFavorite($0) }
+
+                if favorites.isEmpty {
                     ContentUnavailableView(
                         "No Favorites Yet",
                         systemImage: "heart",
@@ -22,7 +21,7 @@ struct FavoritesView: View {
                             GridItem(.flexible(), spacing: 12),
                             GridItem(.flexible(), spacing: 12)
                         ], spacing: 14) {
-                            ForEach(favoriteProducts) { product in
+                            ForEach(favorites) { product in
                                 NavigationLink {
                                     ItemDetailView(product: product)
                                 } label: {
@@ -33,6 +32,10 @@ struct FavoritesView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
+                        .id(refreshID)
+                    }
+                    .refreshable {
+                        refreshID = UUID()
                     }
                 }
             }

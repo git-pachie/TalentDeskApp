@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @State private var showingAddressPicker = false
     @State private var deliveryAddress = "Home, New York"
+    @State private var refreshID = UUID()
 
     private let addresses = ["Home, New York", "Office, Manhattan", "Mom's, Brooklyn", "Gym, Queens"]
 
@@ -27,6 +28,10 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 20)
+                .id(refreshID)
+            }
+            .refreshable {
+                refreshID = UUID()
             }
             .background(GroceryTheme.background)
         }
@@ -277,4 +282,5 @@ struct HomeView: View {
 
 #Preview {
     HomeView()
+        .environment(FavoritesStore())
 }
