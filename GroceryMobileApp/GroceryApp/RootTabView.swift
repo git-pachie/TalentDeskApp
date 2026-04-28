@@ -41,7 +41,5 @@ struct RootTabView: View {
 
 #Preview {
     RootTabView()
-        .environment(GrocerySettingsStore())
-        .environment(FavoritesStore())
-        .environment(CartStore())
+        .groceryPreviewEnvironment()
 }

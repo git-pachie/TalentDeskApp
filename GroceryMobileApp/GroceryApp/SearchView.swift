@@ -177,6 +177,5 @@ struct SearchView: View {
     NavigationStack {
         SearchView()
     }
-    .environment(FavoritesStore())
-    .environment(CartStore())
+    .groceryPreviewEnvironment()
 }

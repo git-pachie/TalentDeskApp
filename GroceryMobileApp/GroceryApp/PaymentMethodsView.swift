@@ -13,6 +13,7 @@ struct PaymentMethodsView: View {
         PaymentItem(name: "Credit Card", detail: "•••• •••• •••• 4242", icon: "creditcard.fill", isDefault: true),
         PaymentItem(name: "Debit Card", detail: "•••• •••• •••• 8910", icon: "creditcard", isDefault: false),
         PaymentItem(name: "Apple Pay", detail: "Connected", icon: "apple.logo", isDefault: false),
+        PaymentItem(name: "GCash", detail: "+63 9XX XXX XXXX", icon: "g.circle.fill", isDefault: false),
         PaymentItem(name: "Cash on Delivery", detail: "Pay when delivered", icon: "banknote.fill", isDefault: false),
     ]
     @State private var editingMethod: PaymentItem?
@@ -123,6 +124,7 @@ struct PaymentEditSheet: View {
         ("creditcard.fill", "Credit Card"),
         ("creditcard", "Debit Card"),
         ("apple.logo", "Apple Pay"),
+        ("g.circle.fill", "GCash"),
         ("banknote.fill", "Cash"),
     ]
     @State private var selectedIcon: String

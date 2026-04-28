@@ -76,12 +76,19 @@ struct OrderDetailView: View {
 
                 // Payment method
                 infoCard(title: "Payment Method", icon: "creditcard.fill") {
-                    HStack(spacing: 8) {
-                        Image(systemName: "creditcard.fill")
-                            .foregroundStyle(GroceryTheme.primary)
-                        Text("Credit Card •••• 4242")
-                            .font(.system(.subheadline, design: .rounded))
-                            .foregroundStyle(GroceryTheme.title)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            Image(systemName: paymentIcon(for: order.paymentMethod))
+                                .foregroundStyle(GroceryTheme.primary)
+                            Text(order.paymentMethod)
+                                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                .foregroundStyle(GroceryTheme.title)
+                        }
+                        if !order.paymentDetail.isEmpty {
+                            Text(order.paymentDetail)
+                                .font(.system(.caption, design: .rounded))
+                                .foregroundStyle(GroceryTheme.muted)
+                        }
                     }
                 }
 
@@ -135,6 +142,18 @@ struct OrderDetailView: View {
         }
     }
 
+    // MARK: - Payment Icon Helper
+
+    private func paymentIcon(for method: String) -> String {
+        switch method {
+        case "Apple Pay": return "apple.logo"
+        case "GCash": return "g.circle.fill"
+        case "Debit Card": return "creditcard"
+        case "Cash on Delivery": return "banknote.fill"
+        default: return "creditcard.fill"
+        }
+    }
+
     // MARK: - Refresh Order Status
 
     private func refreshOrderStatus() async {
@@ -153,7 +172,9 @@ struct OrderDetailView: View {
                     items: order.items,
                     total: order.total,
                     status: .shipped,
-                    orderRemarks: order.orderRemarks
+                    orderRemarks: order.orderRemarks,
+                    paymentMethod: order.paymentMethod,
+                    paymentDetail: order.paymentDetail
                 )
             case .shipped:
                 order = OrderItem(
@@ -162,7 +183,9 @@ struct OrderDetailView: View {
                     items: order.items,
                     total: order.total,
                     status: .delivered,
-                    orderRemarks: order.orderRemarks
+                    orderRemarks: order.orderRemarks,
+                    paymentMethod: order.paymentMethod,
+                    paymentDetail: order.paymentDetail
                 )
             default:
                 break
@@ -251,10 +274,31 @@ struct OrderDetailView: View {
                 "$\(Int(grandTotal))".draw(at: CGPoint(x: 250, y: y), withAttributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor(red: 0.329, green: 0.690, blue: 0.314, alpha: 1)])
                 y += 30
 
-                // Delivery info
+                // Delivery & Payment Details
+                y += 10
+                page.move(to: CGPoint(x: 40, y: y))
+                page.addLine(to: CGPoint(x: 572, y: y))
+                page.strokePath()
+                y += 16
+
+                "Delivery & Payment Details".draw(at: CGPoint(x: 40, y: y), withAttributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.label])
+                y += 28
+
                 drawRow("Delivery Address:", "123 Main St, New York, NY 10001")
-                drawRow("Payment Method:", "Credit Card •••• 4242")
+                drawRow("Contact Number:", "+1 (555) 123-4567")
+                drawRow("Delivery Instructions:", "Leave at the front door")
+
+                y += 10
+                drawRow("Payment Method:", order.paymentMethod)
+                if !order.paymentDetail.isEmpty {
+                    drawRow("Payment Details:", order.paymentDetail)
+                }
                 drawRow("Delivered By:", "John Rider")
+
+                if !order.orderRemarks.isEmpty {
+                    y += 10
+                    drawRow("Order Remarks:", order.orderRemarks)
+                }
 
                 // Footer
                 y += 20

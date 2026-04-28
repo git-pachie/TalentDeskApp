@@ -298,6 +298,5 @@ struct ItemDetailView: View {
     NavigationStack {
         ItemDetailView(product: SampleData.deals.first!)
     }
-    .environment(FavoritesStore())
-    .environment(CartStore())
+    .groceryPreviewEnvironment()
 }

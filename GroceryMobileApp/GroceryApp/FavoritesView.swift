@@ -48,6 +48,5 @@ struct FavoritesView: View {
 
 #Preview {
     FavoritesView()
-        .environment(FavoritesStore())
-        .environment(CartStore())
+        .groceryPreviewEnvironment()
 }

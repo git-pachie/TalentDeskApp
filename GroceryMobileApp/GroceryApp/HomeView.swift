@@ -312,6 +312,5 @@ struct HomeView: View {
 
 #Preview {
     HomeView()
-        .environment(FavoritesStore())
-        .environment(CartStore())
+        .groceryPreviewEnvironment()
 }

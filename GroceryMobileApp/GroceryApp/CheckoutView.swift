@@ -1,4 +1,5 @@
 import SwiftUI
+import PassKit
 
 struct CheckoutView: View {
     @Environment(CartStore.self) private var cartStore
@@ -14,6 +15,10 @@ struct CheckoutView: View {
     @State private var placedOrder: OrderItem?
     @State private var navigateToOrder = false
     @State private var orderRemarks = ""
+    @State private var applePayCoordinator = ApplePayCoordinator()
+    @State private var showingGCashPayment = false
+    @State private var showingCardPayment = false
+    @State private var cardPaymentDetail = ""
 
     private let availableVouchers = [
         (code: "FRESH10", description: "10% off your order", discount: 0.10),
@@ -33,6 +38,7 @@ struct CheckoutView: View {
         ("Credit Card", "creditcard.fill"),
         ("Debit Card", "creditcard"),
         ("Apple Pay", "apple.logo"),
+        ("GCash", "g.circle.fill"),
         ("Cash on Delivery", "banknote.fill"),
     ]
 
@@ -49,6 +55,20 @@ struct CheckoutView: View {
         return voucher.discount
     }
     private var total: Double { max(0, subtotal + deliveryFee + platformFee + otherCharges - voucherDiscount) }
+
+    private var paymentDetailText: String {
+        if !cardPaymentDetail.isEmpty && (paymentMethod == "Credit Card" || paymentMethod == "Debit Card") {
+            return cardPaymentDetail
+        }
+        switch paymentMethod {
+        case "GCash": return "+63 9XX XXX XXXX"
+        case "Apple Pay": return "Apple ID: guest@icloud.com"
+        case "Credit Card": return "•••• •••• •••• 4242"
+        case "Debit Card": return "•••• •••• •••• 8910"
+        case "Cash on Delivery": return "Pay when delivered"
+        default: return ""
+        }
+    }
 
     private var currentAddress: (label: String, address: String, instructions: String, contact: String) {
         deliveryAddresses[selectedAddressIndex]
@@ -250,20 +270,98 @@ struct CheckoutView: View {
                 // Price breakdown
                 priceBreakdown
 
-                // Place order button
-                Button {
-                    placeOrder()
-                } label: {
-                    HStack {
-                        Image(systemName: "bag.fill")
-                        Text("Place Order — $\(Int(total))")
-                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                // Place order buttons
+                VStack(spacing: 12) {
+                    // Apple Pay button
+                    if ApplePayService.isAvailable && paymentMethod == "Apple Pay" {
+                        ApplePayButtonView {
+                            payWithApplePay()
+                        }
+                        .frame(height: 50)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(GroceryTheme.primary)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                    // GCash button
+                    if paymentMethod == "GCash" {
+                        Button {
+                            showingGCashPayment = true
+                        } label: {
+                            HStack {
+                                Text("G")
+                                    .font(.system(.title3, design: .rounded, weight: .bold))
+                                Text("Pay with GCash — $\(Int(total))")
+                                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color(red: 0.0, green: 0.44, blue: 0.87))
+                            .foregroundStyle(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
+                    }
+
+                    // Credit/Debit Card button
+                    if paymentMethod == "Credit Card" || paymentMethod == "Debit Card" {
+                        Button {
+                            showingCardPayment = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "creditcard.fill")
+                                Text("Pay with \(paymentMethod) — $\(Int(total))")
+                                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(paymentMethod == "Credit Card"
+                                ? Color(red: 0.15, green: 0.15, blue: 0.20)
+                                : Color(red: 0.0, green: 0.35, blue: 0.55))
+                            .foregroundStyle(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
+                    }
+
+                    // Cash on Delivery — direct place order
+                    if paymentMethod == "Cash on Delivery" {
+                        Button {
+                            placeOrder()
+                        } label: {
+                            HStack {
+                                Image(systemName: "banknote.fill")
+                                Text("Place Order (COD) — $\(Int(total))")
+                                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(GroceryTheme.primary)
+                            .foregroundStyle(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
+                    }
+                }
+                .sheet(isPresented: $showingGCashPayment) {
+                    GCashPaymentView(
+                        amount: total,
+                        orderDescription: "\(cartStore.totalItems) items from GroceryApp"
+                    ) {
+                        showingGCashPayment = false
+                        placeOrder()
+                    } onCancel: {
+                        showingGCashPayment = false
+                    }
+                }
+                .sheet(isPresented: $showingCardPayment) {
+                    CardPaymentView(
+                        cardType: paymentMethod,
+                        amount: total,
+                        orderDescription: "\(cartStore.totalItems) items"
+                    ) { maskedCard in
+                        showingCardPayment = false
+                        // Update payment detail with the actual card used
+                        cardPaymentDetail = maskedCard
+                        placeOrder()
+                    } onCancel: {
+                        showingCardPayment = false
+                    }
                 }
             }
             .padding(16)
@@ -297,7 +395,9 @@ struct CheckoutView: View {
             items: cartStore.totalItems,
             total: total,
             status: .processing,
-            orderRemarks: orderRemarks.trimmingCharacters(in: .whitespacesAndNewlines)
+            orderRemarks: orderRemarks.trimmingCharacters(in: .whitespacesAndNewlines),
+            paymentMethod: paymentMethod,
+            paymentDetail: paymentDetailText
         )
 
         withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
@@ -306,6 +406,29 @@ struct CheckoutView: View {
         }
 
         cartStore.items.removeAll()
+    }
+
+    // MARK: - Apple Pay
+
+    private func payWithApplePay() {
+        let items = cartStore.items.map { item in
+            (name: "\(item.product.name) x\(item.quantity)", amount: item.product.price * Double(item.quantity))
+        }
+
+        let request = ApplePayService.createPaymentRequest(
+            items: items,
+            deliveryFee: deliveryFee,
+            platformFee: platformFee,
+            otherCharges: otherCharges,
+            voucherDiscount: voucherDiscount
+        )
+
+        applePayCoordinator.present(request: request) {
+            // Success
+            placeOrder()
+        } onFailure: {
+            print("❌ Apple Pay failed")
+        }
     }
 
     // MARK: - Success Overlay
@@ -570,5 +693,5 @@ struct CheckoutView: View {
     NavigationStack {
         CheckoutView()
     }
-    .environment(CartStore())
+    .groceryPreviewEnvironment()
 }

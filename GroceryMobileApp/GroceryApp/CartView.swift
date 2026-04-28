@@ -190,5 +190,5 @@ struct CartView: View {
 
 #Preview {
     CartView()
-        .environment(CartStore())
+        .groceryPreviewEnvironment()
 }

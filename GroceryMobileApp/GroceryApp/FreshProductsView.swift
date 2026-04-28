@@ -155,6 +155,5 @@ struct ProductCard: View {
     NavigationStack {
         FreshProductsView()
     }
-    .environment(FavoritesStore())
-    .environment(CartStore())
+    .groceryPreviewEnvironment()
 }

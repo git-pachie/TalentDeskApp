@@ -8,14 +8,18 @@ struct OrderItem: Identifiable {
     let total: Double
     let status: OrderStatus
     let orderRemarks: String
+    let paymentMethod: String
+    let paymentDetail: String
 
-    init(orderNumber: String, date: String, items: Int, total: Double, status: OrderStatus, orderRemarks: String = "") {
+    init(orderNumber: String, date: String, items: Int, total: Double, status: OrderStatus, orderRemarks: String = "", paymentMethod: String = "Credit Card", paymentDetail: String = "") {
         self.orderNumber = orderNumber
         self.date = date
         self.items = items
         self.total = total
         self.status = status
         self.orderRemarks = orderRemarks
+        self.paymentMethod = paymentMethod
+        self.paymentDetail = paymentDetail
     }
 }
 

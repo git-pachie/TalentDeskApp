@@ -108,6 +108,5 @@ struct ProfileView: View {
 
 #Preview {
     ProfileView()
-        .environment(GrocerySettingsStore())
-        .environment(FavoritesStore())
+        .groceryPreviewEnvironment()
 }
