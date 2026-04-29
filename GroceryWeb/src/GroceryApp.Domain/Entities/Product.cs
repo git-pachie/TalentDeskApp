@@ -16,6 +16,7 @@ public class Product
 
     // Navigation
     public Category Category { get; set; } = null!;
+    public ICollection<ProductCategory> ProductCategories { get; set; } = [];
     public ICollection<ProductImage> Images { get; set; } = [];
     public ICollection<Review> Reviews { get; set; } = [];
     public ICollection<Favorite> Favorites { get; set; } = [];

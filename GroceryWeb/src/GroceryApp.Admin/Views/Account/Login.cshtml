@@ -4,26 +4,43 @@
     Layout = "_Layout";
 }
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header text-center">
-                <h4>🛒 GroceryApp Admin</h4>
+<div class="login-wrapper">
+    <div class="login-card card">
+        <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-3 mb-3"
+                     style="width: 56px; height: 56px; background: linear-gradient(135deg, #22c55e, #16a34a); font-size: 1.5rem;">
+                    🛒
+                </div>
+                <h4 class="fw-bold mb-1">Welcome back</h4>
+                <p class="text-muted mb-0" style="font-size: 0.9rem;">Sign in to GroceryApp Admin</p>
             </div>
-            <div class="card-body">
-                <form asp-action="Login" method="post">
-                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input asp-for="Email" class="form-control" type="email" required />
+
+            <form asp-action="Login" method="post">
+                <div asp-validation-summary="All" class="alert alert-danger py-2 small" style="display: @(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size: 0.85rem;">Email address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
+                        <input asp-for="Email" class="form-control border-start-0 ps-0" type="email" placeholder="admin@groceryapp.com" required
+                               style="border-radius: 0 8px 8px 0;" />
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input asp-for="Password" class="form-control" type="password" required />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold" style="font-size: 0.85rem;">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
+                        <input asp-for="Password" class="form-control border-start-0 ps-0" type="password" placeholder="••••••••" required
+                               style="border-radius: 0 8px 8px 0;" />
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">Sign In</button>
-                </form>
-            </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" style="font-size: 0.95rem;">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                </button>
+            </form>
         </div>
     </div>
 </div>

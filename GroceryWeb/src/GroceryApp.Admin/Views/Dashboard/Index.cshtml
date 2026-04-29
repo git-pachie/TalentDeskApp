@@ -1,45 +1,189 @@
+@model DashboardStatsModel
 @{
     ViewData["Title"] = "Dashboard";
 }
 
-<h2>Dashboard</h2>
-<p>Welcome, @ViewBag.UserName!</p>
+<div class="mb-4">
+    <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Good @(DateTime.Now.Hour < 12 ? "morning" : DateTime.Now.Hour < 17 ? "afternoon" : "evening"), @ViewBag.UserName 👋</h2>
+    <p class="text-muted mb-0">Here's what's happening with your store today.</p>
+</div>
 
-<div class="row mt-4">
-    <div class="col-md-3">
-        <div class="card text-bg-primary mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Products</h5>
-                <p class="card-text display-6">—</p>
-                <a asp-controller="Products" asp-action="Index" class="text-white">Manage →</a>
+@* ===== STAT CARDS ===== *@
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon text-white" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+                    <i class="bi bi-currency-dollar"></i>
+                </div>
+                <div>
+                    <div class="stat-value">₱@Model.TotalRevenue.ToString("N0")</div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-bg-success mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Orders</h5>
-                <p class="card-text display-6">—</p>
-                <a asp-controller="Orders" asp-action="Index" class="text-white">View →</a>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon text-white" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
+                    <i class="bi bi-bag-check-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-value">@Model.TotalOrders</div>
+                    <div class="stat-label">Total Orders</div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-bg-warning mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Categories</h5>
-                <p class="card-text display-6">—</p>
-                <a asp-controller="Categories" asp-action="Index" class="text-white">Manage →</a>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon text-white" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <div>
+                    <div class="stat-value">@Model.PendingOrders</div>
+                    <div class="stat-label">Pending Orders</div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-bg-info mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Vouchers</h5>
-                <p class="card-text display-6">—</p>
-                <a asp-controller="Vouchers" asp-action="Index" class="text-white">Manage →</a>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon text-white" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+                    <i class="bi bi-cart-plus-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-value">@Model.TodayOrders</div>
+                    <div class="stat-label">Today's Orders</div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon text-white" style="background: linear-gradient(135deg, #ec4899, #db2777);">
+                    <i class="bi bi-box-seam-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-value">@Model.TotalProducts</div>
+                    <div class="stat-label">Products</div>
+                </div>
+            </div>
+            <a asp-controller="Products" asp-action="Index" class="card-footer text-decoration-none text-muted d-flex align-items-center justify-content-between py-2 px-3" style="font-size: 0.8rem; background: #f9fafb;">
+                <span>Manage products</span> <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon text-white" style="background: linear-gradient(135deg, #14b8a6, #0d9488);">
+                    <i class="bi bi-tags-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-value">@Model.TotalCategories</div>
+                    <div class="stat-label">Categories</div>
+                </div>
+            </div>
+            <a asp-controller="Categories" asp-action="Index" class="card-footer text-decoration-none text-muted d-flex align-items-center justify-content-between py-2 px-3" style="font-size: 0.8rem; background: #f9fafb;">
+                <span>Manage categories</span> <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon text-white" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-value">@Model.TotalUsers</div>
+                    <div class="stat-label">Users</div>
+                </div>
+            </div>
+            <a asp-controller="Users" asp-action="Index" class="card-footer text-decoration-none text-muted d-flex align-items-center justify-content-between py-2 px-3" style="font-size: 0.8rem; background: #f9fafb;">
+                <span>Manage users</span> <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon text-white" style="background: linear-gradient(135deg, #f97316, #ea580c);">
+                    <i class="bi bi-ticket-perforated-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-value">@Model.ActiveVouchers</div>
+                    <div class="stat-label">Active Vouchers</div>
+                </div>
+            </div>
+            <a asp-controller="Vouchers" asp-action="Index" class="card-footer text-decoration-none text-muted d-flex align-items-center justify-content-between py-2 px-3" style="font-size: 0.8rem; background: #f9fafb;">
+                <span>Manage vouchers</span> <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+@* ===== RECENT ORDERS ===== *@
+<div class="card data-card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h5><i class="bi bi-receipt me-2"></i>Recent Orders</h5>
+        <a asp-controller="Orders" asp-action="Index" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    @if (Model.RecentOrders.Count > 0)
+    {
+        <table class="table data-table">
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model.RecentOrders)
+                {
+                    <tr>
+                        <td>
+                            <a asp-controller="Orders" asp-action="Detail" asp-route-id="@order.Id" class="fw-semibold text-decoration-none">
+                                @order.OrderNumber
+                            </a>
+                        </td>
+                        <td>@order.CustomerName</td>
+                        <td class="fw-semibold">₱@order.TotalAmount.ToString("N2")</td>
+                        <td><span class="badge badge-status @GetStatusBadge(order.Status)">@order.Status</span></td>
+                        <td class="text-muted">@order.CreatedAt.ToString("MMM dd, HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>No recent orders yet.</p>
+        </div>
+    }
+</div>
+
+@functions {
+    string GetStatusBadge(string status) => status switch
+    {
+        "Pending" => "bg-warning text-dark",
+        "Paid" => "bg-info text-white",
+        "Processing" => "bg-primary",
+        "Delivered" => "bg-success",
+        "Cancelled" => "bg-danger",
+        _ => "bg-secondary"
+    };
+}

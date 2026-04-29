@@ -76,7 +76,7 @@ public class AuthService : IAuthService
             Success = true,
             Token = token,
             ExpiresAt = DateTime.UtcNow.AddHours(24),
-            User = new UserDto
+            User = new DTOs.Auth.UserDto
             {
                 Id = user.Id,
                 FirstName = user.FirstName,

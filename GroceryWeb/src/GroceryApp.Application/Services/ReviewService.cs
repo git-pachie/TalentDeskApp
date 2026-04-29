@@ -46,6 +46,19 @@ public class ReviewService : IReviewService
             Comment = request.Comment
         };
 
+        // Add photos if provided
+        if (request.PhotoUrls is { Count: > 0 })
+        {
+            for (int i = 0; i < request.PhotoUrls.Count; i++)
+            {
+                review.Photos.Add(new ReviewPhoto
+                {
+                    PhotoUrl = request.PhotoUrls[i],
+                    SortOrder = i
+                });
+            }
+        }
+
         await _reviewRepo.AddAsync(review);
         await _unitOfWork.SaveChangesAsync();
 
@@ -56,11 +69,36 @@ public class ReviewService : IReviewService
     {
         var reviews = await _reviewRepo.Query()
             .Include(r => r.User)
+            .Include(r => r.Photos)
             .Where(r => r.ProductId == productId)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
 
         return reviews.Select(MapToDto);
+    }
+
+    public async Task<IEnumerable<ReviewDto>> GetAllReviewsAsync(int page, int pageSize)
+    {
+        var reviews = await _reviewRepo.Query()
+            .Include(r => r.User)
+            .Include(r => r.Product)
+            .Include(r => r.Photos)
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return reviews.Select(MapToDto);
+    }
+
+    public async Task<bool> DeleteAsync(Guid reviewId)
+    {
+        var review = await _reviewRepo.GetByIdAsync(reviewId);
+        if (review is null) return false;
+
+        _reviewRepo.Remove(review);
+        await _unitOfWork.SaveChangesAsync();
+        return true;
     }
 
     private static ReviewDto MapToDto(Review review)
@@ -73,7 +111,13 @@ public class ReviewService : IReviewService
             ProductId = review.ProductId,
             Rating = review.Rating,
             Comment = review.Comment,
-            CreatedAt = review.CreatedAt
+            CreatedAt = review.CreatedAt,
+            Photos = review.Photos.OrderBy(p => p.SortOrder).Select(p => new ReviewPhotoDto
+            {
+                Id = p.Id,
+                PhotoUrl = p.PhotoUrl,
+                SortOrder = p.SortOrder
+            }).ToList()
         };
     }
 }

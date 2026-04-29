@@ -31,4 +31,5 @@ public class Order
     public Voucher? Voucher { get; set; }
     public Payment? Payment { get; set; }
     public ICollection<OrderItem> Items { get; set; } = [];
+    public ICollection<OrderStatusHistory> StatusHistory { get; set; } = [];
 }

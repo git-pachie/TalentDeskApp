@@ -14,4 +14,5 @@ public class Review
     public User User { get; set; } = null!;
     public Product Product { get; set; } = null!;
     public Order Order { get; set; } = null!;
+    public ICollection<ReviewPhoto> Photos { get; set; } = [];
 }

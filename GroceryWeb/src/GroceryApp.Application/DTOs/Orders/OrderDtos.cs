@@ -14,6 +14,7 @@ public class OrderDto
     public IEnumerable<OrderItemDto> Items { get; set; } = [];
     public PaymentSummaryDto? Payment { get; set; }
     public OrderAddressDto? Address { get; set; }
+    public List<OrderStatusHistoryDto> StatusHistory { get; set; } = [];
 }
 
 public class OrderItemDto
@@ -30,6 +31,14 @@ public class PaymentSummaryDto
     public string Method { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public DateTime? PaidAt { get; set; }
+}
+
+public class OrderStatusHistoryDto
+{
+    public string Status { get; set; } = string.Empty;
+    public string? Notes { get; set; }
+    public string CreatedBy { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
 }
 
 public class CreateOrderRequest

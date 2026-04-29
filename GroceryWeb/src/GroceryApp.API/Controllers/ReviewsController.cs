@@ -40,4 +40,20 @@ public class ReviewsController : ControllerBase
         var reviews = await _reviewService.GetProductReviewsAsync(productId);
         return Ok(reviews);
     }
+
+    [HttpGet("reviews")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    {
+        var reviews = await _reviewService.GetAllReviewsAsync(page, pageSize);
+        return Ok(reviews);
+    }
+
+    [HttpDelete("reviews/{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var result = await _reviewService.DeleteAsync(id);
+        return result ? NoContent() : NotFound();
+    }
 }

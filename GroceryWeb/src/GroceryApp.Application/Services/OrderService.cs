@@ -10,6 +10,7 @@ public class OrderService : IOrderService
     private readonly IRepository<Order> _orderRepo;
     private readonly IRepository<CartItem> _cartRepo;
     private readonly IRepository<Voucher> _voucherRepo;
+    private readonly IRepository<OrderStatusHistory> _statusHistoryRepo;
     private readonly INotificationService _notificationService;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -17,12 +18,14 @@ public class OrderService : IOrderService
         IRepository<Order> orderRepo,
         IRepository<CartItem> cartRepo,
         IRepository<Voucher> voucherRepo,
+        IRepository<OrderStatusHistory> statusHistoryRepo,
         INotificationService notificationService,
         IUnitOfWork unitOfWork)
     {
         _orderRepo = orderRepo;
         _cartRepo = cartRepo;
         _voucherRepo = voucherRepo;
+        _statusHistoryRepo = statusHistoryRepo;
         _notificationService = notificationService;
         _unitOfWork = unitOfWork;
     }
@@ -83,6 +86,15 @@ public class OrderService : IOrderService
 
         await _orderRepo.AddAsync(order);
 
+        // Record initial status
+        await _statusHistoryRepo.AddAsync(new OrderStatusHistory
+        {
+            OrderId = order.Id,
+            Status = "Pending",
+            Notes = "Order placed",
+            CreatedBy = "Customer"
+        });
+
         // Clear cart
         _cartRepo.RemoveRange(cartItems);
         await _unitOfWork.SaveChangesAsync();
@@ -99,6 +111,7 @@ public class OrderService : IOrderService
             .Include(o => o.Items)
             .Include(o => o.Payment)
             .Include(o => o.Address)
+            .Include(o => o.StatusHistory)
             .Where(o => o.UserId == userId)
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
@@ -112,6 +125,7 @@ public class OrderService : IOrderService
             .Include(o => o.Items)
             .Include(o => o.Payment)
             .Include(o => o.Address)
+            .Include(o => o.StatusHistory)
             .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId);
 
         return order is null ? null : MapToDto(order);
@@ -123,6 +137,7 @@ public class OrderService : IOrderService
             .Include(o => o.Items)
             .Include(o => o.Payment)
             .Include(o => o.Address)
+            .Include(o => o.StatusHistory)
             .FirstOrDefaultAsync(o => o.Id == orderId);
 
         if (order is null) return null;
@@ -132,6 +147,16 @@ public class OrderService : IOrderService
             order.Status = newStatus;
             order.UpdatedAt = DateTime.UtcNow;
             _orderRepo.Update(order);
+
+            // Record status change
+            await _statusHistoryRepo.AddAsync(new OrderStatusHistory
+            {
+                OrderId = orderId,
+                Status = newStatus.ToString(),
+                Notes = $"Status changed to {newStatus}",
+                CreatedBy = "Admin"
+            });
+
             await _unitOfWork.SaveChangesAsync();
 
             await _notificationService.CreateNotificationAsync(
@@ -147,6 +172,7 @@ public class OrderService : IOrderService
             .Include(o => o.Items)
             .Include(o => o.Payment)
             .Include(o => o.Address)
+            .Include(o => o.StatusHistory)
             .OrderByDescending(o => o.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -189,7 +215,16 @@ public class OrderService : IOrderService
                 City = order.Address.City,
                 Province = order.Address.Province,
                 ZipCode = order.Address.ZipCode
-            }
+            },
+            StatusHistory = order.StatusHistory
+                .OrderBy(h => h.CreatedAt)
+                .Select(h => new OrderStatusHistoryDto
+                {
+                    Status = h.Status,
+                    Notes = h.Notes,
+                    CreatedBy = h.CreatedBy,
+                    CreatedAt = h.CreatedAt
+                }).ToList()
         };
     }
 }

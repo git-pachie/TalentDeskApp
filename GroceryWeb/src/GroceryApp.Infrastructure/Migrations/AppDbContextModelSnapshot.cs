@@ -293,6 +293,36 @@ namespace GroceryApp.Infrastructure.Migrations
                     b.ToTable("OrderItems");
                 });
 
+            modelBuilder.Entity("GroceryApp.Domain.Entities.OrderStatusHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderStatusHistory");
+                });
+
             modelBuilder.Entity("GroceryApp.Domain.Entities.Payment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -390,6 +420,31 @@ namespace GroceryApp.Infrastructure.Migrations
                     b.ToTable("Products");
                 });
 
+            modelBuilder.Entity("GroceryApp.Domain.Entities.ProductCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("ProductId", "CategoryId")
+                        .IsUnique();
+
+                    b.ToTable("ProductCategories");
+                });
+
             modelBuilder.Entity("GroceryApp.Domain.Entities.ProductImage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -450,6 +505,32 @@ namespace GroceryApp.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Reviews");
+                });
+
+            modelBuilder.Entity("GroceryApp.Domain.Entities.ReviewPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PhotoUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ReviewId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReviewId");
+
+                    b.ToTable("ReviewPhotos");
                 });
 
             modelBuilder.Entity("GroceryApp.Domain.Entities.User", b =>
@@ -535,6 +616,70 @@ namespace GroceryApp.Infrastructure.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("GroceryApp.Domain.Entities.UserPaymentMethod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Detail")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Icon")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserPaymentMethods");
+                });
+
+            modelBuilder.Entity("GroceryApp.Domain.Entities.UserSetting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SettingKey")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SettingValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "SettingKey")
+                        .IsUnique();
+
+                    b.ToTable("UserSettings");
                 });
 
             modelBuilder.Entity("GroceryApp.Domain.Entities.Voucher", b =>
@@ -826,6 +971,17 @@ namespace GroceryApp.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("GroceryApp.Domain.Entities.OrderStatusHistory", b =>
+                {
+                    b.HasOne("GroceryApp.Domain.Entities.Order", "Order")
+                        .WithMany("StatusHistory")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("GroceryApp.Domain.Entities.Payment", b =>
                 {
                     b.HasOne("GroceryApp.Domain.Entities.Order", "Order")
@@ -854,6 +1010,25 @@ namespace GroceryApp.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("GroceryApp.Domain.Entities.ProductCategory", b =>
+                {
+                    b.HasOne("GroceryApp.Domain.Entities.Category", "Category")
+                        .WithMany("ProductCategories")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("GroceryApp.Domain.Entities.Product", "Product")
+                        .WithMany("ProductCategories")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("GroceryApp.Domain.Entities.ProductImage", b =>
@@ -890,6 +1065,39 @@ namespace GroceryApp.Infrastructure.Migrations
                     b.Navigation("Order");
 
                     b.Navigation("Product");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("GroceryApp.Domain.Entities.ReviewPhoto", b =>
+                {
+                    b.HasOne("GroceryApp.Domain.Entities.Review", "Review")
+                        .WithMany("Photos")
+                        .HasForeignKey("ReviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Review");
+                });
+
+            modelBuilder.Entity("GroceryApp.Domain.Entities.UserPaymentMethod", b =>
+                {
+                    b.HasOne("GroceryApp.Domain.Entities.User", "User")
+                        .WithMany("PaymentMethods")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("GroceryApp.Domain.Entities.UserSetting", b =>
+                {
+                    b.HasOne("GroceryApp.Domain.Entities.User", "User")
+                        .WithMany("Settings")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
@@ -947,6 +1155,8 @@ namespace GroceryApp.Infrastructure.Migrations
 
             modelBuilder.Entity("GroceryApp.Domain.Entities.Category", b =>
                 {
+                    b.Navigation("ProductCategories");
+
                     b.Navigation("Products");
                 });
 
@@ -955,6 +1165,8 @@ namespace GroceryApp.Infrastructure.Migrations
                     b.Navigation("Items");
 
                     b.Navigation("Payment");
+
+                    b.Navigation("StatusHistory");
                 });
 
             modelBuilder.Entity("GroceryApp.Domain.Entities.Product", b =>
@@ -963,7 +1175,14 @@ namespace GroceryApp.Infrastructure.Migrations
 
                     b.Navigation("Images");
 
+                    b.Navigation("ProductCategories");
+
                     b.Navigation("Reviews");
+                });
+
+            modelBuilder.Entity("GroceryApp.Domain.Entities.Review", b =>
+                {
+                    b.Navigation("Photos");
                 });
 
             modelBuilder.Entity("GroceryApp.Domain.Entities.User", b =>
@@ -978,7 +1197,11 @@ namespace GroceryApp.Infrastructure.Migrations
 
                     b.Navigation("Orders");
 
+                    b.Navigation("PaymentMethods");
+
                     b.Navigation("Reviews");
+
+                    b.Navigation("Settings");
                 });
 #pragma warning restore 612, 618
         }

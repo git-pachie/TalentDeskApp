@@ -11,6 +11,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
     public DbSet<Order> Orders => Set<Order>();
@@ -20,7 +21,11 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<Voucher> Vouchers => Set<Voucher>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<ReviewPhoto> ReviewPhotos => Set<ReviewPhoto>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<UserPaymentMethod> UserPaymentMethods => Set<UserPaymentMethod>();
+    public DbSet<OrderStatusHistory> OrderStatusHistory => Set<OrderStatusHistory>();
+    public DbSet<UserSetting> UserSettings => Set<UserSetting>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -54,6 +59,14 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         builder.Entity<ProductImage>(e =>
         {
             e.HasOne(pi => pi.Product).WithMany(p => p.Images).HasForeignKey(pi => pi.ProductId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ProductCategory (many-to-many junction)
+        builder.Entity<ProductCategory>(e =>
+        {
+            e.HasIndex(pc => new { pc.ProductId, pc.CategoryId }).IsUnique();
+            e.HasOne(pc => pc.Product).WithMany(p => p.ProductCategories).HasForeignKey(pc => pc.ProductId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(pc => pc.Category).WithMany(c => c.ProductCategories).HasForeignKey(pc => pc.CategoryId).OnDelete(DeleteBehavior.NoAction);
         });
 
         // CartItem
@@ -135,6 +148,34 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         {
             e.HasIndex(n => new { n.UserId, n.CreatedAt });
             e.HasOne(n => n.User).WithMany(u => u.Notifications).HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ReviewPhoto
+        builder.Entity<ReviewPhoto>(e =>
+        {
+            e.HasIndex(rp => rp.ReviewId);
+            e.HasOne(rp => rp.Review).WithMany(r => r.Photos).HasForeignKey(rp => rp.ReviewId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // UserPaymentMethod
+        builder.Entity<UserPaymentMethod>(e =>
+        {
+            e.HasIndex(pm => pm.UserId);
+            e.HasOne(pm => pm.User).WithMany(u => u.PaymentMethods).HasForeignKey(pm => pm.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // OrderStatusHistory
+        builder.Entity<OrderStatusHistory>(e =>
+        {
+            e.HasIndex(h => h.OrderId);
+            e.HasOne(h => h.Order).WithMany(o => o.StatusHistory).HasForeignKey(h => h.OrderId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // UserSetting
+        builder.Entity<UserSetting>(e =>
+        {
+            e.HasIndex(s => new { s.UserId, s.SettingKey }).IsUnique();
+            e.HasOne(s => s.User).WithMany(u => u.Settings).HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

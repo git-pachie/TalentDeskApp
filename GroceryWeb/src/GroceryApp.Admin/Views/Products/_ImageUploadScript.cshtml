@@ -1,0 +1,179 @@
+<style>
+    #dropZone.drag-over {
+        border-color: #4f46e5 !important;
+        background: #eef2ff !important;
+    }
+    .img-card {
+        position: relative;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 2px solid #e5e7eb;
+        transition: border-color 0.2s;
+    }
+    .img-card.is-primary {
+        border-color: #4f46e5;
+    }
+    .img-card img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        display: block;
+    }
+    .img-card .img-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(transparent 50%, rgba(0,0,0,0.6));
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 8px;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    .img-card:hover .img-overlay {
+        opacity: 1;
+    }
+    .img-card .primary-badge {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        font-size: 0.65rem;
+        border-radius: 4px;
+        padding: 2px 6px;
+    }
+</style>
+
+<script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    const hiddenFieldsContainer = document.getElementById('imageHiddenFields');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+
+    let uploadedImages = []; // { url (filename), isPrimary }
+
+    // Click to browse
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    // Drag and drop
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    async function handleFiles(fileList) {
+        const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+        if (files.length === 0) return;
+
+        uploadProgress.classList.remove('d-none');
+        progressBar.style.width = '0%';
+        progressText.textContent = `Uploading ${files.length} image(s)...`;
+
+        const formData = new FormData();
+        files.forEach(f => formData.append('files', f));
+
+        try {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/Products/UploadImages');
+
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const pct = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = pct + '%';
+                    progressText.textContent = `Uploading... ${pct}%`;
+                }
+            });
+
+            xhr.onload = function() {
+                uploadProgress.classList.add('d-none');
+                if (xhr.status === 200) {
+                    const result = JSON.parse(xhr.responseText);
+                    if (result.urls && result.urls.length > 0) {
+                        result.urls.forEach(filename => {
+                            const isPrimary = uploadedImages.length === 0;
+                            addImageCard(filename, isPrimary);
+                        });
+                    }
+                } else {
+                    alert('Upload failed. Please try again.');
+                }
+                fileInput.value = '';
+            };
+
+            xhr.onerror = function() {
+                uploadProgress.classList.add('d-none');
+                alert('Upload failed. Please check your connection.');
+                fileInput.value = '';
+            };
+
+            xhr.send(formData);
+        } catch (err) {
+            uploadProgress.classList.add('d-none');
+            alert('Upload error: ' + err.message);
+        }
+    }
+
+    function addImageCard(url, isPrimary) {
+        uploadedImages.push({ url, isPrimary: isPrimary && !uploadedImages.some(i => i.isPrimary) });
+
+        if (uploadedImages.length === 1) {
+            uploadedImages[0].isPrimary = true;
+        }
+
+        renderImages();
+    }
+
+    function removeImageAt(index) {
+        const wasPrimary = uploadedImages[index].isPrimary;
+        uploadedImages.splice(index, 1);
+        if (wasPrimary && uploadedImages.length > 0) {
+            uploadedImages[0].isPrimary = true;
+        }
+        renderImages();
+    }
+
+    function setPrimary(index) {
+        uploadedImages.forEach((img, i) => img.isPrimary = (i === index));
+        renderImages();
+    }
+
+    function renderImages() {
+        const baseUrl = (window.imageBaseUrl || '').replace(/\/+$/, '');
+
+        previewContainer.innerHTML = '';
+        uploadedImages.forEach((img, idx) => {
+            const imgSrc = baseUrl ? (baseUrl + '/' + img.url) : img.url;
+            const col = document.createElement('div');
+            col.className = 'col-md-3 col-sm-4 col-6';
+            col.innerHTML = `
+                <div class="img-card ${img.isPrimary ? 'is-primary' : ''}">
+                    <img src="${imgSrc}" alt="Product image" />
+                    ${img.isPrimary ? '<span class="primary-badge badge bg-primary"><i class="bi bi-star-fill me-1"></i>Primary</span>' : ''}
+                    <div class="img-overlay">
+                        <div class="d-flex gap-1 justify-content-center">
+                            ${!img.isPrimary ? `<button type="button" class="btn btn-sm btn-light" onclick="setPrimary(${idx})" title="Set as primary"><i class="bi bi-star"></i></button>` : ''}
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeImageAt(${idx})" title="Remove"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            previewContainer.appendChild(col);
+        });
+
+        // Hidden fields — store only the filename
+        hiddenFieldsContainer.innerHTML = '';
+        uploadedImages.forEach((img, idx) => {
+            hiddenFieldsContainer.innerHTML += `
+                <input type="hidden" name="Images[${idx}].ImageUrl" value="${img.url}" />
+                <input type="hidden" name="Images[${idx}].IsPrimary" value="${img.isPrimary}" />
+                <input type="hidden" name="Images[${idx}].SortOrder" value="${idx}" />
+            `;
+        });
+    }
+</script>

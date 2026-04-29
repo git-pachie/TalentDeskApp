@@ -69,4 +69,13 @@ public class ApiClient
         var response = await _httpClient.DeleteAsync(endpoint);
         return response.IsSuccessStatusCode;
     }
+
+    public async Task<TResponse?> PostMultipartAsync<TResponse>(string endpoint, MultipartFormDataContent content)
+    {
+        AttachToken();
+        var response = await _httpClient.PostAsync(endpoint, content);
+        response.EnsureSuccessStatusCode();
+        var responseJson = await response.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<TResponse>(responseJson, JsonOptions);
+    }
 }

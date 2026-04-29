@@ -1,42 +1,459 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - GroceryApp Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --sidebar-bg: #1a1d23;
+            --sidebar-hover: #2a2d35;
+            --sidebar-active: #0d6efd;
+            --topbar-height: 60px;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        /* Sidebar */
+        .admin-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--sidebar-bg);
+            color: #fff;
+            z-index: 1040;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-brand {
+            height: var(--topbar-height);
+            display: flex;
+            align-items: center;
+            padding: 0 1.25rem;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            gap: 0.6rem;
+        }
+
+        .sidebar-brand:hover { color: #fff; }
+
+        .sidebar-brand .brand-icon {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .sidebar-nav {
+            padding: 0.75rem 0;
+        }
+
+        .sidebar-heading {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.35);
+            padding: 1rem 1.25rem 0.4rem;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 1.25rem;
+            color: rgba(255,255,255,0.65);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0;
+            transition: all 0.15s ease;
+        }
+
+        .sidebar-link:hover {
+            color: #fff;
+            background: var(--sidebar-hover);
+        }
+
+        .sidebar-link.active {
+            color: #fff;
+            background: var(--sidebar-active);
+        }
+
+        .sidebar-link i {
+            font-size: 1.1rem;
+            width: 22px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding: 0.75rem 1.25rem;
+            margin-top: auto;
+        }
+
+        .sidebar-footer .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .sidebar-footer .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .sidebar-footer .user-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .sidebar-footer .user-role {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.45);
+        }
+
+        /* Main content */
+        .admin-main {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+
+        .admin-topbar {
+            height: var(--topbar-height);
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+        }
+
+        .admin-topbar .page-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .admin-content {
+            padding: 1.5rem;
+        }
+
+        /* Cards */
+        .stat-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .stat-card .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #1f2937;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+
+        /* Data tables */
+        .data-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+
+        .data-card .card-header {
+            background: #fff;
+            border-bottom: 1px solid #f3f4f6;
+            padding: 1rem 1.25rem;
+        }
+
+        .data-card .card-header h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+            color: #1f2937;
+        }
+
+        .data-table {
+            margin: 0;
+        }
+
+        .data-table thead th {
+            background: #f9fafb;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+            border-bottom: 1px solid #f3f4f6;
+            padding: 0.75rem 1rem;
+            white-space: nowrap;
+        }
+
+        .data-table tbody td {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            color: #374151;
+            vertical-align: middle;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .data-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Badges */
+        .badge-status {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.35em 0.7em;
+            border-radius: 6px;
+        }
+
+        /* Form cards */
+        .form-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .form-card .card-body {
+            padding: 1.5rem;
+        }
+
+        .form-card .form-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.35rem;
+        }
+
+        .form-card .form-control,
+        .form-card .form-select {
+            border-radius: 8px;
+            border-color: #d1d5db;
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .form-card .form-control:focus,
+        .form-card .form-select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+        }
+
+        /* Buttons */
+        .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; }
+        .btn-primary { background: #4f46e5; border-color: #4f46e5; }
+        .btn-primary:hover { background: #4338ca; border-color: #4338ca; }
+
+        /* Page header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .page-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #9ca3af;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Login page */
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1d23 0%, #2d3748 100%);
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        /* Responsive */
+        @@media (max-width: 991.98px) {
+            .admin-sidebar { transform: translateX(-100%); }
+            .admin-sidebar.show { transform: translateX(0); }
+            .admin-main { margin-left: 0; }
+        }
+    </style>
 </head>
 <body>
     @if (Context.Session.GetString("JwtToken") != null)
     {
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="/">🛒 GroceryApp Admin</a>
-                <div class="collapse navbar-collapse">
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item"><a class="nav-link" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Products" asp-action="Index">Products</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Categories" asp-action="Index">Categories</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Orders" asp-action="Index">Orders</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Vouchers" asp-action="Index">Vouchers</a></li>
-                    </ul>
-                    <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <span class="nav-link text-light">@Context.Session.GetString("UserName")</span>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout</a>
-                        </li>
-                    </ul>
+        @* ===== SIDEBAR ===== *@
+        <aside class="admin-sidebar d-flex flex-column" id="adminSidebar">
+            <a class="sidebar-brand" href="/">
+                <span class="brand-icon">🛒</span>
+                GroceryApp
+            </a>
+
+            <nav class="sidebar-nav flex-grow-1">
+                <div class="sidebar-heading">Main</div>
+                <a class="sidebar-link @IsActive("Dashboard")" asp-controller="Dashboard" asp-action="Index">
+                    <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                </a>
+
+                <div class="sidebar-heading">Catalog</div>
+                <a class="sidebar-link @IsActive("Products")" asp-controller="Products" asp-action="Index">
+                    <i class="bi bi-box-seam-fill"></i> Products
+                </a>
+                <a class="sidebar-link @IsActive("Categories")" asp-controller="Categories" asp-action="Index">
+                    <i class="bi bi-tags-fill"></i> Categories
+                </a>
+
+                <div class="sidebar-heading">Sales</div>
+                <a class="sidebar-link @IsActive("Orders")" asp-controller="Orders" asp-action="Index">
+                    <i class="bi bi-receipt"></i> Orders
+                </a>
+                <a class="sidebar-link @IsActive("Vouchers")" asp-controller="Vouchers" asp-action="Index">
+                    <i class="bi bi-ticket-perforated-fill"></i> Vouchers
+                </a>
+
+                <div class="sidebar-heading">Community</div>
+                <a class="sidebar-link @IsActive("Users")" asp-controller="Users" asp-action="Index">
+                    <i class="bi bi-people-fill"></i> Users
+                </a>
+                <a class="sidebar-link @IsActive("Reviews")" asp-controller="Reviews" asp-action="Index">
+                    <i class="bi bi-star-fill"></i> Reviews
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        @{
+                            var userName = Context.Session.GetString("UserName") ?? "Admin";
+                            var initials = string.Join("", userName.Split(' ').Where(s => s.Length > 0).Select(s => s[0]));
+                        }
+                        @initials
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="user-name">@userName</div>
+                        <div class="user-role">Administrator</div>
+                    </div>
+                    <a asp-controller="Account" asp-action="Logout" class="text-white-50" title="Logout">
+                        <i class="bi bi-box-arrow-right fs-5"></i>
+                    </a>
                 </div>
             </div>
-        </nav>
-    }
+        </aside>
 
-    <div class="container mt-4">
+        @* ===== MAIN ===== *@
+        <div class="admin-main">
+            <header class="admin-topbar">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-link text-dark d-lg-none p-0" onclick="document.getElementById('adminSidebar').classList.toggle('show')">
+                        <i class="bi bi-list fs-4"></i>
+                    </button>
+                    <h1 class="page-title">@ViewData["Title"]</h1>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted" style="font-size: 0.85rem;">
+                        <i class="bi bi-clock me-1"></i>@DateTime.Now.ToString("ddd, MMM dd yyyy")
+                    </span>
+                </div>
+            </header>
+
+            <main class="admin-content">
+                @RenderBody()
+            </main>
+        </div>
+    }
+    else
+    {
         @RenderBody()
-    </div>
+    }
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
+@functions {
+    string IsActive(string controller)
+    {
+        var current = ViewContext.RouteData.Values["controller"]?.ToString();
+        return string.Equals(current, controller, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    }
+}

@@ -66,6 +66,12 @@ var app = builder.Build();
 // Seed data
 await SeedData.InitializeAsync(app.Services);
 
+// Ensure upload directories exist
+var uploadPath = app.Configuration["Storage:UploadPath"] ?? "wwwroot/uploads";
+if (!Path.IsPathRooted(uploadPath))
+    uploadPath = Path.Combine(app.Environment.ContentRootPath, uploadPath);
+Directory.CreateDirectory(Path.Combine(uploadPath, "products"));
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -73,6 +79,23 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(); // Serve wwwroot
+
+// Serve uploaded files from configurable path
+var storagePath = app.Configuration["Storage:UploadPath"] ?? "wwwroot/uploads";
+if (!Path.IsPathRooted(storagePath))
+    storagePath = Path.Combine(app.Environment.ContentRootPath, storagePath);
+var urlPrefix = app.Configuration["Storage:UrlPrefix"] ?? "/uploads";
+
+if (!storagePath.Contains("wwwroot"))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(storagePath),
+        RequestPath = urlPrefix
+    });
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -3,38 +3,88 @@
     ViewData["Title"] = "Vouchers";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Vouchers</h2>
-    <a asp-action="Create" class="btn btn-primary">+ Add Voucher</a>
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-ticket-perforated-fill me-2 text-primary"></i>Vouchers</h2>
+        <p class="text-muted mb-0" style="font-size: 0.85rem;">Manage discount vouchers and promotions</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Add Voucher
+    </a>
 </div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Code</th>
-            <th>Type</th>
-            <th>Value</th>
-            <th>Min Spend</th>
-            <th>Usage</th>
-            <th>Active</th>
-            <th>Expires</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (Model != null)
-        {
-            @foreach (var voucher in Model)
+<div class="card data-card">
+    <table class="table data-table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Type</th>
+                <th>Value</th>
+                <th>Min Spend</th>
+                <th>Usage</th>
+                <th>Status</th>
+                <th>Expires</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Count > 0)
+            {
+                @foreach (var voucher in Model)
+                {
+                    var isExpired = voucher.ExpiryDate < DateTime.UtcNow;
+                    var usagePercent = voucher.UsageLimit > 0 ? (int)((double)voucher.UsedCount / voucher.UsageLimit * 100) : 0;
+                    <tr class="@(isExpired ? "opacity-50" : "")">
+                        <td>
+                            <code class="bg-light px-2 py-1 rounded" style="font-size: 0.85rem;">@voucher.Code</code>
+                        </td>
+                        <td>
+                            <span class="badge @(voucher.Type == "Percentage" ? "bg-purple-subtle text-purple" : "bg-info-subtle text-info")"
+                                  style="@(voucher.Type == "Percentage" ? "background: #f3e8ff !important; color: #7c3aed !important;" : "")">
+                                @(voucher.Type == "Percentage" ? "%" : "₱") @voucher.Type
+                            </span>
+                        </td>
+                        <td class="fw-semibold">
+                            @(voucher.Type == "Percentage" ? $"{voucher.Value}%" : $"₱{voucher.Value:N2}")
+                        </td>
+                        <td>₱@voucher.MinimumSpend.ToString("N2")</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height: 6px; width: 60px;">
+                                    <div class="progress-bar @(usagePercent > 80 ? "bg-danger" : "bg-primary")"
+                                         style="width: @usagePercent%"></div>
+                                </div>
+                                <small class="text-muted">@voucher.UsedCount/@voucher.UsageLimit</small>
+                            </div>
+                        </td>
+                        <td>
+                            @if (!voucher.IsActive)
+                            {
+                                <span class="badge badge-status bg-secondary-subtle text-secondary">Disabled</span>
+                            }
+                            else if (isExpired)
+                            {
+                                <span class="badge badge-status bg-danger-subtle text-danger">Expired</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-status bg-success-subtle text-success">Active</span>
+                            }
+                        </td>
+                        <td class="text-muted">@voucher.ExpiryDate.ToString("MMM dd, yyyy")</td>
+                    </tr>
+                }
+            }
+            else
             {
                 <tr>
-                    <td><code>@voucher.Code</code></td>
-                    <td>@voucher.Type</td>
-                    <td>@voucher.Value</td>
-                    <td>₱@voucher.MinimumSpend.ToString("N2")</td>
-                    <td>@voucher.UsedCount / @voucher.UsageLimit</td>
-                    <td>@(voucher.IsActive ? "✓" : "✗")</td>
-                    <td>@voucher.ExpiryDate.ToString("MMM dd, yyyy")</td>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <i class="bi bi-ticket-perforated"></i>
+                            <p>No vouchers found.</p>
+                        </div>
+                    </td>
                 </tr>
             }
-        }
-    </tbody>
-</table>
+        </tbody>
+    </table>
+</div>

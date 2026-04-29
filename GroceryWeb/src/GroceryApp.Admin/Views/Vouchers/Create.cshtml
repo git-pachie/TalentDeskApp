@@ -3,62 +3,88 @@
     ViewData["Title"] = "Add Voucher";
 }
 
-<h2>Add Voucher</h2>
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-plus-circle-fill me-2 text-primary"></i>Add Voucher</h2>
+        <p class="text-muted mb-0" style="font-size: 0.85rem;">Create a new discount voucher</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back
+    </a>
+</div>
 
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-lg-8">
         <form asp-action="Create" method="post">
-            <div class="mb-3">
-                <label asp-for="Code" class="form-label">Code</label>
-                <input asp-for="Code" class="form-control" required />
-                <span asp-validation-for="Code" class="text-danger"></span>
+            <div class="card form-card mb-3">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">Voucher Details</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Code" class="form-label">Voucher Code</label>
+                            <input asp-for="Code" class="form-control text-uppercase" placeholder="e.g. SAVE20" required />
+                            <span asp-validation-for="Code" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Type" class="form-label">Discount Type</label>
+                            <select asp-for="Type" class="form-select">
+                                <option value="Percentage">Percentage (%)</option>
+                                <option value="FixedAmount">Fixed Amount (₱)</option>
+                            </select>
+                            <span asp-validation-for="Type" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Description" class="form-label">Description</label>
+                            <textarea asp-for="Description" class="form-control" rows="2" placeholder="e.g. 10% off for new users"></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="mb-3">
-                <label asp-for="Description" class="form-label">Description</label>
-                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
-                <span asp-validation-for="Description" class="text-danger"></span>
+
+            <div class="card form-card mb-3">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">Value & Limits</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="Value" class="form-label">Discount Value</label>
+                            <input asp-for="Value" class="form-control" type="number" step="0.01" min="0" required />
+                            <span asp-validation-for="Value" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="MaxDiscount" class="form-label">Max Discount (₱)</label>
+                            <input asp-for="MaxDiscount" class="form-control" type="number" step="0.01" min="0" placeholder="For % type" />
+                            <span asp-validation-for="MaxDiscount" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="MinimumSpend" class="form-label">Min Spend (₱)</label>
+                            <input asp-for="MinimumSpend" class="form-control" type="number" step="0.01" min="0" required />
+                            <span asp-validation-for="MinimumSpend" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="UsageLimit" class="form-label">Usage Limit</label>
+                            <input asp-for="UsageLimit" class="form-control" type="number" min="1" required />
+                            <span asp-validation-for="UsageLimit" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="StartDate" class="form-label">Start Date</label>
+                            <input asp-for="StartDate" class="form-control" type="date" required />
+                            <span asp-validation-for="StartDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="ExpiryDate" class="form-label">Expiry Date</label>
+                            <input asp-for="ExpiryDate" class="form-control" type="date" required />
+                            <span asp-validation-for="ExpiryDate" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="mb-3">
-                <label asp-for="Type" class="form-label">Type</label>
-                <select asp-for="Type" class="form-select">
-                    <option value="Percentage">Percentage</option>
-                    <option value="FixedAmount">Fixed Amount</option>
-                </select>
-                <span asp-validation-for="Type" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Value" class="form-label">Value</label>
-                <input asp-for="Value" class="form-control" type="number" step="0.01" min="0" required />
-                <span asp-validation-for="Value" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="MaxDiscount" class="form-label">Max Discount (₱)</label>
-                <input asp-for="MaxDiscount" class="form-control" type="number" step="0.01" min="0" />
-                <span asp-validation-for="MaxDiscount" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="MinimumSpend" class="form-label">Minimum Spend (₱)</label>
-                <input asp-for="MinimumSpend" class="form-control" type="number" step="0.01" min="0" required />
-                <span asp-validation-for="MinimumSpend" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="UsageLimit" class="form-label">Usage Limit</label>
-                <input asp-for="UsageLimit" class="form-control" type="number" min="1" required />
-                <span asp-validation-for="UsageLimit" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="StartDate" class="form-label">Start Date</label>
-                <input asp-for="StartDate" class="form-control" type="date" required />
-                <span asp-validation-for="StartDate" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="ExpiryDate" class="form-label">Expiry Date</label>
-                <input asp-for="ExpiryDate" class="form-control" type="date" required />
-                <span asp-validation-for="ExpiryDate" class="text-danger"></span>
-            </div>
+
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Create Voucher</button>
-                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-check-lg me-1"></i> Create Voucher
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
             </div>
         </form>
     </div>

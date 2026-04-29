@@ -3,30 +3,44 @@
     ViewData["Title"] = "Add Category";
 }
 
-<h2>Add Category</h2>
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-plus-circle-fill me-2 text-primary"></i>Add Category</h2>
+        <p class="text-muted mb-0" style="font-size: 0.85rem;">Create a new product category</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back
+    </a>
+</div>
 
 <div class="row">
-    <div class="col-md-6">
-        <form asp-action="Create" method="post">
-            <div class="mb-3">
-                <label asp-for="Name" class="form-label">Name</label>
-                <input asp-for="Name" class="form-control" required />
-                <span asp-validation-for="Name" class="text-danger"></span>
+    <div class="col-lg-6">
+        <div class="card form-card">
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label">Category Name</label>
+                        <input asp-for="Name" class="form-control" placeholder="e.g. Fruits & Vegetables" required />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label">Description</label>
+                        <textarea asp-for="Description" class="form-control" rows="3" placeholder="Brief description..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-4">
+                        <label asp-for="ImageUrl" class="form-label">Image URL</label>
+                        <input asp-for="ImageUrl" class="form-control" placeholder="https://..." />
+                        <span asp-validation-for="ImageUrl" class="text-danger small"></span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check-lg me-1"></i> Create Category
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
             </div>
-            <div class="mb-3">
-                <label asp-for="Description" class="form-label">Description</label>
-                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="ImageUrl" class="form-label">Image URL</label>
-                <input asp-for="ImageUrl" class="form-control" placeholder="https://..." />
-                <span asp-validation-for="ImageUrl" class="text-danger"></span>
-            </div>
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Create Category</button>
-                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-            </div>
-        </form>
+        </div>
     </div>
 </div>

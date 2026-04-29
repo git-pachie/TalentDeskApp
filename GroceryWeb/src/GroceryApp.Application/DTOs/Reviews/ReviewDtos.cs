@@ -9,6 +9,14 @@ public class ReviewDto
     public int Rating { get; set; }
     public string? Comment { get; set; }
     public DateTime CreatedAt { get; set; }
+    public List<ReviewPhotoDto> Photos { get; set; } = [];
+}
+
+public class ReviewPhotoDto
+{
+    public Guid Id { get; set; }
+    public string PhotoUrl { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
 }
 
 public class CreateReviewRequest
@@ -17,4 +25,5 @@ public class CreateReviewRequest
     public Guid OrderId { get; set; }
     public int Rating { get; set; }
     public string? Comment { get; set; }
+    public List<string>? PhotoUrls { get; set; }
 }

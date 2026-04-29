@@ -17,4 +17,6 @@ public class User : IdentityUser<Guid>
     public ICollection<Favorite> Favorites { get; set; } = [];
     public ICollection<Review> Reviews { get; set; } = [];
     public ICollection<Notification> Notifications { get; set; } = [];
+    public ICollection<UserPaymentMethod> PaymentMethods { get; set; } = [];
+    public ICollection<UserSetting> Settings { get; set; } = [];
 }

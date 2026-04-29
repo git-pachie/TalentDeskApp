@@ -21,3 +21,6 @@ Keys/
 # .NET
 bin/
 obj/
+
+# Uploaded files
+wwwroot/uploads/

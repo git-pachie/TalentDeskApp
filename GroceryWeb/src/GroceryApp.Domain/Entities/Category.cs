@@ -11,4 +11,5 @@ public class Category
 
     // Navigation
     public ICollection<Product> Products { get; set; } = [];
+    public ICollection<ProductCategory> ProductCategories { get; set; } = [];
 }

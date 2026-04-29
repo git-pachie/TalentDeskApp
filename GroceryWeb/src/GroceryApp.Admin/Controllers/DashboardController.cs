@@ -1,4 +1,5 @@
 using GroceryApp.Admin.Filters;
+using GroceryApp.Admin.Models;
 using GroceryApp.Admin.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,7 +18,17 @@ public class DashboardController : Controller
     public async Task<IActionResult> Index()
     {
         ViewBag.UserName = HttpContext.Session.GetString("UserName");
-        // Dashboard data would be fetched from API
-        return View();
+
+        DashboardStatsModel? stats = null;
+        try
+        {
+            stats = await _apiClient.GetAsync<DashboardStatsModel>("/api/dashboard/stats");
+        }
+        catch
+        {
+            // Fallback to empty stats if API call fails
+        }
+
+        return View(stats ?? new DashboardStatsModel());
     }
 }

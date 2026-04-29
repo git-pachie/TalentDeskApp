@@ -19,6 +19,10 @@ public static class DependencyInjection
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<IFavoriteService, FavoriteService>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IPaymentMethodService, PaymentMethodService>();
+        services.AddScoped<IUserSettingService, UserSettingService>();
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IDashboardService, DashboardService>();
 
         return services;
     }

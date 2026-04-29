@@ -3,6 +3,7 @@ using GroceryApp.Application.DTOs.Products;
 using GroceryApp.Application.Interfaces;
 using GroceryApp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace GroceryApp.Application.Services;
 
@@ -10,22 +11,29 @@ public class ProductService : IProductService
 {
     private readonly IRepository<Product> _productRepo;
     private readonly IRepository<ProductImage> _imageRepo;
+    private readonly IRepository<ProductCategory> _productCategoryRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly string _productImageBaseUrl;
 
     public ProductService(
         IRepository<Product> productRepo,
         IRepository<ProductImage> imageRepo,
-        IUnitOfWork unitOfWork)
+        IRepository<ProductCategory> productCategoryRepo,
+        IUnitOfWork unitOfWork,
+        IConfiguration configuration)
     {
         _productRepo = productRepo;
         _imageRepo = imageRepo;
+        _productCategoryRepo = productCategoryRepo;
         _unitOfWork = unitOfWork;
+        _productImageBaseUrl = (configuration["ImageUrls:ProductImage"] ?? "").TrimEnd('/');
     }
 
     public async Task<ProductDto?> GetByIdAsync(Guid id)
     {
         var product = await _productRepo.Query()
             .Include(p => p.Category)
+            .Include(p => p.ProductCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.Images)
             .Include(p => p.Reviews)
             .FirstOrDefaultAsync(p => p.Id == id);
@@ -37,12 +45,17 @@ public class ProductService : IProductService
     {
         var query = _productRepo.Query()
             .Include(p => p.Category)
+            .Include(p => p.ProductCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.Images)
             .Include(p => p.Reviews)
-            .Where(p => p.IsActive);
+            .AsQueryable();
+
+        if (!queryParams.IncludeInactive)
+            query = query.Where(p => p.IsActive);
 
         if (queryParams.CategoryId.HasValue)
-            query = query.Where(p => p.CategoryId == queryParams.CategoryId.Value);
+            query = query.Where(p => p.CategoryId == queryParams.CategoryId.Value
+                || p.ProductCategories.Any(pc => pc.CategoryId == queryParams.CategoryId.Value));
 
         if (queryParams.MinPrice.HasValue)
             query = query.Where(p => p.Price >= queryParams.MinPrice.Value);
@@ -77,6 +90,7 @@ public class ProductService : IProductService
     {
         var query = _productRepo.Query()
             .Include(p => p.Category)
+            .Include(p => p.ProductCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.Images)
             .Include(p => p.Reviews)
             .Where(p => p.IsActive &&
@@ -117,6 +131,15 @@ public class ProductService : IProductService
             }).ToList()
         };
 
+        // Add additional categories via junction table
+        if (request.CategoryIds.Count > 0)
+        {
+            product.ProductCategories = request.CategoryIds
+                .Distinct()
+                .Select(cid => new ProductCategory { CategoryId = cid })
+                .ToList();
+        }
+
         await _productRepo.AddAsync(product);
         await _unitOfWork.SaveChangesAsync();
 
@@ -127,6 +150,7 @@ public class ProductService : IProductService
     {
         var product = await _productRepo.Query()
             .Include(p => p.Images)
+            .Include(p => p.ProductCategories)
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (product is null) return null;
@@ -141,19 +165,52 @@ public class ProductService : IProductService
         if (request.CategoryId.HasValue) product.CategoryId = request.CategoryId.Value;
         product.UpdatedAt = DateTime.UtcNow;
 
-        if (request.Images is not null)
+        // Remove old categories and images first, then save
+        var needsIntermediateSave = false;
+
+        if (request.CategoryIds is not null && product.ProductCategories.Count > 0)
+        {
+            _productCategoryRepo.RemoveRange(product.ProductCategories);
+            needsIntermediateSave = true;
+        }
+
+        if (request.Images is not null && product.Images.Count > 0)
         {
             _imageRepo.RemoveRange(product.Images);
-            product.Images = request.Images.Select(i => new ProductImage
-            {
-                ProductId = product.Id,
-                ImageUrl = i.ImageUrl,
-                IsPrimary = i.IsPrimary,
-                SortOrder = i.SortOrder
-            }).ToList();
+            needsIntermediateSave = true;
         }
 
         _productRepo.Update(product);
+
+        if (needsIntermediateSave)
+        {
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        // Now add new categories
+        if (request.CategoryIds is not null)
+        {
+            foreach (var cid in request.CategoryIds.Distinct())
+            {
+                await _productCategoryRepo.AddAsync(new ProductCategory { ProductId = product.Id, CategoryId = cid });
+            }
+        }
+
+        // Now add new images
+        if (request.Images is not null)
+        {
+            foreach (var (img, idx) in request.Images.Select((img, idx) => (img, idx)))
+            {
+                await _imageRepo.AddAsync(new ProductImage
+                {
+                    ProductId = product.Id,
+                    ImageUrl = img.ImageUrl,
+                    IsPrimary = img.IsPrimary,
+                    SortOrder = img.SortOrder
+                });
+            }
+        }
+
         await _unitOfWork.SaveChangesAsync();
 
         return (await GetByIdAsync(product.Id))!;
@@ -171,7 +228,7 @@ public class ProductService : IProductService
         return true;
     }
 
-    private static ProductDto MapToDto(Product product)
+    private ProductDto MapToDto(Product product)
     {
         return new ProductDto
         {
@@ -185,15 +242,21 @@ public class ProductService : IProductService
             IsActive = product.IsActive,
             CategoryId = product.CategoryId,
             CategoryName = product.Category?.Name ?? string.Empty,
+            Categories = product.ProductCategories
+                .Where(pc => pc.Category is not null)
+                .Select(pc => new ProductCategoryDto { Id = pc.CategoryId, Name = pc.Category.Name })
+                .ToList(),
             Images = product.Images.OrderBy(i => i.SortOrder).Select(i => new ProductImageDto
             {
                 Id = i.Id,
                 ImageUrl = i.ImageUrl,
+                FullUrl = string.IsNullOrEmpty(_productImageBaseUrl) ? i.ImageUrl : $"{_productImageBaseUrl}/{i.ImageUrl}",
                 IsPrimary = i.IsPrimary,
                 SortOrder = i.SortOrder
             }),
             AverageRating = product.Reviews.Count != 0 ? product.Reviews.Average(r => r.Rating) : 0,
-            ReviewCount = product.Reviews.Count
+            ReviewCount = product.Reviews.Count,
+            CreatedAt = product.CreatedAt
         };
     }
 }
