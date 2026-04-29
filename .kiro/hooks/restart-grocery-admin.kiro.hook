@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Restart Grocery Admin",
+  "description": "Automatically rebuilds and restarts the GroceryApp Admin MVC panel when any C# or cshtml file in the Admin project is saved.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "GroceryWeb/src/GroceryApp.Admin/**/*.cs",
+      "GroceryWeb/src/GroceryApp.Admin/**/*.cshtml"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A file in the GroceryApp Admin project was changed. Stop any running Admin process, rebuild with `dotnet build src/GroceryApp.Admin/GroceryApp.Admin.csproj` in the GroceryWeb directory, and if the build succeeds, start the Admin with `dotnet run --launch-profile https` in GroceryWeb/src/GroceryApp.Admin as a background process. Report the result briefly."
+  }
+}

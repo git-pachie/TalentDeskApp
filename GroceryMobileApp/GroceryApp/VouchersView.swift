@@ -1,27 +1,29 @@
 import SwiftUI
 
 struct VoucherItem: Identifiable {
-    let id = UUID()
+    let id: UUID
     let code: String
     let description: String
     let discount: String
     let minOrder: String
     let validUntil: String
     let isActive: Bool
+
+    init(id: UUID = UUID(), code: String, description: String, discount: String, minOrder: String, validUntil: String, isActive: Bool) {
+        self.id = id
+        self.code = code
+        self.description = description
+        self.discount = discount
+        self.minOrder = minOrder
+        self.validUntil = validUntil
+        self.isActive = isActive
+    }
 }
 
 struct VouchersView: View {
     @State private var copiedCode: String?
-
-    private let vouchers: [VoucherItem] = [
-        VoucherItem(code: "FRESH10", description: "10% off your order", discount: "10%", minOrder: "Min. $15", validUntil: "May 31, 2026", isActive: true),
-        VoucherItem(code: "SAVE5", description: "$5 off orders above $20", discount: "$5", minOrder: "Min. $20", validUntil: "Jun 15, 2026", isActive: true),
-        VoucherItem(code: "NEWUSER", description: "$8 off first order", discount: "$8", minOrder: "No minimum", validUntil: "Dec 31, 2026", isActive: true),
-        VoucherItem(code: "FREESHIP", description: "Free delivery on any order", discount: "Free Delivery", minOrder: "No minimum", validUntil: "May 15, 2026", isActive: true),
-        VoucherItem(code: "SUMMER20", description: "20% off summer fruits", discount: "20%", minOrder: "Min. $25", validUntil: "Aug 31, 2026", isActive: true),
-        VoucherItem(code: "WELCOME", description: "$3 off your next order", discount: "$3", minOrder: "Min. $10", validUntil: "Apr 1, 2026", isActive: false),
-        VoucherItem(code: "HOLIDAY15", description: "15% off holiday specials", discount: "15%", minOrder: "Min. $30", validUntil: "Jan 5, 2026", isActive: false),
-    ]
+    @State private var vouchers: [VoucherItem] = []
+    @State private var isLoading = false
 
     private var activeVouchers: [VoucherItem] { vouchers.filter { $0.isActive } }
     private var expiredVouchers: [VoucherItem] { vouchers.filter { !$0.isActive } }
@@ -67,6 +69,26 @@ struct VouchersView: View {
         .background(GroceryTheme.background)
         .navigationTitle("My Vouchers")
         .navigationBarTitleDisplayMode(.inline)
+        .task { await loadVouchers() }
+        .refreshable { await loadVouchers() }
+    }
+
+    private func loadVouchers() async {
+        guard APIClient.shared.isAuthenticated else { return }
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let dtos: [VoucherDTO] = try await APIClient.shared.get("/api/vouchers")
+            vouchers = dtos.map(\.asVoucherItem)
+        } catch {
+            print("⚠️ Failed to load vouchers, using defaults: \(error)")
+            if vouchers.isEmpty {
+                vouchers = [
+                    VoucherItem(code: "FRESH10", description: "10% off your order", discount: "10%", minOrder: "Min. $15", validUntil: "May 31, 2026", isActive: true),
+                    VoucherItem(code: "SAVE5", description: "$5 off orders above $20", discount: "$5", minOrder: "Min. $20", validUntil: "Jun 15, 2026", isActive: true),
+                ]
+            }
+        }
     }
 
     private func voucherCard(_ voucher: VoucherItem, expired: Bool) -> some View {

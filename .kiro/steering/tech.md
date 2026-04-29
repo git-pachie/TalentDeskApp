@@ -1,36 +1,58 @@
 # Tech Stack & Build
 
-## Platform
-- iOS 17.0+ (iPhone and iPad)
-- Swift 5 with SwiftUI
-- Xcode project generated via XcodeGen (`project.yml`)
+## TalentDesk (iOS)
+- iOS 17.0+, Swift 5, SwiftUI
+- XcodeGen (`project.yml`) for project generation
+- `@Observable` for state management (not Combine)
+- Swift Charts, PhotosUI, UserNotifications
+- Bundle ID: `com.sanshare.talentdesk`
+- APNs push notifications with AppDelegate
 
-## Frameworks
-- **SwiftUI** — all UI, navigation, forms, sheets
-- **Observation** (`@Observable`) — state management (not Combine, not ObservableObject)
-- **Charts** — Swift Charts for dashboard visualizations
-- **PhotosUI** — `PhotosPicker` for client photo selection
-- **Foundation** — `JSONEncoder`/`JSONDecoder` for local persistence, `FileManager` for storage
-
-## Key Patterns
-- `@Observable` classes for stores (`ClientStore`, `AppSessionStore`, `AppSettingsStore`)
-- `@Bindable` for passing observable stores into views
-- `@Environment` for injecting shared stores (e.g., `AppSettingsStore`)
-- `@State` for local view state and draft copies of models
-- No third-party dependencies — pure Apple SDK
-
-## Build & Run
 ```bash
-# Regenerate Xcode project from project.yml (requires xcodegen)
-cd TalentDesk
-xcodegen generate
-
-# Open in Xcode
-open ClientRegistrationApp.xcodeproj
+cd TalentDesk && xcodegen generate && open ClientRegistrationApp.xcodeproj
 ```
 
-There are no test targets, linting tools, or CI pipelines configured. The project has no Swift Package Manager dependencies.
+## TalentDeskAPI (.NET 9)
+- .NET 9 Web API with controllers
+- System.IdentityModel.Tokens.Jwt for APNs JWT auth
+- HTTP/2 for APNs communication
+- Runs on http://localhost:5270 or https://localhost:7150
 
-## Bundle Info
-- Bundle ID: `com.example.ClientRegistrationApp`
-- Version: 1.0 (build 1)
+```bash
+cd TalentDeskAPI && dotnet run
+```
+
+## GroceryMobileApp (iOS)
+- iOS 17.0+, Swift 5, SwiftUI
+- XcodeGen (`project.yml`) for project generation
+- `@Observable` stores: CartStore, FavoritesStore, GrocerySettingsStore
+- MapKit for address pinning with reverse geocoding
+- PassKit for Apple Pay integration
+- AsyncImage + custom CachedAsyncImage for product photos
+- PhotosUI for review photo uploads
+- UIGraphicsPDFRenderer for order PDF export
+- Bundle ID: `com.sanshare.GroceryApp`
+
+```bash
+cd GroceryMobileApp && xcodegen generate && open GroceryApp.xcodeproj
+```
+
+## GroceryWeb (ASP.NET Core 9)
+- Layered architecture: API, Admin (MVC), Application, Domain, Infrastructure
+- Solution file: `GroceryWeb/GroceryApp.sln`
+
+```bash
+cd GroceryWeb && dotnet build GroceryApp.sln
+```
+
+## Database
+- SQL Server schema at `GroceryMobileApp/Database/GroceryApp_Schema.sql`
+- DFD diagrams at `GroceryMobileApp/Database/GroceryApp_DFD.md` (Mermaid)
+- 16 tables with UUIDs, DateCreated/CreatedBy audit fields, check constraints, indexes
+
+## Common Patterns
+- `@Observable` classes for stores, `@Bindable` for view bindings, `@Environment` for injection
+- `@State` for local view state and draft copies
+- `.buttonStyle(.plain)` required for buttons inside List rows
+- All views include `#Preview` blocks with `.groceryPreviewEnvironment()` helper
+- No third-party dependencies — pure Apple SDK + .NET SDK

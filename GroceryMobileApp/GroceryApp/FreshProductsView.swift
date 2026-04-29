@@ -1,6 +1,12 @@
 import SwiftUI
 
 struct FreshProductsView: View {
+    @Environment(ProductStore.self) private var productStore
+
+    private var products: [GroceryProduct] {
+        productStore.freshProducts.isEmpty ? SampleData.freshProducts : productStore.freshProducts
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -16,7 +22,7 @@ struct FreshProductsView: View {
                     GridItem(.flexible(), spacing: 12),
                     GridItem(.flexible(), spacing: 12)
                 ], spacing: 14) {
-                    ForEach(SampleData.freshProducts) { product in
+                    ForEach(products) { product in
                         NavigationLink {
                             ItemDetailView(product: product)
                         } label: {

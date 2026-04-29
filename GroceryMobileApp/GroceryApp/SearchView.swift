@@ -1,20 +1,14 @@
 import SwiftUI
 
 struct SearchView: View {
+    @Environment(ProductStore.self) private var productStore
     @State private var searchText = ""
+    @State private var results: [GroceryProduct] = []
+    @State private var isSearchActive = false
+    @State private var searchTask: Task<Void, Never>?
 
-    private var isSearching: Bool {
+    private var hasQuery: Bool {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    private var filteredProducts: [GroceryProduct] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return [] }
-        return SampleData.allProducts.filter {
-            $0.name.localizedCaseInsensitiveContains(query) ||
-            $0.category.localizedCaseInsensitiveContains(query) ||
-            $0.location.localizedCaseInsensitiveContains(query)
-        }
     }
 
     var body: some View {
@@ -26,9 +20,10 @@ struct SearchView: View {
                         .foregroundStyle(GroceryTheme.muted)
                     TextField("Search by name, category...", text: $searchText)
                         .font(.subheadline)
-                    if isSearching {
+                    if hasQuery {
                         Button {
                             searchText = ""
+                            results = []
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundStyle(GroceryTheme.muted)
@@ -40,11 +35,9 @@ struct SearchView: View {
                 .background(Color(.systemGray6))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-                if isSearching {
-                    // Search results
-                    searchResults
+                if hasQuery {
+                    searchResultsView
                 } else {
-                    // Default content when not searching
                     defaultContent
                 }
             }
@@ -54,17 +47,30 @@ struct SearchView: View {
         .background(GroceryTheme.background)
         .navigationTitle("Search")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: searchText) { _, newValue in
+            searchTask?.cancel()
+            searchTask = Task {
+                try? await Task.sleep(for: .milliseconds(300))
+                guard !Task.isCancelled else { return }
+                let query = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                if query.isEmpty {
+                    results = []
+                } else {
+                    results = await productStore.search(query: query)
+                }
+            }
+        }
     }
 
     // MARK: - Search Results
 
-    private var searchResults: some View {
+    private var searchResultsView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("\(filteredProducts.count) result\(filteredProducts.count == 1 ? "" : "s")")
+            Text("\(results.count) result\(results.count == 1 ? "" : "s")")
                 .font(.system(.caption, design: .rounded, weight: .medium))
                 .foregroundStyle(GroceryTheme.muted)
 
-            if filteredProducts.isEmpty {
+            if results.isEmpty {
                 ContentUnavailableView(
                     "No Results",
                     systemImage: "magnifyingglass",
@@ -76,7 +82,7 @@ struct SearchView: View {
                     GridItem(.flexible(), spacing: 12),
                     GridItem(.flexible(), spacing: 12)
                 ], spacing: 14) {
-                    ForEach(filteredProducts) { product in
+                    ForEach(results) { product in
                         NavigationLink {
                             ItemDetailView(product: product)
                         } label: {
@@ -92,13 +98,15 @@ struct SearchView: View {
     // MARK: - Default Content
 
     private var defaultContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Quick search suggestions
+        let popularProducts = productStore.allProducts.isEmpty ? SampleData.allProducts : productStore.allProducts
+        let categories = productStore.categories.isEmpty ? SampleData.categories : productStore.categories
+
+        return VStack(alignment: .leading, spacing: 16) {
             Text("Popular Searches")
                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .foregroundStyle(GroceryTheme.title)
 
-            ForEach(SampleData.allProducts.prefix(6)) { product in
+            ForEach(Array(popularProducts.prefix(6))) { product in
                 Button {
                     searchText = product.name
                 } label: {
@@ -139,7 +147,6 @@ struct SearchView: View {
 
             Divider()
 
-            // Browse by category
             Text("Browse Categories")
                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .foregroundStyle(GroceryTheme.title)
@@ -149,7 +156,7 @@ struct SearchView: View {
                 GridItem(.flexible(), spacing: 12),
                 GridItem(.flexible(), spacing: 12)
             ], spacing: 12) {
-                ForEach(SampleData.categories) { cat in
+                ForEach(categories) { cat in
                     Button {
                         searchText = cat.name
                     } label: {

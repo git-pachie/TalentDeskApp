@@ -3,6 +3,7 @@ import PhotosUI
 
 struct OrderDetailView: View {
     @State private var order: OrderItem
+    @State private var orderDetail: OrderDTO?
     @State private var rating: Int = 0
     @State private var remarks: String = ""
     @State private var showingRatingSubmitted = false
@@ -10,22 +11,25 @@ struct OrderDetailView: View {
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var isReviewSubmitted = false
     @State private var lastRefreshDate = Date()
+    @State private var isLoading = false
 
     init(order: OrderItem) {
         self._order = State(initialValue: order)
     }
 
-    private var deliveryFee: Double { 5 }
-    private var platformFee: Double { 2 }
-    private var voucher: Double { order.status == .delivered ? -5 : 0 }
-    private var otherCharges: Double { 1 }
-    private var grandTotal: Double { order.total + deliveryFee + platformFee + voucher + otherCharges }
-
-    private let sampleProducts: [(emoji: String, name: String, qty: Int, price: Int, remarks: String)] = [
-        ("🍅", "Orange Tomatoes", 2, 12, "Ripe ones please"),
-        ("🥑", "Ripe Avocado", 1, 8, ""),
-        ("🍎", "Red Apples", 1, 10, "No bruised ones"),
-    ]
+    // Use API data for price breakdown when available
+    private var subtotal: Double {
+        orderDetail.map { NSDecimalNumber(decimal: $0.subTotal).doubleValue } ?? order.total
+    }
+    private var deliveryFee: Double {
+        orderDetail.map { NSDecimalNumber(decimal: $0.deliveryFee).doubleValue } ?? 0
+    }
+    private var discountAmount: Double {
+        orderDetail.map { NSDecimalNumber(decimal: $0.discountAmount).doubleValue } ?? 0
+    }
+    private var grandTotal: Double {
+        orderDetail.map { NSDecimalNumber(decimal: $0.totalAmount).doubleValue } ?? order.total
+    }
 
     var body: some View {
         ScrollView {
@@ -54,7 +58,13 @@ struct OrderDetailView: View {
                 Divider()
 
                 // Order remarks
-                if !order.orderRemarks.isEmpty {
+                if let notes = orderDetail?.notes, !notes.isEmpty {
+                    infoCard(title: "Order Remarks", icon: "text.bubble.fill") {
+                        Text(notes)
+                            .font(.system(.subheadline, design: .rounded))
+                            .foregroundStyle(GroceryTheme.title)
+                    }
+                } else if !order.orderRemarks.isEmpty {
                     infoCard(title: "Order Remarks", icon: "text.bubble.fill") {
                         Text(order.orderRemarks)
                             .font(.system(.subheadline, design: .rounded))
@@ -63,51 +73,10 @@ struct OrderDetailView: View {
                 }
 
                 // Delivery address
-                infoCard(title: "Delivery Address", icon: "mappin.circle.fill") {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Home")
-                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                            .foregroundStyle(GroceryTheme.title)
-                        Text("123 Main St, New York, NY 10001")
-                            .font(.system(.caption, design: .rounded))
-                            .foregroundStyle(GroceryTheme.muted)
-                    }
-                }
+                addressSection
 
                 // Payment method
-                infoCard(title: "Payment Method", icon: "creditcard.fill") {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 8) {
-                            Image(systemName: paymentIcon(for: order.paymentMethod))
-                                .foregroundStyle(GroceryTheme.primary)
-                            Text(order.paymentMethod)
-                                .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                                .foregroundStyle(GroceryTheme.title)
-                        }
-                        if !order.paymentDetail.isEmpty {
-                            Text(order.paymentDetail)
-                                .font(.system(.caption, design: .rounded))
-                                .foregroundStyle(GroceryTheme.muted)
-                        }
-                    }
-                }
-
-                // Delivered by
-                infoCard(title: "Delivered By", icon: "bicycle") {
-                    HStack(spacing: 10) {
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(GroceryTheme.primary)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("John Rider")
-                                .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                                .foregroundStyle(GroceryTheme.title)
-                            Text("GroceryExpress Partner")
-                                .font(.system(.caption2, design: .rounded))
-                                .foregroundStyle(GroceryTheme.muted)
-                        }
-                    }
-                }
+                paymentSection
 
                 // Price breakdown
                 priceBreakdown
@@ -121,7 +90,10 @@ struct OrderDetailView: View {
         }
         .background(GroceryTheme.background)
         .refreshable {
-            await refreshOrderStatus()
+            await loadOrderDetail()
+        }
+        .task {
+            await loadOrderDetail()
         }
         .navigationTitle("Order Details")
         .navigationBarTitleDisplayMode(.inline)
@@ -142,350 +114,58 @@ struct OrderDetailView: View {
         }
     }
 
+    // MARK: - Load Order Detail
+
+    @MainActor
+    private func loadOrderDetail() async {
+        guard APIClient.shared.isAuthenticated else {
+            print("⚠️ [OrderDetail] Not authenticated, skipping refresh")
+            return
+        }
+
+        let endpoint = "/api/orders/\(order.id.uuidString)"
+        print("🔄 [OrderDetail] Fetching: \(endpoint)")
+
+        do {
+            let dto: OrderDTO = try await APIClient.shared.get(endpoint)
+            print("🔄 [OrderDetail] API returned — status: \(dto.status), orderNumber: \(dto.orderNumber)")
+
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d, yyyy"
+            let statusEnum = OrderStatus.from(dto.status)
+
+            let updatedOrder = OrderItem(
+                id: dto.id,
+                orderNumber: dto.orderNumber,
+                date: formatter.string(from: dto.createdAt),
+                items: dto.items?.reduce(0) { $0 + $1.quantity } ?? order.items,
+                total: NSDecimalNumber(decimal: dto.totalAmount).doubleValue,
+                status: statusEnum,
+                orderRemarks: dto.notes ?? "",
+                paymentMethod: dto.payment?.method ?? order.paymentMethod,
+                paymentDetail: order.paymentDetail
+            )
+
+            // Force UI update by setting on main actor outside animation
+            order = updatedOrder
+            orderDetail = dto
+            lastRefreshDate = Date()
+            print("✅ [OrderDetail] UI updated — status: \(order.status.rawValue)")
+        } catch {
+            print("❌ [OrderDetail] Failed to load: \(error)")
+        }
+    }
+
     // MARK: - Payment Icon Helper
 
     private func paymentIcon(for method: String) -> String {
-        switch method {
-        case "Apple Pay": return "apple.logo"
-        case "GCash": return "g.circle.fill"
-        case "Debit Card": return "creditcard"
-        case "Cash on Delivery": return "banknote.fill"
+        switch method.lowercased() {
+        case "applepay", "apple pay": return "apple.logo"
+        case "gcash": return "g.circle.fill"
+        case "card", "debit card": return "creditcard"
+        case "cashondelivery", "cash on delivery": return "banknote.fill"
         default: return "creditcard.fill"
         }
-    }
-
-    // MARK: - Refresh Order Status
-
-    private func refreshOrderStatus() async {
-        // Simulate network delay
-        try? await Task.sleep(for: .seconds(1))
-
-        lastRefreshDate = Date()
-
-        // Simulate status progression
-        withAnimation(.easeInOut) {
-            switch order.status {
-            case .processing:
-                order = OrderItem(
-                    orderNumber: order.orderNumber,
-                    date: order.date,
-                    items: order.items,
-                    total: order.total,
-                    status: .shipped,
-                    orderRemarks: order.orderRemarks,
-                    paymentMethod: order.paymentMethod,
-                    paymentDetail: order.paymentDetail
-                )
-            case .shipped:
-                order = OrderItem(
-                    orderNumber: order.orderNumber,
-                    date: order.date,
-                    items: order.items,
-                    total: order.total,
-                    status: .delivered,
-                    orderRemarks: order.orderRemarks,
-                    paymentMethod: order.paymentMethod,
-                    paymentDetail: order.paymentDetail
-                )
-            default:
-                break
-            }
-        }
-    }
-
-    // MARK: - Export Functions
-
-    private func generatePDF() -> URL? {
-        let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 612, height: 792))
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Order_\(order.orderNumber).pdf")
-
-        do {
-            try renderer.writePDF(to: url) { context in
-                context.beginPage()
-                let page = context.cgContext
-
-                // Title
-                let titleAttrs: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: 24, weight: .bold),
-                    .foregroundColor: UIColor.label
-                ]
-                "Order Details".draw(at: CGPoint(x: 40, y: 40), withAttributes: titleAttrs)
-
-                // Order info
-                let bodyFont = UIFont.systemFont(ofSize: 14)
-                let boldFont = UIFont.systemFont(ofSize: 14, weight: .semibold)
-                let labelColor = UIColor.secondaryLabel
-                let valueColor = UIColor.label
-
-                var y: CGFloat = 80
-
-                func drawRow(_ label: String, _ value: String) {
-                    label.draw(at: CGPoint(x: 40, y: y), withAttributes: [.font: bodyFont, .foregroundColor: labelColor])
-                    value.draw(at: CGPoint(x: 250, y: y), withAttributes: [.font: boldFont, .foregroundColor: valueColor])
-                    y += 24
-                }
-
-                drawRow("Order Number:", order.orderNumber)
-                drawRow("Date:", order.date)
-                drawRow("Status:", order.status.rawValue)
-                drawRow("Items:", "\(order.items) items")
-
-                y += 10
-                // Divider line
-                page.setStrokeColor(UIColor.separator.cgColor)
-                page.move(to: CGPoint(x: 40, y: y))
-                page.addLine(to: CGPoint(x: 572, y: y))
-                page.strokePath()
-                y += 16
-
-                // Items
-                "Items Ordered".draw(at: CGPoint(x: 40, y: y), withAttributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.label])
-                y += 28
-
-                for item in sampleProducts {
-                    drawRow("\(item.emoji) \(item.name) x\(item.qty)", "$\(item.price * item.qty)")
-                }
-
-                y += 10
-                page.move(to: CGPoint(x: 40, y: y))
-                page.addLine(to: CGPoint(x: 572, y: y))
-                page.strokePath()
-                y += 16
-
-                // Price breakdown
-                "Payment Summary".draw(at: CGPoint(x: 40, y: y), withAttributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.label])
-                y += 28
-
-                drawRow("Subtotal:", "$\(Int(order.total))")
-                drawRow("Delivery Fee:", "$\(Int(deliveryFee))")
-                drawRow("Platform Fee:", "$\(Int(platformFee))")
-                if voucher != 0 {
-                    drawRow("Voucher:", "-$\(Int(abs(voucher)))")
-                }
-                drawRow("Other Charges:", "$\(Int(otherCharges))")
-
-                y += 6
-                page.move(to: CGPoint(x: 40, y: y))
-                page.addLine(to: CGPoint(x: 572, y: y))
-                page.strokePath()
-                y += 12
-
-                "Grand Total:".draw(at: CGPoint(x: 40, y: y), withAttributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.label])
-                "$\(Int(grandTotal))".draw(at: CGPoint(x: 250, y: y), withAttributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor(red: 0.329, green: 0.690, blue: 0.314, alpha: 1)])
-                y += 30
-
-                // Delivery & Payment Details
-                y += 10
-                page.move(to: CGPoint(x: 40, y: y))
-                page.addLine(to: CGPoint(x: 572, y: y))
-                page.strokePath()
-                y += 16
-
-                "Delivery & Payment Details".draw(at: CGPoint(x: 40, y: y), withAttributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.label])
-                y += 28
-
-                drawRow("Delivery Address:", "123 Main St, New York, NY 10001")
-                drawRow("Contact Number:", "+1 (555) 123-4567")
-                drawRow("Delivery Instructions:", "Leave at the front door")
-
-                y += 10
-                drawRow("Payment Method:", order.paymentMethod)
-                if !order.paymentDetail.isEmpty {
-                    drawRow("Payment Details:", order.paymentDetail)
-                }
-                drawRow("Delivered By:", "John Rider")
-
-                if !order.orderRemarks.isEmpty {
-                    y += 10
-                    drawRow("Order Remarks:", order.orderRemarks)
-                }
-
-                // Footer
-                y += 20
-                let footerAttrs: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: 10),
-                    .foregroundColor: UIColor.tertiaryLabel
-                ]
-                "Generated by GroceryApp".draw(at: CGPoint(x: 40, y: y), withAttributes: footerAttrs)
-            }
-            return url
-        } catch {
-            print("PDF generation failed: \(error)")
-            return nil
-        }
-    }
-
-    private func exportAndShare() {
-        guard let url = generatePDF() else { return }
-        let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let rootVC = windowScene.windows.first?.rootViewController {
-            var presenter = rootVC
-            while let presented = presenter.presentedViewController {
-                presenter = presented
-            }
-            activityVC.popoverPresentationController?.sourceView = presenter.view
-            presenter.present(activityVC, animated: true)
-        }
-    }
-
-    // MARK: - Rating Section
-
-    private var ratingSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Label(isReviewSubmitted ? "Your Review" : "Rate this Order", systemImage: "star.fill")
-                .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                .foregroundStyle(GroceryTheme.primary)
-
-            // Stars
-            HStack(spacing: 8) {
-                ForEach(1...5, id: \.self) { star in
-                    if isReviewSubmitted {
-                        Image(systemName: star <= rating ? "star.fill" : "star")
-                            .font(.title2)
-                            .foregroundStyle(star <= rating ? .orange : Color(.systemGray4))
-                    } else {
-                        Button {
-                            withAnimation(.bouncy) { rating = star }
-                        } label: {
-                            Image(systemName: star <= rating ? "star.fill" : "star")
-                                .font(.title2)
-                                .foregroundStyle(star <= rating ? .orange : Color(.systemGray4))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-
-            if isReviewSubmitted {
-                // Display submitted review
-                if !remarks.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Remarks")
-                            .font(.system(.caption, design: .rounded, weight: .medium))
-                            .foregroundStyle(GroceryTheme.muted)
-                        Text(remarks)
-                            .font(.system(.subheadline, design: .rounded))
-                            .foregroundStyle(GroceryTheme.title)
-                    }
-                }
-
-                if !reviewPhotos.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(Array(reviewPhotos.enumerated()), id: \.offset) { _, data in
-                                if let uiImage = UIImage(data: data) {
-                                    Image(uiImage: uiImage)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 80, height: 80)
-                                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Text("Review submitted")
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(GroceryTheme.primary)
-            } else {
-                // Edit mode
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Remarks (optional)")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(GroceryTheme.muted)
-                    TextField("How was your experience?", text: $remarks, axis: .vertical)
-                        .font(.system(.subheadline, design: .rounded))
-                        .lineLimit(3...5)
-                        .padding(12)
-                        .background(Color(.systemGray6))
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-
-                // Photos
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Add Photos (optional)")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(GroceryTheme.muted)
-
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(Array(reviewPhotos.enumerated()), id: \.offset) { index, data in
-                                if let uiImage = UIImage(data: data) {
-                                    ZStack(alignment: .topTrailing) {
-                                        Image(uiImage: uiImage)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 70, height: 70)
-                                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-                                        Button {
-                                            reviewPhotos.remove(at: index)
-                                        } label: {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .font(.caption)
-                                                .foregroundStyle(.white)
-                                                .background(Circle().fill(.black.opacity(0.5)))
-                                        }
-                                        .offset(x: 4, y: -4)
-                                    }
-                                }
-                            }
-
-                            PhotosPicker(selection: $selectedPhotoItems, maxSelectionCount: 5, matching: .images) {
-                                VStack(spacing: 4) {
-                                    Image(systemName: "camera.fill")
-                                        .font(.title3)
-                                    Text("Add")
-                                        .font(.system(.caption2, design: .rounded))
-                                }
-                                .foregroundStyle(GroceryTheme.primary)
-                                .frame(width: 70, height: 70)
-                                .background(GroceryTheme.primaryLight)
-                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(GroceryTheme.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [5]))
-                                )
-                            }
-                        }
-                    }
-                }
-                .onChange(of: selectedPhotoItems) { _, newItems in
-                    Task {
-                        for item in newItems {
-                            if let data = try? await item.loadTransferable(type: Data.self) {
-                                reviewPhotos.append(data)
-                            }
-                        }
-                        selectedPhotoItems = []
-                    }
-                }
-
-                // Submit button
-                Button {
-                    isReviewSubmitted = true
-                    showingRatingSubmitted = true
-                } label: {
-                    HStack {
-                        Image(systemName: "paperplane.fill")
-                        Text("Submit Review")
-                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(rating > 0 ? GroceryTheme.primary : Color(.systemGray4))
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .disabled(rating == 0)
-            }
-        }
-        .padding(14)
-        .background(GroceryTheme.card)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .shadow(color: .black.opacity(0.04), radius: 4, y: 2)
     }
 
     // MARK: - Order Header
@@ -524,7 +204,7 @@ struct OrderDetailView: View {
                 .foregroundStyle(GroceryTheme.primary)
 
             HStack(spacing: 0) {
-                ForEach(["Placed", "Confirmed", "Shipped", "Delivered"], id: \.self) { step in
+                ForEach(["Pending", "Paid", "Processing", "Delivered"], id: \.self) { step in
                     let isActive = stepIsActive(step)
                     VStack(spacing: 4) {
                         Circle()
@@ -545,13 +225,14 @@ struct OrderDetailView: View {
     }
 
     private func stepIsActive(_ step: String) -> Bool {
-        let steps = ["Placed", "Confirmed", "Shipped", "Delivered"]
+        let steps = ["Pending", "Paid", "Processing", "Delivered"]
         let currentIndex: Int
         switch order.status {
-        case .processing: currentIndex = 1
-        case .shipped: currentIndex = 2
+        case .pending: currentIndex = 0
+        case .paid: currentIndex = 1
+        case .processing: currentIndex = 2
         case .delivered: currentIndex = 3
-        case .cancelled: currentIndex = 0
+        case .cancelled: currentIndex = -1
         }
         guard let stepIndex = steps.firstIndex(of: step) else { return false }
         return stepIndex <= currentIndex
@@ -565,45 +246,82 @@ struct OrderDetailView: View {
                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .foregroundStyle(GroceryTheme.title)
 
-            ForEach(sampleProducts, id: \.name) { item in
-                VStack(alignment: .leading, spacing: 4) {
+            if let items = orderDetail?.items, !items.isEmpty {
+                ForEach(Array(items.enumerated()), id: \.element.productId) { index, item in
                     HStack(spacing: 10) {
-                        Text(item.emoji)
+                        Text("🛒")
                             .font(.title2)
                             .frame(width: 36)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(item.name)
+                            Text(item.productName)
                                 .font(.system(.caption, design: .rounded, weight: .medium))
                                 .foregroundStyle(GroceryTheme.title)
-                            Text("x\(item.qty)")
+                            Text("x\(item.quantity) @ ₱\(NSDecimalNumber(decimal: item.unitPrice).intValue)")
                                 .font(.system(.caption2, design: .rounded))
                                 .foregroundStyle(GroceryTheme.muted)
                         }
                         Spacer()
-                        Text("$\(item.price * item.qty)")
+                        Text("₱\(NSDecimalNumber(decimal: item.totalPrice).intValue)")
                             .font(.system(.subheadline, design: .rounded, weight: .semibold))
                             .foregroundStyle(GroceryTheme.title)
                     }
-                    if !item.remarks.isEmpty {
-                        HStack(spacing: 4) {
-                            Image(systemName: "text.bubble.fill")
-                                .font(.system(size: 9))
-                            Text(item.remarks)
-                                .font(.system(.caption2, design: .rounded))
-                        }
-                        .foregroundStyle(GroceryTheme.primary)
-                        .padding(.leading, 46)
+                    if index < items.count - 1 {
+                        Divider()
                     }
                 }
-                if item.name != sampleProducts.last?.name {
-                    Divider()
-                }
+            } else {
+                Text("\(order.items) item(s)")
+                    .font(.system(.caption, design: .rounded))
+                    .foregroundStyle(GroceryTheme.muted)
             }
         }
         .padding(14)
         .background(GroceryTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: .black.opacity(0.04), radius: 4, y: 2)
+    }
+
+    // MARK: - Address Section
+
+    private var addressSection: some View {
+        infoCard(title: "Delivery Address", icon: "mappin.circle.fill") {
+            if let addr = orderDetail?.address {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(addr.label)
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                        .foregroundStyle(GroceryTheme.title)
+                    Text(addr.fullAddress)
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(GroceryTheme.muted)
+                }
+            } else {
+                Text("No address on file")
+                    .font(.system(.caption, design: .rounded))
+                    .foregroundStyle(GroceryTheme.muted)
+            }
+        }
+    }
+
+    // MARK: - Payment Section
+
+    private var paymentSection: some View {
+        infoCard(title: "Payment Method", icon: "creditcard.fill") {
+            VStack(alignment: .leading, spacing: 4) {
+                let method = orderDetail?.payment?.method ?? order.paymentMethod
+                HStack(spacing: 8) {
+                    Image(systemName: paymentIcon(for: method))
+                        .foregroundStyle(GroceryTheme.primary)
+                    Text(method)
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                        .foregroundStyle(GroceryTheme.title)
+                }
+                if let paymentStatus = orderDetail?.payment?.status {
+                    Text("Status: \(paymentStatus)")
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(GroceryTheme.muted)
+                }
+            }
+        }
     }
 
     // MARK: - Info Card
@@ -631,23 +349,20 @@ struct OrderDetailView: View {
                 .foregroundStyle(GroceryTheme.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            priceRow("Subtotal", value: "$\(Int(order.total))")
-            priceRow("Delivery Fee", value: "$\(Int(deliveryFee))")
-            priceRow("Platform Fee", value: "$\(Int(platformFee))")
+            priceRow("Subtotal", value: "₱\(Int(subtotal))")
+            priceRow("Delivery Fee", value: "₱\(Int(deliveryFee))")
 
-            if voucher != 0 {
+            if discountAmount > 0 {
                 HStack {
-                    Text("Voucher")
+                    Text("Discount")
                         .font(.system(.caption, design: .rounded))
                         .foregroundStyle(GroceryTheme.subtitle)
                     Spacer()
-                    Text("-$\(Int(abs(voucher)))")
+                    Text("-₱\(Int(discountAmount))")
                         .font(.system(.caption, design: .rounded, weight: .medium))
                         .foregroundStyle(GroceryTheme.primary)
                 }
             }
-
-            priceRow("Other Charges", value: "$\(Int(otherCharges))")
 
             Divider()
 
@@ -656,7 +371,7 @@ struct OrderDetailView: View {
                     .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(GroceryTheme.title)
                 Spacer()
-                Text("$\(Int(grandTotal))")
+                Text("₱\(Int(grandTotal))")
                     .font(.system(.title3, design: .rounded, weight: .bold))
                     .foregroundStyle(GroceryTheme.primary)
             }
@@ -678,10 +393,256 @@ struct OrderDetailView: View {
                 .foregroundStyle(GroceryTheme.title)
         }
     }
+
+    // MARK: - Rating Section
+
+    private var ratingSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Label(isReviewSubmitted ? "Your Review" : "Rate this Order", systemImage: "star.fill")
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                .foregroundStyle(GroceryTheme.primary)
+
+            HStack(spacing: 8) {
+                ForEach(1...5, id: \.self) { star in
+                    if isReviewSubmitted {
+                        Image(systemName: star <= rating ? "star.fill" : "star")
+                            .font(.title2)
+                            .foregroundStyle(star <= rating ? .orange : Color(.systemGray4))
+                    } else {
+                        Button {
+                            withAnimation(.bouncy) { rating = star }
+                        } label: {
+                            Image(systemName: star <= rating ? "star.fill" : "star")
+                                .font(.title2)
+                                .foregroundStyle(star <= rating ? .orange : Color(.systemGray4))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+
+            if isReviewSubmitted {
+                if !remarks.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Remarks")
+                            .font(.system(.caption, design: .rounded, weight: .medium))
+                            .foregroundStyle(GroceryTheme.muted)
+                        Text(remarks)
+                            .font(.system(.subheadline, design: .rounded))
+                            .foregroundStyle(GroceryTheme.title)
+                    }
+                }
+                Text("Review submitted")
+                    .font(.system(.caption, design: .rounded))
+                    .foregroundStyle(GroceryTheme.primary)
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Remarks (optional)")
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(GroceryTheme.muted)
+                    TextField("How was your experience?", text: $remarks, axis: .vertical)
+                        .font(.system(.subheadline, design: .rounded))
+                        .lineLimit(3...5)
+                        .padding(12)
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Add Photos (optional)")
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(GroceryTheme.muted)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(Array(reviewPhotos.enumerated()), id: \.offset) { index, data in
+                                if let uiImage = UIImage(data: data) {
+                                    ZStack(alignment: .topTrailing) {
+                                        Image(uiImage: uiImage)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 70, height: 70)
+                                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                        Button {
+                                            reviewPhotos.remove(at: index)
+                                        } label: {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .font(.caption)
+                                                .foregroundStyle(.white)
+                                                .background(Circle().fill(.black.opacity(0.5)))
+                                        }
+                                        .offset(x: 4, y: -4)
+                                    }
+                                }
+                            }
+                            PhotosPicker(selection: $selectedPhotoItems, maxSelectionCount: 5, matching: .images) {
+                                VStack(spacing: 4) {
+                                    Image(systemName: "camera.fill")
+                                        .font(.title3)
+                                    Text("Add")
+                                        .font(.system(.caption2, design: .rounded))
+                                }
+                                .foregroundStyle(GroceryTheme.primary)
+                                .frame(width: 70, height: 70)
+                                .background(GroceryTheme.primaryLight)
+                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .stroke(GroceryTheme.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [5]))
+                                )
+                            }
+                        }
+                    }
+                }
+                .onChange(of: selectedPhotoItems) { _, newItems in
+                    Task {
+                        for item in newItems {
+                            if let data = try? await item.loadTransferable(type: Data.self) {
+                                reviewPhotos.append(data)
+                            }
+                        }
+                        selectedPhotoItems = []
+                    }
+                }
+
+                Button {
+                    Task { await submitReview() }
+                } label: {
+                    HStack {
+                        Image(systemName: "paperplane.fill")
+                        Text("Submit Review")
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(rating > 0 ? GroceryTheme.primary : Color(.systemGray4))
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .disabled(rating == 0)
+            }
+        }
+        .padding(14)
+        .background(GroceryTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: .black.opacity(0.04), radius: 4, y: 2)
+    }
+
+    private func submitReview() async {
+        guard let firstItem = orderDetail?.items?.first else {
+            isReviewSubmitted = true
+            showingRatingSubmitted = true
+            return
+        }
+
+        let request = CreateReviewRequest(
+            productId: firstItem.productId,
+            orderId: order.id,
+            rating: rating,
+            comment: remarks.isEmpty ? nil : remarks
+        )
+
+        do {
+            let _: ReviewDTO = try await APIClient.shared.post("/api/reviews", body: request)
+            print("✅ [Review] Submitted successfully")
+        } catch {
+            print("⚠️ [Review] Failed to submit: \(error)")
+        }
+
+        isReviewSubmitted = true
+        showingRatingSubmitted = true
+    }
+
+    // MARK: - Export
+
+    private func exportAndShare() {
+        let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 612, height: 792))
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Order_\(order.orderNumber).pdf")
+
+        do {
+            try renderer.writePDF(to: url) { context in
+                context.beginPage()
+                let page = context.cgContext
+                let titleAttrs: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.systemFont(ofSize: 24, weight: .bold),
+                    .foregroundColor: UIColor.label
+                ]
+                "Order Details".draw(at: CGPoint(x: 40, y: 40), withAttributes: titleAttrs)
+
+                let bodyFont = UIFont.systemFont(ofSize: 14)
+                let boldFont = UIFont.systemFont(ofSize: 14, weight: .semibold)
+                let labelColor = UIColor.secondaryLabel
+                let valueColor = UIColor.label
+                var y: CGFloat = 80
+
+                func drawRow(_ label: String, _ value: String) {
+                    label.draw(at: CGPoint(x: 40, y: y), withAttributes: [.font: bodyFont, .foregroundColor: labelColor])
+                    value.draw(at: CGPoint(x: 250, y: y), withAttributes: [.font: boldFont, .foregroundColor: valueColor])
+                    y += 24
+                }
+
+                drawRow("Order Number:", order.orderNumber)
+                drawRow("Date:", order.date)
+                drawRow("Status:", order.status.rawValue)
+
+                y += 10
+                page.setStrokeColor(UIColor.separator.cgColor)
+                page.move(to: CGPoint(x: 40, y: y))
+                page.addLine(to: CGPoint(x: 572, y: y))
+                page.strokePath()
+                y += 16
+
+                "Items Ordered".draw(at: CGPoint(x: 40, y: y), withAttributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.label])
+                y += 28
+
+                if let items = orderDetail?.items {
+                    for item in items {
+                        drawRow("\(item.productName) x\(item.quantity)", "₱\(NSDecimalNumber(decimal: item.totalPrice).intValue)")
+                    }
+                }
+
+                y += 10
+                page.move(to: CGPoint(x: 40, y: y))
+                page.addLine(to: CGPoint(x: 572, y: y))
+                page.strokePath()
+                y += 16
+
+                "Payment Summary".draw(at: CGPoint(x: 40, y: y), withAttributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.label])
+                y += 28
+
+                drawRow("Subtotal:", "₱\(Int(subtotal))")
+                drawRow("Delivery Fee:", "₱\(Int(deliveryFee))")
+                if discountAmount > 0 { drawRow("Discount:", "-₱\(Int(discountAmount))") }
+                drawRow("Grand Total:", "₱\(Int(grandTotal))")
+
+                y += 16
+                if let addr = orderDetail?.address {
+                    drawRow("Delivery:", "\(addr.label) — \(addr.fullAddress)")
+                }
+                drawRow("Payment:", orderDetail?.payment?.method ?? order.paymentMethod)
+
+                y += 20
+                "Generated by GroceryApp".draw(at: CGPoint(x: 40, y: y), withAttributes: [
+                    .font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.tertiaryLabel
+                ])
+            }
+
+            let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let rootVC = windowScene.windows.first?.rootViewController {
+                var presenter = rootVC
+                while let presented = presenter.presentedViewController { presenter = presented }
+                activityVC.popoverPresentationController?.sourceView = presenter.view
+                presenter.present(activityVC, animated: true)
+            }
+        } catch {
+            print("PDF generation failed: \(error)")
+        }
+    }
 }
 
 #Preview {
     NavigationStack {
-        OrderDetailView(order: OrderItem(orderNumber: "#GR-1042", date: "Apr 28, 2026", items: 3, total: 45, status: .shipped))
+        OrderDetailView(order: OrderItem(orderNumber: "#GR-1042", date: "Apr 28, 2026", items: 3, total: 45, status: .processing))
     }
 }

@@ -60,7 +60,7 @@ public class PaymentService : IPaymentService
             payment.Status = PaymentStatus.Paid;
             payment.ExternalTransactionId = result.ExternalTransactionId;
             payment.PaidAt = DateTime.UtcNow;
-            order.Status = OrderStatus.Paid;
+            order.Status = OrderStatus.Processing;
             order.UpdatedAt = DateTime.UtcNow;
         }
         else if (!string.IsNullOrEmpty(result.RedirectUrl))

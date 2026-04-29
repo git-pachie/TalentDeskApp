@@ -41,6 +41,14 @@ public class OrdersController : ControllerBase
         return Ok(orders);
     }
 
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllOrders([FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    {
+        var orders = await _orderService.GetAllOrdersAsync(page, pageSize);
+        return Ok(orders);
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {

@@ -2,7 +2,7 @@ import SwiftUI
 import MapKit
 
 struct AddressItem: Identifiable {
-    let id = UUID()
+    let id: UUID
     var label: String
     var address: String
     var isDefault: Bool
@@ -11,19 +11,27 @@ struct AddressItem: Identifiable {
     var latitude: Double
     var longitude: Double
 
+    init(id: UUID = UUID(), label: String, address: String, isDefault: Bool, deliveryInstructions: String, contactNumber: String, latitude: Double, longitude: Double) {
+        self.id = id
+        self.label = label
+        self.address = address
+        self.isDefault = isDefault
+        self.deliveryInstructions = deliveryInstructions
+        self.contactNumber = contactNumber
+        self.latitude = latitude
+        self.longitude = longitude
+    }
+
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 }
 
 struct AddressListView: View {
-    @State private var addresses: [AddressItem] = [
-        AddressItem(label: "Home", address: "123 Main St, New York, NY 10001", isDefault: true, deliveryInstructions: "Leave at the front door", contactNumber: "+1 (555) 123-4567", latitude: 40.7128, longitude: -74.0060),
-        AddressItem(label: "Office", address: "456 Park Ave, Manhattan, NY 10022", isDefault: false, deliveryInstructions: "Ask for reception at lobby", contactNumber: "+1 (555) 987-6543", latitude: 40.7648, longitude: -73.9724),
-        AddressItem(label: "Mom's", address: "789 Oak Dr, Brooklyn, NY 11201", isDefault: false, deliveryInstructions: "Ring doorbell twice", contactNumber: "+1 (555) 456-7890", latitude: 40.6892, longitude: -73.9857),
-    ]
+    @State private var addresses: [AddressItem] = []
     @State private var editingAddress: AddressItem?
     @State private var showingAddSheet = false
+    @State private var isLoading = false
 
     var body: some View {
         ScrollView {
@@ -125,7 +133,41 @@ struct AddressListView: View {
                     for i in addresses.indices { addresses[i].isDefault = false }
                 }
                 addresses.append(newAddress)
+                Task { await saveAddressToServer(newAddress) }
             }
+        }
+        .task { await loadAddresses() }
+        .refreshable { await loadAddresses() }
+    }
+
+    private func loadAddresses() async {
+        guard APIClient.shared.isAuthenticated else { return }
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let dtos: [AddressDTO] = try await APIClient.shared.get("/api/addresses")
+            addresses = dtos.map(\.asAddressItem)
+        } catch {
+            print("⚠️ Failed to load addresses: \(error)")
+        }
+    }
+
+    private func saveAddressToServer(_ item: AddressItem) async {
+        guard APIClient.shared.isAuthenticated else { return }
+        let parts = item.address.components(separatedBy: ", ")
+        let request = CreateAddressRequest(
+            label: item.label,
+            street: parts.first ?? item.address,
+            city: parts.count > 1 ? parts[1] : "",
+            province: parts.count > 2 ? parts[2] : "",
+            zipCode: parts.count > 3 ? parts[3] : "",
+            country: nil,
+            isDefault: item.isDefault
+        )
+        do {
+            let _: AddressDTO = try await APIClient.shared.post("/api/addresses", body: request)
+        } catch {
+            print("⚠️ Failed to save address: \(error)")
         }
     }
 }

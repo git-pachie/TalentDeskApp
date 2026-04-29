@@ -17,7 +17,7 @@ public class OrdersController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var orders = await _apiClient.GetAsync<List<OrderModel>>("/api/orders");
+        var orders = await _apiClient.GetAsync<List<OrderModel>>("/api/orders/all");
         return View(orders ?? []);
     }
 

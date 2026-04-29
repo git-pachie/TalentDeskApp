@@ -1,19 +1,19 @@
 import SwiftUI
 
 struct HomeView: View {
+    @Environment(ProductStore.self) private var productStore
     @State private var showingAddressPicker = false
     @State private var selectedAddressIndex = 0
     @State private var refreshID = UUID()
-
-    private let addresses: [(label: String, address: String, contact: String)] = [
+    @State private var addresses: [(label: String, address: String, contact: String)] = [
         ("Home", "123 Main St, New York, NY 10001", "+1 (555) 123-4567"),
-        ("Office", "456 Park Ave, Manhattan, NY 10022", "+1 (555) 987-6543"),
-        ("Mom's", "789 Oak Dr, Brooklyn, NY 11201", "+1 (555) 456-7890"),
-        ("Gym", "321 Fitness Blvd, Queens, NY 11375", "+1 (555) 321-0987"),
     ]
 
     private var currentAddress: (label: String, address: String, contact: String) {
-        addresses[selectedAddressIndex]
+        guard selectedAddressIndex < addresses.count else {
+            return ("Home", "Set delivery address", "")
+        }
+        return addresses[selectedAddressIndex]
     }
 
     var body: some View {
@@ -40,7 +40,15 @@ struct HomeView: View {
                 .id(refreshID)
             }
             .refreshable {
+                await productStore.loadHome()
                 refreshID = UUID()
+            }
+            .task {
+                if productStore.categories.isEmpty {
+                    await productStore.loadHome()
+                }
+                // Load addresses from API
+                await loadAddresses()
             }
             .background(GroceryTheme.background)
         }
@@ -250,7 +258,7 @@ struct HomeView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHGrid(rows: rows, spacing: 14) {
-                    ForEach(SampleData.categories) { cat in
+                    ForEach(productStore.categories.isEmpty ? SampleData.categories : productStore.categories) { cat in
                         Button {
                             print("📂 Category tapped: \(cat.name)")
                         } label: {
@@ -295,7 +303,7 @@ struct HomeView: View {
                     GridItem(.flexible(), spacing: 12),
                     GridItem(.flexible(), spacing: 12)
                 ], spacing: 14) {
-                    ForEach(SampleData.deals) { product in
+                ForEach(productStore.deals.isEmpty ? SampleData.deals : productStore.deals) { product in
                         NavigationLink {
                             ItemDetailView(product: product)
                         } label: {
@@ -309,6 +317,23 @@ struct HomeView: View {
 }
 
 // MARK: - Deal Card
+
+extension HomeView {
+    func loadAddresses() async {
+        guard APIClient.shared.isAuthenticated else { return }
+        do {
+            let dtos: [AddressDTO] = try await APIClient.shared.get("/api/addresses")
+            if !dtos.isEmpty {
+                addresses = dtos.map { (label: $0.label, address: $0.fullAddress, contact: "") }
+                if let defaultIdx = dtos.firstIndex(where: { $0.isDefault }) {
+                    selectedAddressIndex = defaultIdx
+                }
+            }
+        } catch {
+            print("⚠️ Failed to load addresses: \(error)")
+        }
+    }
+}
 
 #Preview {
     HomeView()

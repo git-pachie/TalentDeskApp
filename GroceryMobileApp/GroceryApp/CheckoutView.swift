@@ -3,7 +3,6 @@ import PassKit
 
 struct CheckoutView: View {
     @Environment(CartStore.self) private var cartStore
-    @State private var selectedAddressIndex = 0
     @State private var paymentMethod = "Credit Card"
     @State private var showingConfirmation = false
     @State private var showingAddressPicker = false
@@ -19,6 +18,8 @@ struct CheckoutView: View {
     @State private var showingGCashPayment = false
     @State private var showingCardPayment = false
     @State private var cardPaymentDetail = ""
+    @State private var deliveryAddresses: [AddressDTO] = []
+    @State private var selectedAddressId: UUID?
 
     private let availableVouchers = [
         (code: "FRESH10", description: "10% off your order", discount: 0.10),
@@ -27,12 +28,16 @@ struct CheckoutView: View {
         (code: "FREESHIP", description: "Free delivery", discount: 5.0),
     ]
 
-    private let deliveryAddresses: [(label: String, address: String, instructions: String, contact: String)] = [
-        ("Home", "123 Main St, New York, NY 10001", "Leave at the front door. Do not ring the bell.", "+1 (555) 123-4567"),
-        ("Office", "456 Park Ave, Manhattan, NY 10022", "Ask for reception at lobby. Floor 12.", "+1 (555) 987-6543"),
-        ("Mom's", "789 Oak Dr, Brooklyn, NY 11201", "Ring doorbell twice. Gate code: 4521.", "+1 (555) 456-7890"),
-        ("Gym", "321 Fitness Blvd, Queens, NY 11375", "Leave with front desk staff.", "+1 (555) 321-0987"),
-    ]
+    private var currentAddress: (label: String, address: String, instructions: String, contact: String) {
+        if let idx = deliveryAddresses.firstIndex(where: { $0.id == selectedAddressId }) {
+            let a = deliveryAddresses[idx]
+            return (a.label, a.fullAddress, "", "")
+        }
+        if let first = deliveryAddresses.first {
+            return (first.label, first.fullAddress, "", "")
+        }
+        return ("No Address", "Add a delivery address", "", "")
+    }
 
     private let paymentMethods = [
         ("Credit Card", "creditcard.fill"),
@@ -68,10 +73,6 @@ struct CheckoutView: View {
         case "Cash on Delivery": return "Pay when delivered"
         default: return ""
         }
-    }
-
-    private var currentAddress: (label: String, address: String, instructions: String, contact: String) {
-        deliveryAddresses[selectedAddressIndex]
     }
 
     var body: some View {
@@ -123,9 +124,9 @@ struct CheckoutView: View {
                 .buttonStyle(.plain)
                 .sheet(isPresented: $showingAddressPicker) {
                     NavigationView {
-                        List(Array(deliveryAddresses.enumerated()), id: \.offset) { index, addr in
+                        List(deliveryAddresses) { addr in
                             Button {
-                                selectedAddressIndex = index
+                                selectedAddressId = addr.id
                                 showingAddressPicker = false
                             } label: {
                                 HStack(alignment: .top, spacing: 12) {
@@ -137,32 +138,14 @@ struct CheckoutView: View {
                                         Text(addr.label)
                                             .font(.system(.subheadline, design: .rounded, weight: .semibold))
                                             .foregroundStyle(GroceryTheme.title)
-                                        Text(addr.address)
+                                        Text(addr.fullAddress)
                                             .font(.system(.caption, design: .rounded))
                                             .foregroundStyle(GroceryTheme.subtitle)
-
-                                        HStack(spacing: 4) {
-                                            Image(systemName: "phone.fill")
-                                                .font(.caption2)
-                                            Text(addr.contact)
-                                                .font(.system(.caption2, design: .rounded))
-                                        }
-                                        .foregroundStyle(GroceryTheme.primary)
-
-                                        if !addr.instructions.isEmpty {
-                                            HStack(spacing: 4) {
-                                                Image(systemName: "text.bubble")
-                                                    .font(.caption2)
-                                                Text(addr.instructions)
-                                                    .font(.system(.caption2, design: .rounded))
-                                            }
-                                            .foregroundStyle(GroceryTheme.muted)
-                                        }
                                     }
 
                                     Spacer()
 
-                                    if index == selectedAddressIndex {
+                                    if addr.id == selectedAddressId {
                                         Image(systemName: "checkmark.circle.fill")
                                             .foregroundStyle(GroceryTheme.primary)
                                     }
@@ -379,11 +362,110 @@ struct CheckoutView: View {
                 OrderDetailView(order: order)
             }
         }
+        .task {
+            await loadAddresses()
+        }
+    }
+
+    // MARK: - Load Addresses
+
+    private func loadAddresses() async {
+        guard APIClient.shared.isAuthenticated else { return }
+        do {
+            let dtos: [AddressDTO] = try await APIClient.shared.get("/api/addresses")
+            deliveryAddresses = dtos
+            // Select the default address
+            if let defaultAddr = dtos.first(where: { $0.isDefault }) {
+                selectedAddressId = defaultAddr.id
+            } else if let first = dtos.first {
+                selectedAddressId = first.id
+            }
+        } catch {
+            print("⚠️ [Checkout] Failed to load addresses: \(error)")
+        }
     }
 
     // MARK: - Place Order
 
     private func placeOrder() {
+        Task {
+            await placeOrderOnServer()
+        }
+    }
+
+    private func paymentMethodToInt(_ method: String) -> Int {
+        switch method {
+        case "Credit Card", "Debit Card": return 0  // Card
+        case "Apple Pay": return 1
+        case "GCash": return 2
+        case "Cash on Delivery": return 4
+        default: return 0
+        }
+    }
+
+    private func placeOrderOnServer() async {
+        guard APIClient.shared.isAuthenticated else {
+            placeOrderLocally()
+            return
+        }
+
+        let request = CreateOrderRequest(
+            addressId: selectedAddressId,
+            voucherCode: appliedVoucher?.code,
+            notes: orderRemarks.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? nil
+                : orderRemarks.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+
+        do {
+            let orderDTO: OrderDTO = try await APIClient.shared.post("/api/orders", body: request)
+            print("✅ [Checkout] Order created: \(orderDTO.orderNumber)")
+
+            // Create payment record on the server
+            let checkoutReq = CheckoutPaymentRequest(
+                orderId: orderDTO.id,
+                method: paymentMethodToInt(paymentMethod),
+                stripeToken: nil,
+                returnUrl: nil
+            )
+            do {
+                let paymentResult: PaymentResultDTO = try await APIClient.shared.post("/api/payments/checkout", body: checkoutReq)
+                print("✅ [Checkout] Payment recorded — success: \(paymentResult.success), status: \(paymentResult.status)")
+            } catch {
+                print("⚠️ [Checkout] Payment record failed: \(error) — order still placed")
+            }
+
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d, yyyy"
+
+            placedOrder = OrderItem(
+                id: orderDTO.id,
+                orderNumber: orderDTO.orderNumber,
+                date: formatter.string(from: orderDTO.createdAt),
+                items: orderDTO.items?.reduce(0) { $0 + $1.quantity } ?? cartStore.totalItems,
+                total: NSDecimalNumber(decimal: orderDTO.totalAmount).doubleValue,
+                status: .processing,
+                orderRemarks: orderDTO.notes ?? "",
+                paymentMethod: paymentMethod,
+                paymentDetail: paymentDetailText
+            )
+
+            await MainActor.run {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
+                    orderPlaced = true
+                    successScale = 1
+                }
+                cartStore.clearCart()
+            }
+        } catch {
+            print("❌ [Checkout] API order failed: \(error), falling back to local")
+            await MainActor.run {
+                placeOrderLocally()
+            }
+        }
+    }
+
+    private func placeOrderLocally() {
         let orderNumber = "#GR-\(Int.random(in: 2000...9999))"
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, yyyy"

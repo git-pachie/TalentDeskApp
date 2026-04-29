@@ -6,5 +6,7 @@ extension View {
             .environment(FavoritesStore())
             .environment(CartStore())
             .environment(GrocerySettingsStore())
+            .environment(AuthStore())
+            .environment(ProductStore())
     }
 }

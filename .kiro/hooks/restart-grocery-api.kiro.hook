@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Restart Grocery API",
+  "description": "Automatically rebuilds and restarts the GroceryApp API when any C# file in the API, Application, Domain, or Infrastructure projects is saved.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "GroceryWeb/src/GroceryApp.API/**/*.cs",
+      "GroceryWeb/src/GroceryApp.Application/**/*.cs",
+      "GroceryWeb/src/GroceryApp.Domain/**/*.cs",
+      "GroceryWeb/src/GroceryApp.Infrastructure/**/*.cs"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A C# file in the GroceryWeb backend was changed. Stop any running API process, rebuild the solution with `dotnet build GroceryApp.sln` in the GroceryWeb directory, and if the build succeeds, start the API with `dotnet run --launch-profile https` in GroceryWeb/src/GroceryApp.API as a background process. Report the result briefly."
+  }
+}

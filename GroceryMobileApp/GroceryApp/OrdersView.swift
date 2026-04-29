@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct OrderItem: Identifiable {
-    let id = UUID()
+    let id: UUID
     let orderNumber: String
     let date: String
     let items: Int
@@ -11,7 +11,8 @@ struct OrderItem: Identifiable {
     let paymentMethod: String
     let paymentDetail: String
 
-    init(orderNumber: String, date: String, items: Int, total: Double, status: OrderStatus, orderRemarks: String = "", paymentMethod: String = "Credit Card", paymentDetail: String = "") {
+    init(id: UUID = UUID(), orderNumber: String, date: String, items: Int, total: Double, status: OrderStatus, orderRemarks: String = "", paymentMethod: String = "Credit Card", paymentDetail: String = "") {
+        self.id = id
         self.orderNumber = orderNumber
         self.date = date
         self.items = items
@@ -24,15 +25,17 @@ struct OrderItem: Identifiable {
 }
 
 enum OrderStatus: String {
+    case pending = "Pending"
+    case paid = "Paid"
     case processing = "Processing"
-    case shipped = "Shipped"
     case delivered = "Delivered"
     case cancelled = "Cancelled"
 
     var color: Color {
         switch self {
+        case .pending: .orange
+        case .paid: .blue
         case .processing: .orange
-        case .shipped: .blue
         case .delivered: GroceryTheme.primary
         case .cancelled: GroceryTheme.badge
         }
@@ -40,28 +43,32 @@ enum OrderStatus: String {
 
     var icon: String {
         switch self {
-        case .processing: "clock.fill"
-        case .shipped: "shippingbox.fill"
+        case .pending: "clock.fill"
+        case .paid: "creditcard.fill"
+        case .processing: "shippingbox.fill"
         case .delivered: "checkmark.circle.fill"
         case .cancelled: "xmark.circle.fill"
         }
+    }
+
+    /// Initialize from API status string
+    static func from(_ apiStatus: String) -> OrderStatus {
+        OrderStatus(rawValue: apiStatus) ?? .pending
     }
 }
 
 struct OrdersView: View {
     @State private var selectedTab = 0
+    @State private var orders: [OrderItem] = []
+    @State private var isLoading = false
 
-    private let currentOrders: [OrderItem] = [
-        OrderItem(orderNumber: "#GR-1042", date: "Apr 28, 2026", items: 3, total: 45, status: .processing),
-        OrderItem(orderNumber: "#GR-1039", date: "Apr 27, 2026", items: 5, total: 72, status: .shipped),
-    ]
+    private var currentOrders: [OrderItem] {
+        orders.filter { $0.status == .pending || $0.status == .paid || $0.status == .processing }
+    }
 
-    private let orderHistory: [OrderItem] = [
-        OrderItem(orderNumber: "#GR-1035", date: "Apr 22, 2026", items: 2, total: 28, status: .delivered),
-        OrderItem(orderNumber: "#GR-1028", date: "Apr 18, 2026", items: 4, total: 56, status: .delivered),
-        OrderItem(orderNumber: "#GR-1020", date: "Apr 12, 2026", items: 1, total: 18, status: .delivered),
-        OrderItem(orderNumber: "#GR-1015", date: "Apr 8, 2026", items: 6, total: 94, status: .cancelled),
-    ]
+    private var orderHistory: [OrderItem] {
+        orders.filter { $0.status == .delivered || $0.status == .cancelled }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -103,6 +110,20 @@ struct OrdersView: View {
         .background(GroceryTheme.background)
         .navigationTitle("Orders")
         .navigationBarTitleDisplayMode(.inline)
+        .task { await loadOrders() }
+        .refreshable { await loadOrders() }
+    }
+
+    private func loadOrders() async {
+        guard APIClient.shared.isAuthenticated else { return }
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let dtos: [OrderDTO] = try await APIClient.shared.get("/api/orders")
+            orders = dtos.map(\.asOrderItem)
+        } catch {
+            print("⚠️ Failed to load orders: \(error)")
+        }
     }
 
     private func orderCard(_ order: OrderItem) -> some View {

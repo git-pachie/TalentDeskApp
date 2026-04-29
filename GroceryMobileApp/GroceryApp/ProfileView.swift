@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ProfileView: View {
     @Environment(GrocerySettingsStore.self) private var settingsStore
+    @Environment(AuthStore.self) private var authStore
 
     var body: some View {
         NavigationStack {
@@ -10,9 +11,9 @@ struct ProfileView: View {
                     HStack(spacing: 14) {
                         GroceryIconView(size: 50)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Guest User")
+                            Text(authStore.currentUser?.fullName ?? "Guest User")
                                 .font(.system(.headline, design: .rounded))
-                            Text("guest@grocery.app")
+                            Text(authStore.currentUser?.email ?? "guest@grocery.app")
                                 .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(.secondary)
                         }
@@ -98,6 +99,15 @@ struct ProfileView: View {
                 Section("Settings") {
                     Label("Notifications", systemImage: "bell")
                     Label("Help & Support", systemImage: "questionmark.circle")
+                }
+
+                Section {
+                    Button {
+                        authStore.logout()
+                    } label: {
+                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                            .foregroundStyle(GroceryTheme.badge)
+                    }
                 }
             }
             .navigationTitle("Profile")

@@ -2,12 +2,16 @@ import SwiftUI
 
 struct FavoritesView: View {
     @Environment(FavoritesStore.self) private var favoritesStore
+    @Environment(ProductStore.self) private var productStore
     @State private var refreshID = UUID()
 
     var body: some View {
         NavigationStack {
             Group {
-                let favorites = SampleData.allProducts.filter { favoritesStore.isFavorite($0) }
+                let allProducts = productStore.allProducts.isEmpty ? SampleData.allProducts : productStore.allProducts
+                let favorites = favoritesStore.favoriteProducts.isEmpty
+                    ? allProducts.filter { favoritesStore.isFavorite($0) }
+                    : favoritesStore.favoriteProducts
 
                 if favorites.isEmpty {
                     ContentUnavailableView(

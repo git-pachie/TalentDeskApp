@@ -11,8 +11,8 @@ struct GroceryProduct: Identifiable, Hashable {
     let category: String
     let imageURL: String?
 
-    init(name: String, location: String, price: Double, originalPrice: Double?, discount: String?, emoji: String, category: String, imageURL: String? = nil) {
-        self.id = UUID()
+    init(id: UUID = UUID(), name: String, location: String, price: Double, originalPrice: Double?, discount: String?, emoji: String, category: String, imageURL: String? = nil) {
+        self.id = id
         self.name = name
         self.location = location
         self.price = price
@@ -25,9 +25,15 @@ struct GroceryProduct: Identifiable, Hashable {
 }
 
 struct GroceryCategory: Identifiable {
-    let id = UUID()
+    let id: UUID
     let name: String
     let emoji: String
+
+    init(id: UUID = UUID(), name: String, emoji: String) {
+        self.id = id
+        self.name = name
+        self.emoji = emoji
+    }
 }
 
 enum SampleData {

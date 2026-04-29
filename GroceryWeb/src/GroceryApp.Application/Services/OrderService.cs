@@ -98,6 +98,7 @@ public class OrderService : IOrderService
         var orders = await _orderRepo.Query()
             .Include(o => o.Items)
             .Include(o => o.Payment)
+            .Include(o => o.Address)
             .Where(o => o.UserId == userId)
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
@@ -110,6 +111,7 @@ public class OrderService : IOrderService
         var order = await _orderRepo.Query()
             .Include(o => o.Items)
             .Include(o => o.Payment)
+            .Include(o => o.Address)
             .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId);
 
         return order is null ? null : MapToDto(order);
@@ -120,6 +122,7 @@ public class OrderService : IOrderService
         var order = await _orderRepo.Query()
             .Include(o => o.Items)
             .Include(o => o.Payment)
+            .Include(o => o.Address)
             .FirstOrDefaultAsync(o => o.Id == orderId);
 
         if (order is null) return null;
@@ -143,6 +146,7 @@ public class OrderService : IOrderService
         var orders = await _orderRepo.Query()
             .Include(o => o.Items)
             .Include(o => o.Payment)
+            .Include(o => o.Address)
             .OrderByDescending(o => o.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -177,6 +181,14 @@ public class OrderService : IOrderService
                 Method = order.Payment.Method.ToString(),
                 Status = order.Payment.Status.ToString(),
                 PaidAt = order.Payment.PaidAt
+            },
+            Address = order.Address is null ? null : new OrderAddressDto
+            {
+                Label = order.Address.Label,
+                Street = order.Address.Street,
+                City = order.Address.City,
+                Province = order.Address.Province,
+                ZipCode = order.Address.ZipCode
             }
         };
     }

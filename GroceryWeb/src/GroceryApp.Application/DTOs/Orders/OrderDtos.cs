@@ -13,6 +13,7 @@ public class OrderDto
     public DateTime CreatedAt { get; set; }
     public IEnumerable<OrderItemDto> Items { get; set; } = [];
     public PaymentSummaryDto? Payment { get; set; }
+    public OrderAddressDto? Address { get; set; }
 }
 
 public class OrderItemDto
@@ -36,4 +37,13 @@ public class CreateOrderRequest
     public Guid? AddressId { get; set; }
     public string? VoucherCode { get; set; }
     public string? Notes { get; set; }
+}
+
+public class OrderAddressDto
+{
+    public string Label { get; set; } = string.Empty;
+    public string Street { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string Province { get; set; } = string.Empty;
+    public string ZipCode { get; set; } = string.Empty;
 }

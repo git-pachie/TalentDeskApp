@@ -8,6 +8,15 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient("GroceryApi", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5001");
+    client.Timeout = TimeSpan.FromSeconds(30);
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    return new HttpClientHandler
+    {
+        // Trust the dev certificate when calling the API locally
+        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+    };
 });
 
 builder.Services.AddHttpContextAccessor();
