@@ -1,0 +1,40 @@
+@model List<VoucherModel>
+@{
+    ViewData["Title"] = "Vouchers";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Vouchers</h2>
+    <a asp-action="Create" class="btn btn-primary">+ Add Voucher</a>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Code</th>
+            <th>Type</th>
+            <th>Value</th>
+            <th>Min Spend</th>
+            <th>Usage</th>
+            <th>Active</th>
+            <th>Expires</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null)
+        {
+            @foreach (var voucher in Model)
+            {
+                <tr>
+                    <td><code>@voucher.Code</code></td>
+                    <td>@voucher.Type</td>
+                    <td>@voucher.Value</td>
+                    <td>₱@voucher.MinimumSpend.ToString("N2")</td>
+                    <td>@voucher.UsedCount / @voucher.UsageLimit</td>
+                    <td>@(voucher.IsActive ? "✓" : "✗")</td>
+                    <td>@voucher.ExpiryDate.ToString("MMM dd, yyyy")</td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

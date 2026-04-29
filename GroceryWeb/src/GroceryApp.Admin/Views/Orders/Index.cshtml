@@ -1,0 +1,44 @@
+@model List<OrderModel>
+@{
+    ViewData["Title"] = "Orders";
+}
+
+<h2>Orders</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Order #</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null)
+        {
+            @foreach (var order in Model)
+            {
+                <tr>
+                    <td>@order.OrderNumber</td>
+                    <td>₱@order.TotalAmount.ToString("N2")</td>
+                    <td><span class="badge bg-secondary">@order.Status</span></td>
+                    <td>@order.CreatedAt.ToString("MMM dd, yyyy")</td>
+                    <td>
+                        <form asp-action="UpdateStatus" asp-route-id="@order.Id" method="post" class="d-inline">
+                            <select name="status" class="form-select form-select-sm d-inline w-auto">
+                                <option value="Pending">Pending</option>
+                                <option value="Paid">Paid</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Delivered">Delivered</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
