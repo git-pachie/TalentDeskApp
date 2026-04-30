@@ -5,13 +5,13 @@ struct HomeView: View {
     @State private var showingAddressPicker = false
     @State private var selectedAddressIndex = 0
     @State private var refreshID = UUID()
-    @State private var addresses: [(label: String, address: String, contact: String)] = [
-        ("Home", "123 Main St, New York, NY 10001", "+1 (555) 123-4567"),
+    @State private var addresses: [(label: String, address: String, contact: String, instructions: String)] = [
+        ("Home", "123 Main St, New York, NY 10001", "+1 (555) 123-4567", ""),
     ]
 
-    private var currentAddress: (label: String, address: String, contact: String) {
+    private var currentAddress: (label: String, address: String, contact: String, instructions: String) {
         guard selectedAddressIndex < addresses.count else {
-            return ("Home", "Set delivery address", "")
+            return ("Home", "Set delivery address", "", "")
         }
         return addresses[selectedAddressIndex]
     }
@@ -79,6 +79,15 @@ struct HomeView: View {
                         .font(.system(.caption2, design: .rounded))
                         .foregroundStyle(GroceryTheme.muted)
                         .lineLimit(1)
+                    if !currentAddress.contact.isEmpty {
+                        HStack(spacing: 3) {
+                            Image(systemName: "phone.fill")
+                                .font(.system(size: 8))
+                            Text(currentAddress.contact)
+                                .font(.system(.caption2, design: .rounded))
+                        }
+                        .foregroundStyle(GroceryTheme.primary)
+                    }
                 }
             }
             .buttonStyle(.plain)
@@ -101,13 +110,24 @@ struct HomeView: View {
                                     Text(addr.address)
                                         .font(.system(.caption, design: .rounded))
                                         .foregroundStyle(GroceryTheme.subtitle)
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "phone.fill")
-                                            .font(.caption2)
-                                        Text(addr.contact)
-                                            .font(.system(.caption2, design: .rounded))
+                                    if !addr.contact.isEmpty {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "phone.fill")
+                                                .font(.caption2)
+                                            Text(addr.contact)
+                                                .font(.system(.caption2, design: .rounded))
+                                        }
+                                        .foregroundStyle(GroceryTheme.primary)
                                     }
-                                    .foregroundStyle(GroceryTheme.primary)
+                                    if !addr.instructions.isEmpty {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "text.bubble.fill")
+                                                .font(.caption2)
+                                            Text(addr.instructions)
+                                                .font(.system(.caption2, design: .rounded))
+                                        }
+                                        .foregroundStyle(GroceryTheme.muted)
+                                    }
                                 }
 
                                 Spacer()
@@ -324,7 +344,7 @@ extension HomeView {
         do {
             let dtos: [AddressDTO] = try await APIClient.shared.get("/api/addresses")
             if !dtos.isEmpty {
-                addresses = dtos.map { (label: $0.label, address: $0.fullAddress, contact: "") }
+                addresses = dtos.map { (label: $0.label, address: $0.fullAddress, contact: $0.contactNumber ?? "", instructions: $0.deliveryInstructions ?? "") }
                 if let defaultIdx = dtos.firstIndex(where: { $0.isDefault }) {
                     selectedAddressIndex = defaultIdx
                 }
