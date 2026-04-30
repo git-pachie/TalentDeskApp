@@ -136,14 +136,6 @@ struct ItemDetailView: View {
                 .font(.system(.title2, design: .rounded, weight: .bold))
                 .foregroundStyle(GroceryTheme.title)
             HStack(spacing: 4) {
-                Image(systemName: "mappin.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(GroceryTheme.primary)
-                Text(product.location)
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(GroceryTheme.muted)
-            }
-            HStack(spacing: 4) {
                 Image(systemName: "tag.fill")
                     .font(.caption)
                     .foregroundStyle(GroceryTheme.primary)
