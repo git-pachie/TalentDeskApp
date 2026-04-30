@@ -96,6 +96,9 @@ struct ProductDTO: Decodable, Identifiable {
         let primaryImage = images.first(where: { $0.isPrimary }) ?? images.first
         let imageURL = primaryImage?.fullUrl ?? primaryImage?.imageUrl
 
+        // Debug: print image URL resolution
+        print("🖼️ [\(name)] images: \(images.count), primary: \(primaryImage?.imageUrl ?? "none"), fullUrl: \(primaryImage?.fullUrl ?? "nil"), resolved: \(imageURL ?? "nil")")
+
         return GroceryProduct(
             id: id,
             name: name,

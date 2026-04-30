@@ -257,7 +257,7 @@ public class ProductService : IProductService
             {
                 Id = i.Id,
                 ImageUrl = i.ImageUrl,
-                FullUrl = string.IsNullOrEmpty(_productImageBaseUrl) ? i.ImageUrl : $"{_productImageBaseUrl}/{i.ImageUrl}",
+                FullUrl = BuildFullImageUrl(i.ImageUrl),
                 IsPrimary = i.IsPrimary,
                 SortOrder = i.SortOrder
             }),
@@ -265,5 +265,30 @@ public class ProductService : IProductService
             ReviewCount = product.Reviews.Count,
             CreatedAt = product.CreatedAt
         };
+    }
+
+    /// Build the full image URL.
+    /// - If the stored value is already a full URL (http/https), return as-is.
+    /// - If it's a path starting with /, treat as relative to the API base.
+    /// - Otherwise it's a filename — prepend the configured product image base URL.
+    private string BuildFullImageUrl(string imageUrl)
+    {
+        if (string.IsNullOrEmpty(imageUrl)) return imageUrl;
+
+        // Already a full URL
+        if (imageUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            imageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return imageUrl;
+
+        // Has a configured base URL — treat imageUrl as filename
+        if (!string.IsNullOrEmpty(_productImageBaseUrl))
+        {
+            // If imageUrl starts with / it's a legacy path like /images/products/banana.png
+            // Extract just the filename
+            var fileName = imageUrl.Contains('/') ? imageUrl.Split('/').Last() : imageUrl;
+            return $"{_productImageBaseUrl}/{fileName}";
+        }
+
+        return imageUrl;
     }
 }
