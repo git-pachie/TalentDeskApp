@@ -1,0 +1,276 @@
+/*--------------------------------------------------------------
+# GroceryApp Admin Theme
+# Green-focused palette matching the login design
+# Overrides EasyAdmin default zinc/neutral with grocery green
+--------------------------------------------------------------*/
+
+:root {
+  /* Primary green palette */
+  --grocery-primary: #059669;
+  --grocery-primary-hover: #047857;
+  --grocery-primary-light: #d1fae5;
+  --grocery-primary-lighter: #ecfdf5;
+  --grocery-primary-dark: #065f46;
+  --grocery-primary-darker: #064e3b;
+
+  /* Override accent to green */
+  --accent-color: #059669;
+
+  /* Sidebar active state - green tint */
+  --sidebar-active-bg: #ecfdf5;
+  --sidebar-active-color: #059669;
+  --sidebar-hover-bg: #f0fdf4;
+}
+
+/* Dark mode green overrides */
+[data-theme=dark] {
+  --accent-color: #34d399;
+  --sidebar-active-bg: rgba(5, 150, 105, 0.12);
+  --sidebar-active-color: #6ee7b7;
+  --sidebar-hover-bg: rgba(5, 150, 105, 0.06);
+}
+
+/*--------------------------------------------------------------
+# Header
+--------------------------------------------------------------*/
+.header .header-logo span {
+  font-weight: 700;
+  color: var(--grocery-primary);
+}
+
+[data-theme=dark] .header .header-logo span {
+  color: #6ee7b7;
+}
+
+/*--------------------------------------------------------------
+# Sidebar Navigation - Green active states
+--------------------------------------------------------------*/
+.sidebar .nav-link.active {
+  background: var(--sidebar-active-bg) !important;
+  color: var(--grocery-primary) !important;
+  font-weight: 600;
+}
+
+.sidebar .nav-link.active i {
+  color: var(--grocery-primary) !important;
+}
+
+.sidebar .nav-link:hover {
+  background: var(--sidebar-hover-bg);
+  color: var(--grocery-primary);
+}
+
+.sidebar .nav-link:hover i {
+  color: var(--grocery-primary);
+}
+
+[data-theme=dark] .sidebar .nav-link.active {
+  color: #6ee7b7 !important;
+}
+
+[data-theme=dark] .sidebar .nav-link.active i {
+  color: #6ee7b7 !important;
+}
+
+[data-theme=dark] .sidebar .nav-link:hover {
+  color: #6ee7b7;
+}
+
+/*--------------------------------------------------------------
+# Sidebar Logo
+--------------------------------------------------------------*/
+.sidebar-logo-name {
+  color: var(--grocery-primary) !important;
+  font-weight: 700 !important;
+}
+
+[data-theme=dark] .sidebar-logo-name {
+  color: #6ee7b7 !important;
+}
+
+/*--------------------------------------------------------------
+# Buttons - Green primary
+--------------------------------------------------------------*/
+.btn-primary {
+  background-color: var(--grocery-primary) !important;
+  border-color: var(--grocery-primary) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--grocery-primary-hover) !important;
+  border-color: var(--grocery-primary-hover) !important;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+}
+
+.btn-primary:active {
+  background-color: var(--grocery-primary-dark) !important;
+  border-color: var(--grocery-primary-dark) !important;
+}
+
+.btn-outline-primary {
+  color: var(--grocery-primary) !important;
+  border-color: var(--grocery-primary) !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--grocery-primary) !important;
+  border-color: var(--grocery-primary) !important;
+  color: #fff !important;
+}
+
+/*--------------------------------------------------------------
+# Links
+--------------------------------------------------------------*/
+a {
+  color: var(--grocery-primary);
+}
+
+a:hover {
+  color: var(--grocery-primary-hover);
+}
+
+[data-theme=dark] a {
+  color: #6ee7b7;
+}
+
+[data-theme=dark] a:hover {
+  color: #a7f3d0;
+}
+
+/*--------------------------------------------------------------
+# Form Controls - Green focus
+--------------------------------------------------------------*/
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--grocery-primary) !important;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1) !important;
+}
+
+/*--------------------------------------------------------------
+# Badges - Green primary
+--------------------------------------------------------------*/
+.badge.bg-primary {
+  background-color: var(--grocery-primary) !important;
+}
+
+.bg-primary-subtle {
+  background-color: var(--grocery-primary-light) !important;
+}
+
+.text-primary {
+  color: var(--grocery-primary) !important;
+}
+
+[data-theme=dark] .text-primary {
+  color: #6ee7b7 !important;
+}
+
+/*--------------------------------------------------------------
+# Cards & Page Headers
+--------------------------------------------------------------*/
+.page-header h2 i.text-primary {
+  color: var(--grocery-primary) !important;
+}
+
+/*--------------------------------------------------------------
+# Tables - Green hover accent
+--------------------------------------------------------------*/
+.table > tbody > tr:hover {
+  --bs-table-hover-bg: #f0fdf4;
+}
+
+[data-theme=dark] .table > tbody > tr:hover {
+  --bs-table-hover-bg: rgba(5, 150, 105, 0.05);
+}
+
+/*--------------------------------------------------------------
+# Pagination - Green active
+--------------------------------------------------------------*/
+.page-item.active .page-link {
+  background-color: var(--grocery-primary) !important;
+  border-color: var(--grocery-primary) !important;
+}
+
+.page-link {
+  color: var(--grocery-primary);
+}
+
+.page-link:hover {
+  color: var(--grocery-primary-hover);
+  background-color: var(--grocery-primary-lighter);
+}
+
+/*--------------------------------------------------------------
+# Status Badges - Keep success green consistent
+--------------------------------------------------------------*/
+.badge.bg-success-subtle {
+  background-color: #d1fae5 !important;
+}
+
+.badge.bg-success-subtle.text-success {
+  color: #059669 !important;
+}
+
+/*--------------------------------------------------------------
+# Back to Top Button
+--------------------------------------------------------------*/
+.back-to-top {
+  background: var(--grocery-primary) !important;
+}
+
+.back-to-top:hover {
+  background: var(--grocery-primary-hover) !important;
+}
+
+/*--------------------------------------------------------------
+# Footer Link
+--------------------------------------------------------------*/
+.footer a {
+  color: var(--grocery-primary);
+  font-weight: 600;
+}
+
+[data-theme=dark] .footer a {
+  color: #6ee7b7;
+}
+
+/*--------------------------------------------------------------
+# Scrollbar (Webkit)
+--------------------------------------------------------------*/
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--grocery-primary);
+}
+
+/*--------------------------------------------------------------
+# User Avatar - Green ring on hover
+--------------------------------------------------------------*/
+.user-dropdown .avatar {
+  transition: box-shadow 0.2s ease;
+}
+
+.user-dropdown .avatar:hover {
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+}
+
+/*--------------------------------------------------------------
+# Header Actions - Green hover
+--------------------------------------------------------------*/
+.header-action:hover {
+  color: var(--grocery-primary) !important;
+}
+
+/*--------------------------------------------------------------
+# Nav Heading - Subtle green tint
+--------------------------------------------------------------*/
+.sidebar .nav-heading span {
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
