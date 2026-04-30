@@ -55,3 +55,24 @@ public class UpdateVoucherRequest
     public bool? IsActive { get; set; }
     public DateTime? ExpiryDate { get; set; }
 }
+
+public class UserVoucherDto
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid VoucherId { get; set; }
+    public string VoucherCode { get; set; } = string.Empty;
+    public string? VoucherDescription { get; set; }
+    public string VoucherType { get; set; } = string.Empty;
+    public decimal VoucherValue { get; set; }
+    public DateTime ExpiryDate { get; set; }
+    public bool IsUsed { get; set; }
+    public DateTime? UsedAt { get; set; }
+    public DateTime AssignedAt { get; set; }
+    public string AssignedBy { get; set; } = string.Empty;
+}
+
+public class AssignVoucherRequest
+{
+    public Guid VoucherId { get; set; }
+}

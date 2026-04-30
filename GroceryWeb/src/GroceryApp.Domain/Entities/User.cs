@@ -7,6 +7,12 @@ public class User : IdentityUser<Guid>
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string? ProfileImageUrl { get; set; }
+    public bool IsEmailVerified { get; set; }
+    public bool IsPhoneVerified { get; set; }
+    public string? EmailVerificationCode { get; set; }
+    public DateTime? EmailVerificationSentAt { get; set; }
+    public string? PhoneVerificationCode { get; set; }
+    public DateTime? PhoneVerificationSentAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 
@@ -19,4 +25,5 @@ public class User : IdentityUser<Guid>
     public ICollection<Notification> Notifications { get; set; } = [];
     public ICollection<UserPaymentMethod> PaymentMethods { get; set; } = [];
     public ICollection<UserSetting> Settings { get; set; } = [];
+    public ICollection<UserVoucher> UserVouchers { get; set; } = [];
 }

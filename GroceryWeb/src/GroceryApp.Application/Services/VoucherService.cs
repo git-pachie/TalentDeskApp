@@ -55,6 +55,12 @@ public class VoucherService : IVoucherService
         return vouchers.Select(MapToDto);
     }
 
+    public async Task<VoucherDto?> GetByIdAsync(Guid id)
+    {
+        var voucher = await _voucherRepo.GetByIdAsync(id);
+        return voucher is null ? null : MapToDto(voucher);
+    }
+
     public async Task<IEnumerable<VoucherDto>> GetActiveAsync()
     {
         var now = DateTime.UtcNow;

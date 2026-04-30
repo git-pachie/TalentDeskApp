@@ -164,6 +164,44 @@
 
     @* ===== RIGHT: Sidebar ===== *@
     <div class="col-lg-4">
+        @* Customer Card *@
+        <div class="card form-card mb-3">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3"><i class="bi bi-person me-2"></i>Customer</h6>
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
+                         style="width:40px;height:40px;font-size:0.85rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                        @(string.Concat(Model.CustomerName.Split(' ').Where(w => w.Length > 0).Take(2).Select(w => w[0])))
+                    </div>
+                    <div>
+                        @if (Model.UserId != Guid.Empty && !string.IsNullOrEmpty(Model.CustomerName))
+                        {
+                            <a asp-controller="Users" asp-action="Detail" asp-route-id="@Model.UserId"
+                               class="fw-semibold text-decoration-none d-block">@Model.CustomerName</a>
+                        }
+                        else
+                        {
+                            <span class="fw-semibold">—</span>
+                        }
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.CustomerEmail))
+                {
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-envelope text-muted" style="width:16px;"></i>
+                        <a href="mailto:@Model.CustomerEmail" class="text-muted text-decoration-none" style="font-size:0.85rem;word-break:break-all;">@Model.CustomerEmail</a>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.CustomerPhone))
+                {
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-telephone text-muted" style="width:16px;"></i>
+                        <span class="text-muted" style="font-size:0.85rem;">@Model.CustomerPhone</span>
+                    </div>
+                }
+            </div>
+        </div>
+
         @* Status Card *@
         <div class="card form-card mb-3">
             <div class="card-body">

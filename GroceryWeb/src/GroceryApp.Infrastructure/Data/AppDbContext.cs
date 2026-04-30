@@ -26,6 +26,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<UserPaymentMethod> UserPaymentMethods => Set<UserPaymentMethod>();
     public DbSet<OrderStatusHistory> OrderStatusHistory => Set<OrderStatusHistory>();
     public DbSet<UserSetting> UserSettings => Set<UserSetting>();
+    public DbSet<UserVoucher> UserVouchers => Set<UserVoucher>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -178,6 +179,14 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         {
             e.HasIndex(s => new { s.UserId, s.SettingKey }).IsUnique();
             e.HasOne(s => s.User).WithMany(u => u.Settings).HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // UserVoucher
+        builder.Entity<UserVoucher>(e =>
+        {
+            e.HasIndex(uv => new { uv.UserId, uv.VoucherId }).IsUnique();
+            e.HasOne(uv => uv.User).WithMany(u => u.UserVouchers).HasForeignKey(uv => uv.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(uv => uv.Voucher).WithMany(v => v.UserVouchers).HasForeignKey(uv => uv.VoucherId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

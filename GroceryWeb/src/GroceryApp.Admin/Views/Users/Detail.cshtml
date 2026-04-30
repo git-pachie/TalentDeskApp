@@ -1,84 +1,765 @@
 @model UserModel
+@using GroceryApp.Admin.Models
 @{
     ViewData["Title"] = $"{Model.FirstName} {Model.LastName}";
     var initials = $"{(Model.FirstName.Length > 0 ? Model.FirstName[0] : '?')}{(Model.LastName.Length > 0 ? Model.LastName[0] : '?')}";
+    var addresses   = ViewBag.Addresses   as List<UserAddressModel>       ?? [];
+    var orders      = ViewBag.Orders      as List<OrderModel>             ?? [];
+    var payments    = ViewBag.Payments    as List<UserPaymentMethodModel> ?? [];
+    var userVouchers= ViewBag.UserVouchers as List<UserVoucherModel>      ?? [];
+    var allVouchers = ViewBag.AllVouchers  as List<VoucherModel>          ?? [];
 }
 
 <div class="page-header">
     <div>
         <h2><i class="bi bi-person-fill me-2 text-primary"></i>User Profile</h2>
-        <p class="text-muted mb-0" style="font-size: 0.85rem;">Viewing @Model.FirstName @Model.LastName</p>
+        <p class="text-muted mb-0" style="font-size:0.85rem;">@Model.FirstName @Model.LastName</p>
     </div>
-    <a asp-action="Index" class="btn btn-outline-secondary">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left me-1"></i> Back to Users
     </a>
 </div>
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-3" role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>@TempData["SuccessMessage"]</span>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+    </div>
+}
+
 <div class="row g-3">
-    <div class="col-lg-4">
-        <div class="card form-card text-center">
+
+    <!-- ===== LEFT SIDEBAR ===== -->
+    <div class="col-lg-3">
+
+        <!-- Profile Card -->
+        <div class="card form-card text-center mb-3">
             <div class="card-body py-4">
                 <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-bold mx-auto mb-3"
-                     style="width: 80px; height: 80px; font-size: 1.5rem; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+                     style="width:80px;height:80px;font-size:1.5rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);">
                     @initials
                 </div>
                 <h5 class="fw-bold mb-1">@Model.FirstName @Model.LastName</h5>
-                <p class="text-muted mb-3">@Model.Email</p>
-                <div class="d-flex justify-content-center gap-2 mb-3">
+                <p class="text-muted mb-1" style="font-size:0.85rem;">@Model.Email</p>
+                @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                {
+                    <p class="text-muted mb-2" style="font-size:0.82rem;"><i class="bi bi-telephone me-1"></i>@Model.PhoneNumber</p>
+                }
+                <div class="d-flex justify-content-center gap-1 flex-wrap mb-3">
                     @foreach (var role in Model.Roles)
                     {
-                        <span class="badge @(role == "Admin" ? "bg-danger" : "bg-primary") px-3 py-2">@role</span>
+                        <span class="badge @(role == "Admin" ? "bg-danger" : "bg-primary") px-2 py-1" style="font-size:0.7rem;">@role</span>
                     }
                 </div>
-                <span class="badge badge-status @(Model.IsActive ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") px-3 py-2">
+                <span class="badge @(Model.IsActive ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") px-3 py-2 d-block mb-3">
                     <i class="bi @(Model.IsActive ? "bi-check-circle" : "bi-x-circle") me-1"></i>
                     @(Model.IsActive ? "Active" : "Locked")
                 </span>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-8">
-        <div class="card form-card mb-3">
-            <div class="card-body">
-                <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Account Details</h6>
-                <div class="row g-3">
-                    <div class="col-sm-6">
-                        <div class="p-3 rounded" style="background: #f9fafb;">
-                            <div class="text-muted" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Total Orders</div>
-                            <div class="fw-bold fs-4">@Model.OrderCount</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <div class="p-3 rounded" style="background: #f9fafb;">
-                            <div class="text-muted" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Member Since</div>
-                            <div class="fw-bold fs-4">@Model.CreatedAt.ToString("MMM yyyy")</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card form-card">
-            <div class="card-body">
-                <h6 class="fw-bold mb-3"><i class="bi bi-shield-lock me-2"></i>Account Actions</h6>
                 <form asp-action="ToggleActive" asp-route-id="@Model.Id" method="post">
-                    <p class="text-muted mb-3" style="font-size: 0.85rem;">
-                        @if (Model.IsActive)
-                        {
-                            <text>Locking this account will prevent the user from logging in.</text>
-                        }
-                        else
-                        {
-                            <text>Unlocking this account will restore the user's access.</text>
-                        }
-                    </p>
-                    <button type="submit" class="btn @(Model.IsActive ? "btn-warning" : "btn-success")">
+                    <button type="submit" class="btn btn-sm @(Model.IsActive ? "btn-outline-warning" : "btn-outline-success") w-100">
                         <i class="bi @(Model.IsActive ? "bi-lock" : "bi-unlock") me-1"></i>
                         @(Model.IsActive ? "Lock Account" : "Unlock Account")
                     </button>
                 </form>
             </div>
         </div>
+
+        <!-- Verification Card -->
+        <div class="card form-card mb-3">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3"><i class="bi bi-shield-check me-2"></i>Verification</h6>
+
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+                    <div>
+                        <div class="fw-semibold" style="font-size:0.85rem;"><i class="bi bi-envelope me-1"></i>Email</div>
+                        <span class="badge @(Model.IsEmailVerified ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning")" style="font-size:0.72rem;">
+                            <i class="bi @(Model.IsEmailVerified ? "bi-check-circle" : "bi-exclamation-circle") me-1"></i>
+                            @(Model.IsEmailVerified ? "Verified" : "Unverified")
+                        </span>
+                    </div>
+                    <div class="d-flex flex-column gap-1 align-items-end">
+                        <form asp-action="SetEmailVerified" asp-route-id="@Model.Id" method="post">
+                            <input type="hidden" name="verified" value="@(!Model.IsEmailVerified)" />
+                            <button type="submit" class="btn btn-sm @(Model.IsEmailVerified ? "btn-outline-warning" : "btn-outline-success")"
+                                    style="font-size:0.72rem;padding:3px 10px;">
+                                @(Model.IsEmailVerified ? "Revoke" : "Mark Verified")
+                            </button>
+                        </form>
+                        @if (!Model.IsEmailVerified)
+                        {
+                            <form asp-action="SendEmailVerification" asp-route-id="@Model.Id" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-primary"
+                                        style="font-size:0.72rem;padding:3px 10px;">
+                                    <i class="bi bi-envelope-arrow-up me-1"></i>Send Code
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="fw-semibold" style="font-size:0.85rem;"><i class="bi bi-phone me-1"></i>Mobile</div>
+                        <span class="badge @(Model.IsPhoneVerified ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning")" style="font-size:0.72rem;">
+                            <i class="bi @(Model.IsPhoneVerified ? "bi-check-circle" : "bi-exclamation-circle") me-1"></i>
+                            @(Model.IsPhoneVerified ? "Verified" : "Unverified")
+                        </span>
+                    </div>
+                    <div class="d-flex flex-column gap-1 align-items-end">
+                        <form asp-action="SetPhoneVerified" asp-route-id="@Model.Id" method="post">
+                            <input type="hidden" name="verified" value="@(!Model.IsPhoneVerified)" />
+                            <button type="submit" class="btn btn-sm @(Model.IsPhoneVerified ? "btn-outline-warning" : "btn-outline-success")"
+                                    style="font-size:0.72rem;padding:3px 10px;">
+                                @(Model.IsPhoneVerified ? "Revoke" : "Mark Verified")
+                            </button>
+                        </form>
+                        @if (!Model.IsPhoneVerified && !string.IsNullOrEmpty(Model.PhoneNumber))
+                        {
+                            <form asp-action="SendPhoneVerification" asp-route-id="@Model.Id" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-primary"
+                                        style="font-size:0.72rem;padding:3px 10px;">
+                                    <i class="bi bi-phone-vibrate me-1"></i>Send SMS
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Card -->
+        <div class="card form-card">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart me-2"></i>Stats</h6>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" style="font-size:0.85rem;">Total Orders</span>
+                    <span class="fw-bold">@Model.OrderCount</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" style="font-size:0.85rem;">Addresses</span>
+                    <span class="fw-bold">@addresses.Count</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" style="font-size:0.85rem;">Payment Methods</span>
+                    <span class="fw-bold">@payments.Count</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted" style="font-size:0.85rem;">Vouchers</span>
+                    <span class="fw-bold">@userVouchers.Count</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted" style="font-size:0.85rem;">Member Since</span>
+                    <span class="fw-bold">@Model.CreatedAt.ToString("MMM yyyy")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== RIGHT: TABS ===== -->
+    <div class="col-lg-9">
+        <div class="card data-card">
+            <div class="card-header p-0">
+                <ul class="nav nav-tabs border-0 px-3 pt-2" id="profileTabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#tab-addresses">
+                            <i class="bi bi-geo-alt me-1"></i>Addresses
+                            <span class="badge bg-secondary ms-1" style="font-size:0.68rem;">@addresses.Count</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#tab-orders">
+                            <i class="bi bi-bag me-1"></i>Orders
+                            <span class="badge bg-secondary ms-1" style="font-size:0.68rem;">@orders.Count</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#tab-payments">
+                            <i class="bi bi-credit-card me-1"></i>Payment Methods
+                            <span class="badge bg-secondary ms-1" style="font-size:0.68rem;">@payments.Count</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#tab-vouchers">
+                            <i class="bi bi-ticket me-1"></i>Vouchers
+                            <span class="badge bg-secondary ms-1" style="font-size:0.68rem;">@userVouchers.Count</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="tab-content p-3">
+
+                <!-- ===== ADDRESSES ===== -->
+                <div class="tab-pane fade show active" id="tab-addresses">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0">Delivery Addresses</h6>
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+                            <i class="bi bi-plus me-1"></i>Add Address
+                        </button>
+                    </div>
+                    @if (!addresses.Any())
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-geo-alt fs-3 d-block mb-2"></i>No addresses found.
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="table data-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Label</th>
+                                    <th>Address</th>
+                                    <th>Contact</th>
+                                    <th>Notes</th>
+                                    <th>Map</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var a in addresses)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-primary-subtle text-primary">@a.Label</span>
+                                            @if (a.IsDefault)
+                                            {
+                                                <span class="badge bg-success-subtle text-success ms-1">Default</span>
+                                            }
+                                        </td>
+                                        <td style="font-size:0.85rem;">@a.Street, @a.City, @a.Province @a.ZipCode</td>
+                                        <td style="font-size:0.82rem;">@(a.ContactNumber ?? "—")</td>
+                                        <td style="font-size:0.82rem;">@(a.DeliveryInstructions ?? "—")</td>
+                                        <td style="font-size:0.78rem;">
+                                            @if (a.Latitude.HasValue && a.Longitude.HasValue)
+                                            {
+                                                <a href="https://www.google.com/maps?q=@a.Latitude,@a.Longitude" target="_blank" class="text-primary">
+                                                    <i class="bi bi-pin-map me-1"></i>@a.Latitude.Value.ToString("F4"), @a.Longitude.Value.ToString("F4")
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <button class="btn btn-xs btn-outline-primary me-1"
+                                                    data-bs-toggle="modal" data-bs-target="#editAddressModal"
+                                                    data-id="@a.Id" data-label="@a.Label" data-street="@a.Street"
+                                                    data-city="@a.City" data-province="@a.Province" data-zip="@a.ZipCode"
+                                                    data-contact="@a.ContactNumber" data-instructions="@a.DeliveryInstructions"
+                                                    data-lat="@a.Latitude" data-lng="@a.Longitude" data-default="@a.IsDefault.ToString().ToLower()"
+                                                    onclick="populateEditAddress(this)">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <form asp-action="DeleteAddress" asp-route-id="@Model.Id" asp-route-addressId="@a.Id"
+                                                  method="post" class="d-inline"
+                                                  onsubmit="return confirm('Delete address &quot;@a.Label&quot;?')">
+                                                <button type="submit" class="btn btn-xs btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+
+                <!-- ===== ORDERS ===== -->
+                <div class="tab-pane fade" id="tab-orders">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0">Order History</h6>
+                    </div>
+                    @if (!orders.Any())
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-bag fs-3 d-block mb-2"></i>No orders found.
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="table data-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Date</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var o in orders)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@o.OrderNumber</td>
+                                        <td class="text-muted" style="font-size:0.85rem;">@o.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                        <td class="fw-semibold">₱@o.TotalAmount.ToString("N2")</td>
+                                        <td>
+                                            @{
+                                                var badgeCls = o.Status switch {
+                                                    "Pending"    => "bg-warning text-dark",
+                                                    "Paid"       => "bg-info text-white",
+                                                    "Processing" => "bg-primary",
+                                                    "Delivered"  => "bg-success",
+                                                    "Cancelled"  => "bg-danger",
+                                                    _            => "bg-secondary"
+                                                };
+                                            }
+                                            <span class="badge @badgeCls">@o.Status</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <a asp-controller="Orders" asp-action="Detail" asp-route-id="@o.Id"
+                                               class="btn btn-xs btn-outline-primary">
+                                                <i class="bi bi-eye me-1"></i>View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+
+                <!-- ===== PAYMENT METHODS ===== -->
+                <div class="tab-pane fade" id="tab-payments">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0">Payment Methods</h6>
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                            <i class="bi bi-plus me-1"></i>Add Payment Method
+                        </button>
+                    </div>
+                    @if (!payments.Any())
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-credit-card fs-3 d-block mb-2"></i>No payment methods found.
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="table data-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Name</th>
+                                    <th>Detail</th>
+                                    <th>Added</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in payments)
+                                {
+                                    var pmIcon = p.PaymentType switch {
+                                        "CreditCard"     => "bi-credit-card-fill",
+                                        "DebitCard"      => "bi-credit-card",
+                                        "GCash"          => "bi-phone",
+                                        "ApplePay"       => "bi-apple",
+                                        "CashOnDelivery" => "bi-cash-coin",
+                                        _                => "bi-wallet2"
+                                    };
+                                    <tr>
+                                        <td>
+                                            <i class="bi @pmIcon me-2 text-primary"></i>
+                                            <span style="font-size:0.85rem;">@p.PaymentType</span>
+                                            @if (p.IsDefault)
+                                            {
+                                                <span class="badge bg-success-subtle text-success ms-1">Default</span>
+                                            }
+                                        </td>
+                                        <td class="fw-semibold">@p.Name</td>
+                                        <td class="text-muted" style="font-size:0.85rem;">@(p.Detail ?? "—")</td>
+                                        <td class="text-muted" style="font-size:0.82rem;">@p.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                        <td class="text-end">
+                                            <button class="btn btn-xs btn-outline-primary me-1"
+                                                    data-bs-toggle="modal" data-bs-target="#editPaymentModal"
+                                                    data-id="@p.Id" data-name="@p.Name" data-detail="@p.Detail"
+                                                    data-type="@p.PaymentType" data-default="@p.IsDefault.ToString().ToLower()"
+                                                    onclick="populateEditPayment(this)">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <form asp-action="DeletePaymentMethod" asp-route-id="@Model.Id" asp-route-pmId="@p.Id"
+                                                  method="post" class="d-inline"
+                                                  onsubmit="return confirm('Delete payment method &quot;@p.Name&quot;?')">
+                                                <button type="submit" class="btn btn-xs btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+
+                <!-- ===== VOUCHERS ===== -->
+                <div class="tab-pane fade" id="tab-vouchers">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0">Assigned Vouchers</h6>
+                        @if (allVouchers.Any())
+                        {
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignVoucherModal">
+                                <i class="bi bi-plus me-1"></i>Assign Voucher
+                            </button>
+                        }
+                    </div>
+                    @if (!userVouchers.Any())
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-ticket fs-3 d-block mb-2"></i>No vouchers assigned.
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="table data-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Description</th>
+                                    <th>Discount</th>
+                                    <th>Expires</th>
+                                    <th>Status</th>
+                                    <th>Assigned</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var v in userVouchers)
+                                {
+                                    <tr>
+                                        <td><span class="badge bg-primary-subtle text-primary fw-bold">@v.VoucherCode</span></td>
+                                        <td style="font-size:0.85rem;">@(v.VoucherDescription ?? "—")</td>
+                                        <td style="font-size:0.85rem;">
+                                            @if (v.VoucherType == "Percentage")
+                                            {
+                                                <text>@v.VoucherValue% off</text>
+                                            }
+                                            else
+                                            {
+                                                <text>₱@v.VoucherValue.ToString("N2") off</text>
+                                            }
+                                        </td>
+                                        <td style="font-size:0.82rem;">@v.ExpiryDate.ToString("MMM dd, yyyy")</td>
+                                        <td>
+                                            @if (v.IsUsed)
+                                            {
+                                                <span class="badge bg-secondary">Used @(v.UsedAt.HasValue ? v.UsedAt.Value.ToString("MMM dd") : "")</span>
+                                            }
+                                            else if (v.ExpiryDate < DateTime.UtcNow)
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger">Expired</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success-subtle text-success">Available</span>
+                                            }
+                                        </td>
+                                        <td style="font-size:0.82rem;" class="text-muted">@v.AssignedAt.ToString("MMM dd, yyyy")</td>
+                                        <td class="text-end">
+                                            <form asp-action="RevokeVoucher" asp-route-id="@Model.Id" asp-route-userVoucherId="@v.Id"
+                                                  method="post" class="d-inline"
+                                                  onsubmit="return confirm('Revoke voucher &quot;@v.VoucherCode&quot; from this user?')">
+                                                <button type="submit" class="btn btn-xs btn-outline-danger">
+                                                    <i class="bi bi-x-circle me-1"></i>Revoke
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+
+            </div>
+        </div>
     </div>
 </div>
+
+<!-- ===================================================
+     MODALS
+     =================================================== -->
+
+<!-- Add Address Modal -->
+<div class="modal fade" id="addAddressModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form asp-action="AddAddress" asp-route-id="@Model.Id" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-geo-alt me-2"></i>Add Address</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold">Label <span class="text-danger">*</span></label>
+                            <input name="Label" class="form-control" placeholder="Home, Work, etc." required />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold">Contact Number</label>
+                            <input name="ContactNumber" class="form-control" placeholder="+63 9XX XXX XXXX" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Street <span class="text-danger">*</span></label>
+                            <input name="Street" class="form-control" placeholder="House/Unit No., Street Name" required />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label fw-semibold">City <span class="text-danger">*</span></label>
+                            <input name="City" class="form-control" required />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label fw-semibold">Province <span class="text-danger">*</span></label>
+                            <input name="Province" class="form-control" required />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label fw-semibold">ZIP Code <span class="text-danger">*</span></label>
+                            <input name="ZipCode" class="form-control" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Delivery Instructions</label>
+                            <input name="DeliveryInstructions" class="form-control" placeholder="Gate code, landmark, etc." />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold">Latitude</label>
+                            <input name="Latitude" type="number" step="any" class="form-control" placeholder="14.5995" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold">Longitude</label>
+                            <input name="Longitude" type="number" step="any" class="form-control" placeholder="120.9842" />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="IsDefault" value="true" id="addAddrDefault" />
+                                <label class="form-check-label" for="addAddrDefault">Set as default address</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check me-1"></i>Save Address</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Address Modal -->
+<div class="modal fade" id="editAddressModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="editAddressForm" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Address</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold">Label <span class="text-danger">*</span></label>
+                            <input id="ea-label" name="Label" class="form-control" required />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold">Contact Number</label>
+                            <input id="ea-contact" name="ContactNumber" class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Street <span class="text-danger">*</span></label>
+                            <input id="ea-street" name="Street" class="form-control" required />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label fw-semibold">City <span class="text-danger">*</span></label>
+                            <input id="ea-city" name="City" class="form-control" required />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label fw-semibold">Province <span class="text-danger">*</span></label>
+                            <input id="ea-province" name="Province" class="form-control" required />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label fw-semibold">ZIP Code <span class="text-danger">*</span></label>
+                            <input id="ea-zip" name="ZipCode" class="form-control" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Delivery Instructions</label>
+                            <input id="ea-instructions" name="DeliveryInstructions" class="form-control" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold">Latitude</label>
+                            <input id="ea-lat" name="Latitude" type="number" step="any" class="form-control" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold">Longitude</label>
+                            <input id="ea-lng" name="Longitude" type="number" step="any" class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="IsDefault" value="true" id="ea-default" />
+                                <label class="form-check-label" for="ea-default">Set as default address</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check me-1"></i>Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Payment Method Modal -->
+<div class="modal fade" id="addPaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="AddPaymentMethod" asp-route-id="@Model.Id" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-credit-card me-2"></i>Add Payment Method</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Type <span class="text-danger">*</span></label>
+                            <select name="PaymentType" class="form-select" required>
+                                <option value="CreditCard">Credit Card</option>
+                                <option value="DebitCard">Debit Card</option>
+                                <option value="GCash">GCash</option>
+                                <option value="ApplePay">Apple Pay</option>
+                                <option value="CashOnDelivery">Cash on Delivery</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Name / Label <span class="text-danger">*</span></label>
+                            <input name="Name" class="form-control" placeholder="e.g. My BDO Card" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Detail</label>
+                            <input name="Detail" class="form-control" placeholder="Last 4 digits, account number, etc." />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="IsDefault" value="true" id="addPmDefault" />
+                                <label class="form-check-label" for="addPmDefault">Set as default</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check me-1"></i>Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Payment Method Modal -->
+<div class="modal fade" id="editPaymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editPaymentForm" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Payment Method</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Type <span class="text-danger">*</span></label>
+                            <select id="ep-type" name="PaymentType" class="form-select" required>
+                                <option value="CreditCard">Credit Card</option>
+                                <option value="DebitCard">Debit Card</option>
+                                <option value="GCash">GCash</option>
+                                <option value="ApplePay">Apple Pay</option>
+                                <option value="CashOnDelivery">Cash on Delivery</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Name / Label <span class="text-danger">*</span></label>
+                            <input id="ep-name" name="Name" class="form-control" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Detail</label>
+                            <input id="ep-detail" name="Detail" class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="IsDefault" value="true" id="ep-default" />
+                                <label class="form-check-label" for="ep-default">Set as default</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check me-1"></i>Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Voucher Modal -->
+@if (allVouchers.Any())
+{
+    <div class="modal fade" id="assignVoucherModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form asp-action="AssignVoucher" asp-route-id="@Model.Id" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="bi bi-ticket me-2"></i>Assign Voucher</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label fw-semibold">Select Voucher <span class="text-danger">*</span></label>
+                        <select name="voucherId" class="form-select" required>
+                            @foreach (var v in allVouchers)
+                            {
+                                var discountLabel = v.Type == "Percentage" ? $"{v.Value}% off" : $"₱{v.Value:N2} off";
+                                <option value="@v.Id">@v.Code — @discountLabel (expires @v.ExpiryDate.ToString("MMM dd, yyyy"))</option>
+                            }
+                        </select>
+                        <div class="form-text mt-2">Only active, non-expired vouchers are shown.</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check me-1"></i>Assign</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+function populateEditAddress(btn) {
+    document.getElementById('ea-label').value        = btn.dataset.label        ?? '';
+    document.getElementById('ea-contact').value      = btn.dataset.contact      ?? '';
+    document.getElementById('ea-street').value       = btn.dataset.street       ?? '';
+    document.getElementById('ea-city').value         = btn.dataset.city         ?? '';
+    document.getElementById('ea-province').value     = btn.dataset.province     ?? '';
+    document.getElementById('ea-zip').value          = btn.dataset.zip          ?? '';
+    document.getElementById('ea-instructions').value = btn.dataset.instructions ?? '';
+    document.getElementById('ea-lat').value          = btn.dataset.lat          ?? '';
+    document.getElementById('ea-lng').value          = btn.dataset.lng          ?? '';
+    document.getElementById('ea-default').checked    = btn.dataset.default === 'true';
+    document.getElementById('editAddressForm').action =
+        `/Users/EditAddress?id=@Model.Id&addressId=${btn.dataset.id}`;
+}
+
+function populateEditPayment(btn) {
+    document.getElementById('ep-type').value    = btn.dataset.type    ?? 'CreditCard';
+    document.getElementById('ep-name').value    = btn.dataset.name    ?? '';
+    document.getElementById('ep-detail').value  = btn.dataset.detail  ?? '';
+    document.getElementById('ep-default').checked = btn.dataset.default === 'true';
+    document.getElementById('editPaymentForm').action =
+        `/Users/EditPaymentMethod?id=@Model.Id&pmId=${btn.dataset.id}`;
+}
+</script>
+}

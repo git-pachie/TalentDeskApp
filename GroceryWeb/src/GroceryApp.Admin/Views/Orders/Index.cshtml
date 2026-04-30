@@ -15,7 +15,6 @@
         <thead>
             <tr>
                 <th>Order</th>
-                <th>Subtotal</th>
                 <th>Discount</th>
                 <th>Delivery</th>
                 <th>Total</th>
@@ -34,8 +33,8 @@
                             <a asp-action="Detail" asp-route-id="@order.Id" class="fw-semibold text-decoration-none">
                                 @order.OrderNumber
                             </a>
+                            <div class="text-muted" style="font-size: 0.8rem;">₱@order.SubTotal.ToString("N2")</div>
                         </td>
-                        <td>₱@order.SubTotal.ToString("N2")</td>
                         <td>
                             @if (order.DiscountAmount > 0)
                             {
@@ -51,6 +50,9 @@
                         <td><span class="badge badge-status @GetStatusBadge(order.Status)">@order.Status</span></td>
                         <td class="text-muted">@order.CreatedAt.ToString("MMM dd, yyyy")</td>
                         <td class="text-end">
+                            <a asp-action="Detail" asp-route-id="@order.Id" class="btn btn-xs btn-outline-primary me-1" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </a>
                             <form asp-action="UpdateStatus" asp-route-id="@order.Id" method="post" class="d-inline-flex align-items-center gap-1">
                                 <select name="status" class="form-select form-select-sm" style="width: auto; font-size: 0.8rem; border-radius: 6px;">
                                     <option value="Pending" selected="@(order.Status == "Pending")">Pending</option>
@@ -59,7 +61,7 @@
                                     <option value="Delivered" selected="@(order.Status == "Delivered")">Delivered</option>
                                     <option value="Cancelled" selected="@(order.Status == "Cancelled")">Cancelled</option>
                                 </select>
-                                <button type="submit" class="btn btn-sm btn-primary" title="Update">
+                                <button type="submit" class="btn btn-sm btn-primary" title="Update Status">
                                     <i class="bi bi-check-lg"></i>
                                 </button>
                             </form>
@@ -70,7 +72,7 @@
             else
             {
                 <tr>
-                    <td colspan="8">
+                    <td colspan="7">
                         <div class="empty-state">
                             <i class="bi bi-receipt"></i>
                             <p>No orders found.</p>

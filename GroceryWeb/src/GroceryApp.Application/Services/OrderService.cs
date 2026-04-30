@@ -165,6 +165,7 @@ public class OrderService : IOrderService
     public async Task<OrderDto?> GetOrderByIdAdminAsync(Guid orderId)
     {
         var order = await _orderRepo.Query()
+            .Include(o => o.User)
             .Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
             .Include(o => o.Payment)
             .Include(o => o.Address)
@@ -256,6 +257,10 @@ public class OrderService : IOrderService
         {
             Id = order.Id,
             OrderNumber = order.OrderNumber,
+            UserId = order.UserId,
+            CustomerName = order.User is not null ? $"{order.User.FirstName} {order.User.LastName}".Trim() : string.Empty,
+            CustomerEmail = order.User?.Email ?? string.Empty,
+            CustomerPhone = order.User?.PhoneNumber,
             SubTotal = order.SubTotal,
             DiscountAmount = order.DiscountAmount,
             DeliveryFee = order.DeliveryFee,

@@ -31,4 +31,32 @@ public class VouchersController : Controller
         await _apiClient.PostAsync<CreateVoucherModel, VoucherModel>("/api/vouchers", model);
         return RedirectToAction(nameof(Index));
     }
+
+    public async Task<IActionResult> Edit(Guid id)
+    {
+        var voucher = await _apiClient.GetAsync<VoucherModel>($"/api/vouchers/{id}");
+        if (voucher is null) return NotFound();
+        return View(voucher);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Edit(Guid id, UpdateVoucherModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            var voucher = await _apiClient.GetAsync<VoucherModel>($"/api/vouchers/{id}");
+            if (voucher is null) return NotFound();
+            return View(voucher);
+        }
+
+        await _apiClient.PutAsync<UpdateVoucherModel, VoucherModel>($"/api/vouchers/{id}", model);
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        await _apiClient.DeleteAsync($"/api/vouchers/{id}");
+        return RedirectToAction(nameof(Index));
+    }
 }

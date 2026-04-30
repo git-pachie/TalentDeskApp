@@ -25,6 +25,14 @@ public class VouchersController : ControllerBase
         return Ok(vouchers);
     }
 
+    [HttpGet("{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var voucher = await _voucherService.GetByIdAsync(id);
+        return voucher is null ? NotFound() : Ok(voucher);
+    }
+
     [HttpGet("user")]
     [Authorize]
     public async Task<IActionResult> GetActive()

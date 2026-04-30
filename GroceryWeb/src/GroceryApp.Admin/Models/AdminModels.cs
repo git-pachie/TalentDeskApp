@@ -19,11 +19,56 @@ public class UserModel
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
     public string? ProfileImageUrl { get; set; }
     public bool IsActive { get; set; }
+    public bool IsEmailVerified { get; set; }
+    public bool IsPhoneVerified { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<string> Roles { get; set; } = [];
     public int OrderCount { get; set; }
+}
+
+public class UserAddressModel
+{
+    public Guid Id { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public string Street { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string Province { get; set; } = string.Empty;
+    public string ZipCode { get; set; } = string.Empty;
+    public string? Country { get; set; }
+    public string? DeliveryInstructions { get; set; }
+    public string? ContactNumber { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public bool IsDefault { get; set; }
+}
+
+public class UserPaymentMethodModel
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Detail { get; set; }
+    public string PaymentType { get; set; } = string.Empty;
+    public string? Icon { get; set; }
+    public bool IsDefault { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class UserVoucherModel
+{
+    public Guid Id { get; set; }
+    public Guid VoucherId { get; set; }
+    public string VoucherCode { get; set; } = string.Empty;
+    public string? VoucherDescription { get; set; }
+    public string VoucherType { get; set; } = string.Empty;
+    public decimal VoucherValue { get; set; }
+    public DateTime ExpiryDate { get; set; }
+    public bool IsUsed { get; set; }
+    public DateTime? UsedAt { get; set; }
+    public DateTime AssignedAt { get; set; }
+    public string AssignedBy { get; set; } = string.Empty;
 }
 
 public class PagedResultModel<T>
@@ -124,6 +169,10 @@ public class OrderModel
 {
     public Guid Id { get; set; }
     public string OrderNumber { get; set; } = string.Empty;
+    public Guid UserId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string CustomerEmail { get; set; } = string.Empty;
+    public string? CustomerPhone { get; set; }
     public decimal SubTotal { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal DeliveryFee { get; set; }
@@ -204,6 +253,7 @@ public class VoucherModel
     public string? Description { get; set; }
     public string Type { get; set; } = string.Empty;
     public decimal Value { get; set; }
+    public decimal? MaxDiscount { get; set; }
     public decimal MinimumSpend { get; set; }
     public int UsageLimit { get; set; }
     public int UsedCount { get; set; }
@@ -222,6 +272,17 @@ public class CreateVoucherModel
     public int UsageLimit { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime ExpiryDate { get; set; }
+}
+
+public class UpdateVoucherModel
+{
+    public string? Description { get; set; }
+    public decimal? Value { get; set; }
+    public decimal? MaxDiscount { get; set; }
+    public decimal? MinimumSpend { get; set; }
+    public int? UsageLimit { get; set; }
+    public bool? IsActive { get; set; }
+    public DateTime? ExpiryDate { get; set; }
 }
 
 public class ReviewModel

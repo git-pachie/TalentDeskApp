@@ -21,4 +21,7 @@ public class Voucher
     public DateTime StartDate { get; set; }
     public DateTime ExpiryDate { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    public ICollection<UserVoucher> UserVouchers { get; set; } = [];
 }
