@@ -214,13 +214,13 @@ struct ItemDetailView: View {
                 .foregroundStyle(GroceryTheme.subtitle)
                 .lineSpacing(4)
 
-            // Show all categories if product belongs to multiple
-            if let categories = productDetail?.allCategoryNames, categories.count > 1 {
+            // Show additional categories if product belongs to multiple
+            if let extras = productDetail?.additionalCategoryNames, !extras.isEmpty {
                 HStack(spacing: 6) {
                     Image(systemName: "tag.fill")
                         .font(.caption2)
                         .foregroundStyle(GroceryTheme.primary)
-                    ForEach(categories, id: \.self) { cat in
+                    ForEach(extras, id: \.self) { cat in
                         Text(cat)
                             .font(.system(.caption2, design: .rounded, weight: .medium))
                             .padding(.horizontal, 8)

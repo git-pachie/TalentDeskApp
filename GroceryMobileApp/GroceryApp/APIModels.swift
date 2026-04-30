@@ -112,13 +112,10 @@ struct ProductDTO: Decodable, Identifiable {
         )
     }
 
-    /// All category names including primary
-    var allCategoryNames: [String] {
-        var names = [categoryName]
-        if let categories {
-            names.append(contentsOf: categories.map(\.name))
-        }
-        return Array(Set(names))
+    /// Additional category names (excluding the primary categoryName)
+    var additionalCategoryNames: [String] {
+        guard let categories else { return [] }
+        return categories.map(\.name).filter { $0 != categoryName }
     }
 
     /// All image full URLs for gallery display
