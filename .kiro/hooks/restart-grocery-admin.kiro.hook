@@ -1,5 +1,5 @@
 {
-  "enabled": true,
+  "enabled": false,
   "name": "Restart Grocery Admin",
   "description": "Automatically rebuilds and restarts the GroceryApp Admin MVC panel when any C# or cshtml file in the Admin project is saved.",
   "version": "1",

@@ -1,5 +1,5 @@
 {
-  "enabled": true,
+  "enabled": false,
   "name": "Restart Grocery API",
   "description": "Automatically rebuilds and restarts the GroceryApp API when any C# file in the API, Application, Domain, or Infrastructure projects is saved.",
   "version": "1",
