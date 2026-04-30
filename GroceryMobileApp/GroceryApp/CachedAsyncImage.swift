@@ -29,7 +29,9 @@ struct CachedAsyncImage: View {
             }
         }
         .task(id: url) {
-            guard let url, image == nil else { return }
+            guard let url else { return }
+            // Reset when URL changes so the new image loads
+            if image != nil { image = nil }
             await loadImage(from: url)
         }
     }
