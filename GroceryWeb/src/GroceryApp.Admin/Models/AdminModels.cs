@@ -188,7 +188,7 @@ public class CreateVoucherModel
 {
     public string Code { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public string Type { get; set; } = "Percentage";
+    public int Type { get; set; } = 0; // 0 = Percentage, 1 = FixedAmount
     public decimal Value { get; set; }
     public decimal? MaxDiscount { get; set; }
     public decimal MinimumSpend { get; set; }
