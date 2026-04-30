@@ -141,6 +141,24 @@ struct CheckoutView: View {
                                         Text(addr.fullAddress)
                                             .font(.system(.caption, design: .rounded))
                                             .foregroundStyle(GroceryTheme.subtitle)
+                                        if let contact = addr.contactNumber, !contact.isEmpty {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "phone.fill")
+                                                    .font(.caption2)
+                                                Text(contact)
+                                                    .font(.system(.caption2, design: .rounded))
+                                            }
+                                            .foregroundStyle(GroceryTheme.primary)
+                                        }
+                                        if let notes = addr.deliveryInstructions, !notes.isEmpty {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "text.bubble.fill")
+                                                    .font(.caption2)
+                                                Text(notes)
+                                                    .font(.system(.caption2, design: .rounded))
+                                            }
+                                            .foregroundStyle(GroceryTheme.muted)
+                                        }
                                     }
 
                                     Spacer()

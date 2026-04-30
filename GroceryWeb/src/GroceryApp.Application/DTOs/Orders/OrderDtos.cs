@@ -7,6 +7,8 @@ public class OrderDto
     public decimal SubTotal { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal DeliveryFee { get; set; }
+    public decimal PlatformFee { get; set; }
+    public decimal OtherCharges { get; set; }
     public decimal TotalAmount { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? Notes { get; set; }

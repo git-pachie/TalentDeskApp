@@ -194,6 +194,8 @@ public class OrderService : IOrderService
             SubTotal = order.SubTotal,
             DiscountAmount = order.DiscountAmount,
             DeliveryFee = order.DeliveryFee,
+            PlatformFee = order.PlatformFee,
+            OtherCharges = order.OtherCharges,
             TotalAmount = order.TotalAmount,
             Status = order.Status.ToString(),
             Notes = order.Notes,

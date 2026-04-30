@@ -24,6 +24,12 @@ struct OrderDetailView: View {
     private var deliveryFee: Double {
         orderDetail.map { NSDecimalNumber(decimal: $0.deliveryFee).doubleValue } ?? 0
     }
+    private var platformFee: Double {
+        orderDetail?.platformFee.map { NSDecimalNumber(decimal: $0).doubleValue } ?? 0
+    }
+    private var otherCharges: Double {
+        orderDetail?.otherCharges.map { NSDecimalNumber(decimal: $0).doubleValue } ?? 0
+    }
     private var discountAmount: Double {
         orderDetail.map { NSDecimalNumber(decimal: $0.discountAmount).doubleValue } ?? 0
     }
@@ -417,6 +423,14 @@ struct OrderDetailView: View {
 
             priceRow("Subtotal", value: "₱\(Int(subtotal))")
             priceRow("Delivery Fee", value: "₱\(Int(deliveryFee))")
+
+            if platformFee > 0 {
+                priceRow("Platform Fee", value: "₱\(Int(platformFee))")
+            }
+
+            if otherCharges > 0 {
+                priceRow("Other Charges", value: "₱\(Int(otherCharges))")
+            }
 
             if discountAmount > 0 {
                 HStack {

@@ -85,6 +85,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             e.Property(o => o.SubTotal).HasPrecision(18, 2);
             e.Property(o => o.DiscountAmount).HasPrecision(18, 2);
             e.Property(o => o.DeliveryFee).HasPrecision(18, 2);
+            e.Property(o => o.PlatformFee).HasPrecision(18, 2);
+            e.Property(o => o.OtherCharges).HasPrecision(18, 2);
             e.Property(o => o.TotalAmount).HasPrecision(18, 2);
             e.HasOne(o => o.User).WithMany(u => u.Orders).HasForeignKey(o => o.UserId).OnDelete(DeleteBehavior.NoAction);
             e.HasOne(o => o.Address).WithMany().HasForeignKey(o => o.AddressId).OnDelete(DeleteBehavior.SetNull);

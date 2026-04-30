@@ -173,6 +173,8 @@ struct OrderDTO: Decodable, Identifiable {
     let subTotal: Decimal
     let discountAmount: Decimal
     let deliveryFee: Decimal
+    let platformFee: Decimal?
+    let otherCharges: Decimal?
     let totalAmount: Decimal
     let status: String
     let notes: String?
