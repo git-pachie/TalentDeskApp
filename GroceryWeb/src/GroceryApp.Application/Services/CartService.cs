@@ -2,6 +2,7 @@ using GroceryApp.Application.DTOs.Cart;
 using GroceryApp.Application.Interfaces;
 using GroceryApp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace GroceryApp.Application.Services;
 
@@ -10,15 +11,18 @@ public class CartService : ICartService
     private readonly IRepository<CartItem> _cartRepo;
     private readonly IRepository<Product> _productRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly string _productImageBaseUrl;
 
     public CartService(
         IRepository<CartItem> cartRepo,
         IRepository<Product> productRepo,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IConfiguration configuration)
     {
         _cartRepo = cartRepo;
         _productRepo = productRepo;
         _unitOfWork = unitOfWork;
+        _productImageBaseUrl = (configuration["ImageUrls:ProductImage"] ?? "").TrimEnd('/');
     }
 
     public async Task<IEnumerable<CartItemDto>> GetCartAsync(Guid userId)
@@ -99,7 +103,7 @@ public class CartService : ICartService
         await _unitOfWork.SaveChangesAsync();
     }
 
-    private static CartItemDto MapToDto(CartItem item)
+    private CartItemDto MapToDto(CartItem item)
     {
         var primaryImage = item.Product.Images.FirstOrDefault(i => i.IsPrimary)
             ?? item.Product.Images.FirstOrDefault();
@@ -110,9 +114,24 @@ public class CartService : ICartService
             ProductId = item.ProductId,
             ProductName = item.Product.Name,
             ProductImageUrl = primaryImage?.ImageUrl,
+            ProductImageFullUrl = BuildFullImageUrl(primaryImage?.ImageUrl),
             UnitPrice = item.Product.DiscountPrice ?? item.Product.Price,
             Quantity = item.Quantity,
             TotalPrice = (item.Product.DiscountPrice ?? item.Product.Price) * item.Quantity
         };
+    }
+
+    private string? BuildFullImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrEmpty(imageUrl)) return null;
+        if (imageUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            imageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return imageUrl;
+        if (!string.IsNullOrEmpty(_productImageBaseUrl))
+        {
+            var fileName = imageUrl.Contains('/') ? imageUrl.Split('/').Last() : imageUrl;
+            return $"{_productImageBaseUrl}/{fileName}";
+        }
+        return imageUrl;
     }
 }

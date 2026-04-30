@@ -96,7 +96,7 @@ final class CartStore {
                     discount: nil,
                     emoji: "🛒",
                     category: "",
-                    imageURL: dto.productImageUrl
+                    imageURL: dto.productImageFullUrl ?? dto.productImageUrl
                 )
                 let existingRemarks = items.first(where: { $0.product.id == dto.productId })?.remarks ?? ""
                 merged.append(CartItem(

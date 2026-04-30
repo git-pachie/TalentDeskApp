@@ -150,6 +150,7 @@ struct CartItemDTO: Decodable, Identifiable {
     let productId: UUID
     let productName: String
     let productImageUrl: String?
+    let productImageFullUrl: String?
     let unitPrice: Decimal
     let quantity: Int
     let totalPrice: Decimal
