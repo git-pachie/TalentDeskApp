@@ -107,8 +107,7 @@ final class CartStore {
 
         do {
             let serverItems: [CartItemDTO] = try await APIClient.shared.get("/api/cart")
-            var merged: [CartItem] = []
-            for dto in serverItems {
+            let merged = serverItems.map { dto -> CartItem in
                 let product = GroceryProduct(
                     id: dto.productId,
                     name: dto.productName,
@@ -120,19 +119,18 @@ final class CartStore {
                     category: "",
                     imageURL: dto.productImageFullUrl ?? dto.productImageUrl
                 )
-                // Prefer server remarks; fall back to local if server has none
                 let serverRemarks = dto.remarks ?? ""
                 let localRemarks = items.first(where: { $0.product.id == dto.productId })?.remarks ?? ""
                 let finalRemarks = serverRemarks.isEmpty ? localRemarks : serverRemarks
-                merged.append(CartItem(
+                return CartItem(
                     id: dto.productId,
                     product: product,
                     quantity: dto.quantity,
                     remarks: finalRemarks,
                     serverCartItemId: dto.id
-                ))
+                )
             }
-            items = merged
+            await MainActor.run { items = merged }
         } catch {
             print("⚠️ Failed to load cart from server: \(error)")
         }
@@ -145,8 +143,10 @@ final class CartStore {
                 "/api/cart",
                 body: AddToCartRequest(productId: productId, quantity: quantity, remarks: remarks)
             )
-            if let index = items.firstIndex(where: { $0.product.id == productId }) {
-                items[index].serverCartItemId = dto.id
+            await MainActor.run {
+                if let index = items.firstIndex(where: { $0.product.id == productId }) {
+                    items[index].serverCartItemId = dto.id
+                }
             }
         } catch {
             print("⚠️ Failed to add to cart on server: \(error)")
@@ -160,6 +160,7 @@ final class CartStore {
                 "/api/cart/\(id.uuidString)",
                 body: UpdateCartItemRequest(quantity: quantity, remarks: remarks)
             )
+            print("✅ [Cart] Updated item \(id) — qty:\(quantity) remarks:\(remarks ?? "nil")")
         } catch {
             print("⚠️ Failed to update cart on server: \(error)")
         }

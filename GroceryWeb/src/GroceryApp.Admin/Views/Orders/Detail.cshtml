@@ -99,9 +99,10 @@
                                     <div class="d-flex align-items-center gap-2">
                                         @if (!string.IsNullOrEmpty(item.ProductImageUrl))
                                         {
-                                            <img src="@item.ProductImageUrl" alt="@item.ProductName"
+                                            <img src="@ImageProxyUrl(item.ProductImageUrl)" alt="@item.ProductName"
                                                  class="rounded flex-shrink-0"
-                                                 style="width:42px;height:42px;object-fit:cover;" />
+                                                 style="width:42px;height:42px;object-fit:cover;"
+                                                 onerror="this.onerror=null;this.src='/images/default-product.svg';" />
                                         }
                                         else
                                         {
@@ -202,7 +203,6 @@
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <div>
                                     <span class="fw-semibold" style="font-size:0.9rem;">@review.UserName</span>
-                                    <span class="badge bg-secondary-subtle text-secondary ms-2" style="font-size:0.72rem;">@review.ProductName</span>
                                 </div>
                                 <span class="text-muted" style="font-size:0.78rem;">@review.CreatedAt.ToString("MMM dd, yyyy")</span>
                             </div>
@@ -219,14 +219,19 @@
                             }
                             @if (review.Photos.Count > 0)
                             {
+                                var reviewBase = ViewBag.ReviewImageBase as string ?? "";
+                                string ResolvePhoto(string url) =>
+                                    ImageProxyUrl(url.StartsWith("http") ? url : $"{reviewBase.TrimEnd('/')}{url}");
                                 <div class="d-flex flex-wrap gap-2 mt-2">
                                     @foreach (var photo in review.Photos)
                                     {
-                                        <a href="@photo.PhotoUrl" target="_blank" rel="noopener noreferrer">
-                                            <img src="@photo.PhotoUrl" alt="Review photo" loading="lazy"
-                                                 class="rounded-2 border"
-                                                 style="width:72px;height:72px;object-fit:cover;cursor:pointer;" />
-                                        </a>
+                                        var fullUrl = ResolvePhoto(photo.PhotoUrl);
+                                        <img src="@fullUrl" alt="Review photo" loading="lazy"
+                                             class="rounded-2 border review-photo-thumb"
+                                             style="width:72px;height:72px;object-fit:cover;cursor:pointer;"
+                                             data-photos="@string.Join(",", review.Photos.Select(p => ResolvePhoto(p.PhotoUrl)))"
+                                             data-index="@review.Photos.IndexOf(photo)"
+                                             onclick="openPhotoCarousel(this)" />
                                     }
                                 </div>
                             }
@@ -486,7 +491,39 @@
     </div>
 </div>
 
+<!-- Photo Carousel Modal -->
+<div class="modal fade" id="photoCarouselModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark border-0">
+            <div class="modal-header border-0 pb-0">
+                <span id="photoCarouselCounter" class="text-white-50" style="font-size:0.85rem;"></span>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="photoCarousel" class="carousel slide" data-bs-ride="false">
+                    <div class="carousel-inner" id="photoCarouselInner"></div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#photoCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon"></span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#photoCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon"></span>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 justify-content-center">
+                <div id="photoCarouselDots" class="d-flex gap-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @functions {
+    string ImageProxyUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return string.Empty;
+        return Url.Action("Image", "Orders", new { url }) ?? url;
+    }
+
     string GetStatusBadge(string status) => status switch
     {
         "Pending"    => "bg-warning text-dark",
@@ -510,6 +547,60 @@
 
 @section Scripts {
 <script>
+// ── Photo Carousel ─────────────────────────────────────────────────────────
+function openPhotoCarousel(img) {
+    const photos = img.dataset.photos.split(',').filter(Boolean);
+    const startIndex = parseInt(img.dataset.index) || 0;
+
+    const inner = document.getElementById('photoCarouselInner');
+    const dots  = document.getElementById('photoCarouselDots');
+    inner.innerHTML = '';
+    dots.innerHTML  = '';
+
+    photos.forEach((url, i) => {
+        inner.innerHTML += `
+            <div class="carousel-item ${i === startIndex ? 'active' : ''}">
+                <img src="${url}" class="d-block mx-auto"
+                     style="max-height:70vh;max-width:100%;object-fit:contain;"
+                     alt="Review photo ${i+1}" />
+            </div>`;
+        dots.innerHTML += `
+            <div class="rounded-circle ${i === startIndex ? 'bg-white' : 'bg-secondary'}"
+                 style="width:8px;height:8px;cursor:pointer;"
+                 onclick="bootstrap.Carousel.getInstance(document.getElementById('photoCarousel')).to(${i})">
+            </div>`;
+    });
+
+    // Update counter and dots on slide
+    const carousel = document.getElementById('photoCarousel');
+    const counter  = document.getElementById('photoCarouselCounter');
+    counter.textContent = `${startIndex + 1} / ${photos.length}`;
+
+    carousel.addEventListener('slid.bs.carousel', e => {
+        const idx = e.to;
+        counter.textContent = `${idx + 1} / ${photos.length}`;
+        dots.querySelectorAll('div').forEach((d, i) => {
+            d.className = `rounded-circle ${i === idx ? 'bg-white' : 'bg-secondary'}`;
+            d.style.cssText = 'width:8px;height:8px;cursor:pointer;';
+        });
+    }, { once: false });
+
+    // Show/hide nav arrows
+    const prevBtn = carousel.querySelector('.carousel-control-prev');
+    const nextBtn = carousel.querySelector('.carousel-control-next');
+    prevBtn.style.display = photos.length > 1 ? '' : 'none';
+    nextBtn.style.display = photos.length > 1 ? '' : 'none';
+
+    const modal = new bootstrap.Modal(document.getElementById('photoCarouselModal'));
+    modal.show();
+
+    // Jump to start index after modal shown
+    setTimeout(() => {
+        bootstrap.Carousel.getInstance(carousel)?.to(startIndex);
+    }, 150);
+}
+
+// ── Quick Order Search ─────────────────────────────────────────────────────
 (function () {
     const input    = document.getElementById('quickSearch');
     const dropdown = document.getElementById('quickSearchDropdown');

@@ -112,9 +112,8 @@ public class ReviewsController : ControllerBase
             await using var stream = new FileStream(filePath, FileMode.Create);
             await file.CopyToAsync(stream);
 
-            // Return full URL
-            var baseUrl = (_configuration["App:BaseUrl"] ?? "").TrimEnd('/');
-            urls.Add($"{baseUrl}{urlPrefix}/reviews/{fileName}");
+            // Store relative URL — clients prepend their own base URL
+            urls.Add($"{urlPrefix}/reviews/{fileName}");
         }
 
         return Ok(new { urls });

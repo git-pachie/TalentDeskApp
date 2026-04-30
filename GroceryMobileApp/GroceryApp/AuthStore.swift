@@ -9,13 +9,35 @@ final class AuthStore {
     var errorMessage: String?
 
     init() {
-        // Restore session from UserDefaults if token exists
+        // Restore session from UserDefaults if token exists and is not expired
         isAuthenticated = APIClient.shared.isAuthenticated
         if isAuthenticated,
            let data = UserDefaults.standard.data(forKey: "current_user"),
            let user = try? JSONDecoder().decode(UserDTO.self, from: data) {
             currentUser = user
+        } else if !APIClient.shared.isAuthenticated {
+            // Token expired — clear stale user data
+            APIClient.shared.clearToken()
+            UserDefaults.standard.removeObject(forKey: "current_user")
         }
+
+        // Listen for 401 from any API call — auto-logout
+        NotificationCenter.default.addObserver(
+            forName: .apiUnauthorized,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleSessionExpired()
+        }
+    }
+
+    private func handleSessionExpired() {
+        guard isAuthenticated else { return } // already logged out
+        currentUser = nil
+        isAuthenticated = false
+        UserDefaults.standard.removeObject(forKey: "current_user")
+        errorMessage = "Your session has expired. Please log in again."
+        print("⚠️ [Auth] Session expired — redirecting to login")
     }
 
     func login(email: String, password: String) async -> Bool {

@@ -75,7 +75,7 @@ public class AuthService : IAuthService
         {
             Success = true,
             Token = token,
-            ExpiresAt = DateTime.UtcNow.AddHours(24),
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
             User = new DTOs.Auth.UserDto
             {
                 Id = user.Id,
@@ -109,7 +109,7 @@ public class AuthService : IAuthService
             issuer: _configuration["Jwt:Issuer"],
             audience: _configuration["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(24),
+            expires: DateTime.UtcNow.AddDays(7),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

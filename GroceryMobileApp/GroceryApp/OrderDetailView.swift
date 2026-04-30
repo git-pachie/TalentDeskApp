@@ -12,6 +12,9 @@ struct OrderDetailView: View {
     @State private var isReviewSubmitted = false
     @State private var lastRefreshDate = Date()
     @State private var isLoading = false
+    @State private var photoViewerPhotos: [String] = []
+    @State private var photoViewerIndex: Int = 0
+    @State private var showingPhotoViewer = false
 
     init(order: OrderItem) {
         self._order = State(initialValue: order)
@@ -117,6 +120,12 @@ struct OrderDetailView: View {
             Button("OK") { }
         } message: {
             Text("Your \(rating)-star rating\(reviewPhotos.isEmpty ? "" : " with \(reviewPhotos.count) photo(s)") has been submitted.")
+        }
+        .sheet(isPresented: $showingPhotoViewer) {
+            ReviewPhotoViewerSheet(
+                photos: photoViewerPhotos,
+                initialIndex: photoViewerIndex
+            )
         }
     }
 
@@ -321,6 +330,15 @@ struct OrderDetailView: View {
                             Text("x\(item.quantity) @ ₱\(NSDecimalNumber(decimal: item.unitPrice).intValue)")
                                 .font(.system(.caption2, design: .rounded))
                                 .foregroundStyle(GroceryTheme.muted)
+                            if let r = item.remarks, !r.isEmpty {
+                                HStack(spacing: 3) {
+                                    Image(systemName: "text.bubble.fill")
+                                        .font(.system(size: 9))
+                                    Text(r)
+                                        .font(.system(.caption2, design: .rounded))
+                                }
+                                .foregroundStyle(GroceryTheme.primary)
+                            }
                         }
                         Spacer()
                         Text("₱\(NSDecimalNumber(decimal: item.totalPrice).intValue)")
@@ -499,7 +517,7 @@ struct OrderDetailView: View {
 
     private var ratingSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label(isReviewSubmitted ? "Your Review" : "Rate this Order", systemImage: "star.fill")
+            Label(isReviewSubmitted ? "Order Review" : "Rate this Order", systemImage: "star.fill")
                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .foregroundStyle(GroceryTheme.primary)
 
@@ -533,7 +551,43 @@ struct OrderDetailView: View {
                             .foregroundStyle(GroceryTheme.title)
                     }
                 }
-                Text("Review submitted")
+                // Show submitted review photos from API
+                if let reviews = orderDetail?.reviews, !reviews.isEmpty {
+                    let allPhotos = reviews.flatMap { $0.photos ?? [] }
+                    if !allPhotos.isEmpty {
+                        let photoUrls = allPhotos.map { photo -> String in
+                                    let url = photo.photoUrl
+                                    if url.hasPrefix("http") { return url }
+                                    return "\(APIConfig.baseURL)\(url)"
+                                }
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(Array(allPhotos.enumerated()), id: \.element.id) { idx, photo in
+                                    let resolvedUrl = photo.photoUrl.hasPrefix("http")
+                                        ? photo.photoUrl
+                                        : "\(APIConfig.baseURL)\(photo.photoUrl)"
+                                    if let url = URL(string: resolvedUrl) {
+                                        Button {
+                                            photoViewerPhotos = photoUrls
+                                            photoViewerIndex = idx
+                                            showingPhotoViewer = true
+                                        } label: {
+                                            CachedAsyncImage(url: url, emoji: "🖼️")
+                                                .frame(width: 72, height: 72)
+                                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                        .stroke(GroceryTheme.primary.opacity(0.2), lineWidth: 1)
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Text("Review submitted ✓")
                     .font(.system(.caption, design: .rounded))
                     .foregroundStyle(GroceryTheme.primary)
             } else {
@@ -638,80 +692,85 @@ struct OrderDetailView: View {
             uploadedPhotoUrls = await uploadReviewPhotos(reviewPhotos)
         }
 
-        // 2. Submit a review for each item in the order
-        let items = orderDetail?.items ?? []
-        var submitted = false
-
-        if items.isEmpty {
-            // Fallback: no items loaded, skip API call but mark as submitted
+        // 2. Submit ONE review per order (using first item as product anchor)
+        //    The review captures the overall order experience — rating, comment, photos
+        guard let firstItem = orderDetail?.items?.first else {
+            // No items loaded — mark submitted locally only
             isReviewSubmitted = true
             showingRatingSubmitted = true
             return
         }
 
-        for item in items {
-            let request = CreateReviewRequest(
-                productId: item.productId,
-                orderId: order.id,
-                rating: rating,
-                comment: remarks.isEmpty ? nil : remarks,
-                photoUrls: uploadedPhotoUrls.isEmpty ? nil : uploadedPhotoUrls
-            )
-            do {
-                let _: ReviewDTO = try await APIClient.shared.post("/api/reviews", body: request)
-                submitted = true
-                print("✅ [Review] Submitted for product \(item.productName)")
-            } catch APIError.badRequest(let msg) {
-                // "already reviewed" is acceptable — treat as success
-                if msg.lowercased().contains("already") {
-                    submitted = true
-                } else {
-                    print("⚠️ [Review] \(item.productName): \(msg)")
-                }
-            } catch {
-                print("⚠️ [Review] Failed for \(item.productName): \(error)")
-            }
-        }
+        let request = CreateReviewRequest(
+            productId: firstItem.productId,
+            orderId: order.id,
+            rating: rating,
+            comment: remarks.isEmpty ? nil : remarks,
+            photoUrls: uploadedPhotoUrls.isEmpty ? nil : uploadedPhotoUrls
+        )
 
-        if submitted {
+        do {
+            let _: ReviewDTO = try await APIClient.shared.post("/api/reviews", body: request)
+            print("✅ [Review] Submitted for order \(order.orderNumber)")
             isReviewSubmitted = true
             showingRatingSubmitted = true
+            // Reload to fetch the saved review with photos from server
+            await loadOrderDetail()
+        } catch APIError.badRequest(let msg) {
+            if msg.lowercased().contains("already") {
+                // Already reviewed — just mark as submitted
+                isReviewSubmitted = true
+            } else {
+                print("⚠️ [Review] Failed: \(msg)")
+            }
+        } catch {
+            print("⚠️ [Review] Failed: \(error)")
         }
     }
 
     private func uploadReviewPhotos(_ photos: [Data]) async -> [String] {
         var urls: [String] = []
         do {
-            let boundary = UUID().uuidString
+            let boundary = "Boundary-\(UUID().uuidString)"
             var body = Data()
 
             for (index, photoData) in photos.enumerated() {
+                // Compress to JPEG
+                let jpeg = UIImage(data: photoData)?.jpegData(compressionQuality: 0.75) ?? photoData
+                let filename = "review_\(index).jpg"
+
                 body.append("--\(boundary)\r\n".data(using: .utf8)!)
-                body.append("Content-Disposition: form-data; name=\"files\"; filename=\"review_\(index).jpg\"\r\n".data(using: .utf8)!)
+                body.append("Content-Disposition: form-data; name=\"files\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
                 body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-                // Compress to JPEG at 0.7 quality
-                if let compressed = UIImage(data: photoData)?.jpegData(compressionQuality: 0.7) {
-                    body.append(compressed)
-                } else {
-                    body.append(photoData)
-                }
+                body.append(jpeg)
                 body.append("\r\n".data(using: .utf8)!)
             }
             body.append("--\(boundary)--\r\n".data(using: .utf8)!)
 
-            var request = URLRequest(url: URL(string: "\(APIConfig.baseURL)/api/reviews/upload")!)
-            request.httpMethod = "POST"
-            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            // Use APIClient's session so self-signed cert is trusted
+            var urlRequest = URLRequest(url: URL(string: "\(APIConfig.baseURL)/api/reviews/upload")!)
+            urlRequest.httpMethod = "POST"
+            urlRequest.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
             if let token = UserDefaults.standard.string(forKey: "jwt_token") {
-                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             }
-            request.httpBody = body
+            urlRequest.httpBody = body
 
-            let (data, _) = try await URLSession.shared.data(for: request)
+            // Use APIClient's trusted session
+            let session = APIClient.shared.trustedSession
+            let (data, response) = try await session.data(for: urlRequest)
+
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+                let body = String(data: data, encoding: .utf8) ?? "unknown"
+                print("⚠️ [Review] Upload failed — response: \(body)")
+                return []
+            }
+
             struct UploadResult: Decodable { let urls: [String] }
             let result = try JSONDecoder().decode(UploadResult.self, from: data)
             urls = result.urls
-            print("✅ [Review] Uploaded \(urls.count) photo(s)")
+            print("✅ [Review] Uploaded \(urls.count) photo(s): \(urls)")
         } catch {
             print("⚠️ [Review] Photo upload failed: \(error)")
         }
@@ -809,5 +868,64 @@ struct OrderDetailView: View {
 #Preview {
     NavigationStack {
         OrderDetailView(order: OrderItem(orderNumber: "#GR-1042", date: "Apr 28, 2026", items: 3, total: 45, status: .processing))
+    }
+}
+
+// MARK: - Review Photo Viewer Sheet
+
+struct ReviewPhotoViewerSheet: View {
+    let photos: [String]
+    let initialIndex: Int
+    @State private var currentIndex: Int
+    @Environment(\.dismiss) private var dismiss
+
+    init(photos: [String], initialIndex: Int) {
+        self.photos = photos
+        self.initialIndex = initialIndex
+        self._currentIndex = State(initialValue: initialIndex)
+    }
+
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+
+                TabView(selection: $currentIndex) {
+                    ForEach(Array(photos.enumerated()), id: \.offset) { idx, urlString in
+                        if let url = URL(string: urlString) {
+                            CachedAsyncImage(url: url, emoji: "🖼️")
+                                .scaledToFit()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .tag(idx)
+                        }
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .always))
+                .indexViewStyle(.page(backgroundDisplayMode: .always))
+
+                // Counter
+                VStack {
+                    Spacer()
+                    Text("\(currentIndex + 1) / \(photos.count)")
+                        .font(.system(.caption, design: .rounded, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(.black.opacity(0.5))
+                        .clipShape(Capsule())
+                        .padding(.bottom, 40)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundStyle(.white)
+                }
+            }
+            .toolbarBackground(.black, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+        }
+        .presentationDetents([.large])
     }
 }

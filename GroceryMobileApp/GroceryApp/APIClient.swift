@@ -4,9 +4,9 @@ import Foundation
 
 enum APIConfig {
     // Change this to your server's IP/hostname
-    // Use "https://localhost:5001" for iOS Simulator on the same machine
+    // Use "https://192.168.7.136:5002" for iOS Simulator on the same machine
     // Use "https://<your-mac-ip>:5001" for a physical device
-    static let baseURL = "https://localhost:5001"
+    static let baseURL = "http://192.168.7.136:5010"
 
     static var base: URL {
         URL(string: baseURL)!
@@ -64,6 +64,9 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         config.urlCache = nil
         return URLSession(configuration: config, delegate: self, delegateQueue: nil)
     }()
+
+    /// Exposed for multipart uploads that need the same SSL trust as the main session
+    var trustedSession: URLSession { session }
 
     private let decoder: JSONDecoder = {
         let d = JSONDecoder()
@@ -132,7 +135,11 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         }
     }
 
-    var isAuthenticated: Bool { token != nil }
+    /// True only if a token exists AND it has not expired
+    var isAuthenticated: Bool {
+        guard let token else { return false }
+        return !isTokenExpired(token)
+    }
 
     func setToken(_ token: String?) {
         self.token = token
@@ -140,6 +147,29 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
 
     func clearToken() {
         self.token = nil
+    }
+
+    // MARK: - Token Expiry Check
+
+    private func isTokenExpired(_ token: String) -> Bool {
+        let parts = token.split(separator: ".")
+        guard parts.count == 3 else { return true }
+
+        // Base64url decode the payload
+        var base64 = String(parts[1])
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        // Pad to multiple of 4
+        let remainder = base64.count % 4
+        if remainder > 0 { base64 += String(repeating: "=", count: 4 - remainder) }
+
+        guard let data = Data(base64Encoded: base64),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let exp = json["exp"] as? TimeInterval else {
+            return true // Can't decode → treat as expired
+        }
+
+        return Date(timeIntervalSince1970: exp) < Date()
     }
 
     // MARK: - Request Building
@@ -194,6 +224,8 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
                 throw APIError.decodingError(error)
             }
         case 401:
+            clearToken() // Token expired — force re-login
+            NotificationCenter.default.post(name: .apiUnauthorized, object: nil)
             throw APIError.unauthorized
         case 403:
             throw APIError.forbidden
@@ -279,4 +311,10 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
 
 private struct ErrorBody: Decodable {
     let error: String?
+}
+
+// MARK: - Notification Names
+
+extension Notification.Name {
+    static let apiUnauthorized = Notification.Name("APIClientUnauthorized")
 }
