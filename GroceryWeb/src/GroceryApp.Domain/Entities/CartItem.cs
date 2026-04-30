@@ -6,6 +6,7 @@ public class CartItem
     public Guid UserId { get; set; }
     public Guid ProductId { get; set; }
     public int Quantity { get; set; } = 1;
+    public string? Remarks { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 

@@ -9,6 +9,7 @@ public class OrderItem
     public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
     public decimal TotalPrice { get; set; }
+    public string? Remarks { get; set; }
 
     // Navigation
     public Order Order { get; set; } = null!;

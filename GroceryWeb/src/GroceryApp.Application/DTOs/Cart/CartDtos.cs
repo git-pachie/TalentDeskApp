@@ -10,15 +10,18 @@ public class CartItemDto
     public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
     public decimal TotalPrice { get; set; }
+    public string? Remarks { get; set; }
 }
 
 public class AddToCartRequest
 {
     public Guid ProductId { get; set; }
     public int Quantity { get; set; } = 1;
+    public string? Remarks { get; set; }
 }
 
 public class UpdateCartItemRequest
 {
     public int Quantity { get; set; }
+    public string? Remarks { get; set; }
 }

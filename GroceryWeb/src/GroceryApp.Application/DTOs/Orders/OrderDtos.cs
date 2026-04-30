@@ -17,6 +17,7 @@ public class OrderDto
     public PaymentSummaryDto? Payment { get; set; }
     public OrderAddressDto? Address { get; set; }
     public List<OrderStatusHistoryDto> StatusHistory { get; set; } = [];
+    public List<OrderReviewDto> Reviews { get; set; } = [];
 }
 
 public class OrderItemDto
@@ -27,6 +28,7 @@ public class OrderItemDto
     public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
     public decimal TotalPrice { get; set; }
+    public string? Remarks { get; set; }
 }
 
 public class PaymentSummaryDto
@@ -60,4 +62,24 @@ public class OrderAddressDto
     public string ZipCode { get; set; } = string.Empty;
     public string? DeliveryInstructions { get; set; }
     public string? ContactNumber { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+}
+
+public class OrderReviewDto
+{
+    public Guid Id { get; set; }
+    public string UserName { get; set; } = string.Empty;
+    public string ProductName { get; set; } = string.Empty;
+    public int Rating { get; set; }
+    public string? Comment { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public List<OrderReviewPhotoDto> Photos { get; set; } = [];
+}
+
+public class OrderReviewPhotoDto
+{
+    public Guid Id { get; set; }
+    public string PhotoUrl { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
 }

@@ -12,6 +12,7 @@ public class OrderService : IOrderService
     private readonly IRepository<CartItem> _cartRepo;
     private readonly IRepository<Voucher> _voucherRepo;
     private readonly IRepository<OrderStatusHistory> _statusHistoryRepo;
+    private readonly IRepository<Review> _reviewRepo;
     private readonly INotificationService _notificationService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly string _productImageBaseUrl;
@@ -21,6 +22,7 @@ public class OrderService : IOrderService
         IRepository<CartItem> cartRepo,
         IRepository<Voucher> voucherRepo,
         IRepository<OrderStatusHistory> statusHistoryRepo,
+        IRepository<Review> reviewRepo,
         INotificationService notificationService,
         IUnitOfWork unitOfWork,
         IConfiguration configuration)
@@ -29,6 +31,7 @@ public class OrderService : IOrderService
         _cartRepo = cartRepo;
         _voucherRepo = voucherRepo;
         _statusHistoryRepo = statusHistoryRepo;
+        _reviewRepo = reviewRepo;
         _notificationService = notificationService;
         _unitOfWork = unitOfWork;
         _productImageBaseUrl = (configuration["ImageUrls:ProductImage"] ?? "").TrimEnd('/');
@@ -66,6 +69,8 @@ public class OrderService : IOrderService
         }
 
         var deliveryFee = subTotal >= 1500 ? 0 : 50; // Free delivery over ₱1500
+        var platformFee = 2m;
+        var otherCharges = 1m;
 
         var order = new Order
         {
@@ -74,7 +79,9 @@ public class OrderService : IOrderService
             SubTotal = subTotal,
             DiscountAmount = discountAmount,
             DeliveryFee = deliveryFee,
-            TotalAmount = subTotal - discountAmount + deliveryFee,
+            PlatformFee = platformFee,
+            OtherCharges = otherCharges,
+            TotalAmount = subTotal - discountAmount + deliveryFee + platformFee + otherCharges,
             AddressId = request.AddressId,
             VoucherId = voucherId,
             Notes = request.Notes,
@@ -84,7 +91,8 @@ public class OrderService : IOrderService
                 ProductName = c.Product.Name,
                 UnitPrice = c.Product.DiscountPrice ?? c.Product.Price,
                 Quantity = c.Quantity,
-                TotalPrice = (c.Product.DiscountPrice ?? c.Product.Price) * c.Quantity
+                TotalPrice = (c.Product.DiscountPrice ?? c.Product.Price) * c.Quantity,
+                Remarks = c.Remarks
             }).ToList()
         };
 
@@ -120,7 +128,17 @@ public class OrderService : IOrderService
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
 
-        return orders.Select(MapToDto);
+        var orderIds = orders.Select(o => o.Id).ToList();
+        var reviews = await _reviewRepo.Query()
+            .Include(r => r.User)
+            .Include(r => r.Product)
+            .Include(r => r.Photos)
+            .Where(r => orderIds.Contains(r.OrderId))
+            .ToListAsync();
+
+        var reviewsByOrder = reviews.GroupBy(r => r.OrderId).ToDictionary(g => g.Key, g => g.AsEnumerable());
+
+        return orders.Select(o => MapToDto(o, reviewsByOrder.GetValueOrDefault(o.Id)));
     }
 
     public async Task<OrderDto?> GetOrderByIdAsync(Guid userId, Guid orderId)
@@ -132,7 +150,37 @@ public class OrderService : IOrderService
             .Include(o => o.StatusHistory)
             .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId);
 
-        return order is null ? null : MapToDto(order);
+        if (order is null) return null;
+
+        var reviews = await _reviewRepo.Query()
+            .Include(r => r.User)
+            .Include(r => r.Product)
+            .Include(r => r.Photos)
+            .Where(r => r.OrderId == orderId)
+            .ToListAsync();
+
+        return MapToDto(order, reviews);
+    }
+
+    public async Task<OrderDto?> GetOrderByIdAdminAsync(Guid orderId)
+    {
+        var order = await _orderRepo.Query()
+            .Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
+            .Include(o => o.Payment)
+            .Include(o => o.Address)
+            .Include(o => o.StatusHistory)
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+
+        if (order is null) return null;
+
+        var reviews = await _reviewRepo.Query()
+            .Include(r => r.User)
+            .Include(r => r.Product)
+            .Include(r => r.Photos)
+            .Where(r => r.OrderId == orderId)
+            .ToListAsync();
+
+        return MapToDto(order, reviews);
     }
 
     public async Task<OrderDto?> UpdateOrderStatusAsync(Guid orderId, string status)
@@ -167,7 +215,14 @@ public class OrderService : IOrderService
                 order.UserId, "Order Updated", $"Your order {order.OrderNumber} is now {newStatus}.", "order", order.Id.ToString());
         }
 
-        return MapToDto(order);
+        var reviews = await _reviewRepo.Query()
+            .Include(r => r.User)
+            .Include(r => r.Product)
+            .Include(r => r.Photos)
+            .Where(r => r.OrderId == orderId)
+            .ToListAsync();
+
+        return MapToDto(order, reviews);
     }
 
     public async Task<IEnumerable<OrderDto>> GetAllOrdersAsync(int page, int pageSize)
@@ -182,10 +237,20 @@ public class OrderService : IOrderService
             .Take(pageSize)
             .ToListAsync();
 
-        return orders.Select(MapToDto);
+        var orderIds = orders.Select(o => o.Id).ToList();
+        var reviews = await _reviewRepo.Query()
+            .Include(r => r.User)
+            .Include(r => r.Product)
+            .Include(r => r.Photos)
+            .Where(r => orderIds.Contains(r.OrderId))
+            .ToListAsync();
+
+        var reviewsByOrder = reviews.GroupBy(r => r.OrderId).ToDictionary(g => g.Key, g => g.AsEnumerable());
+
+        return orders.Select(o => MapToDto(o, reviewsByOrder.GetValueOrDefault(o.Id)));
     }
 
-    private OrderDto MapToDto(Order order)
+    private OrderDto MapToDto(Order order, IEnumerable<Review>? reviews = null)
     {
         return new OrderDto
         {
@@ -211,7 +276,8 @@ public class OrderService : IOrderService
                     ProductImageUrl = BuildFullImageUrl(primaryImage?.ImageUrl),
                     UnitPrice = i.UnitPrice,
                     Quantity = i.Quantity,
-                    TotalPrice = i.TotalPrice
+                    TotalPrice = i.TotalPrice,
+                    Remarks = i.Remarks
                 };
             }),
             Payment = order.Payment is null ? null : new PaymentSummaryDto
@@ -228,7 +294,9 @@ public class OrderService : IOrderService
                 Province = order.Address.Province,
                 ZipCode = order.Address.ZipCode,
                 DeliveryInstructions = order.Address.DeliveryInstructions,
-                ContactNumber = order.Address.ContactNumber
+                ContactNumber = order.Address.ContactNumber,
+                Latitude = order.Address.Latitude,
+                Longitude = order.Address.Longitude
             },
             StatusHistory = order.StatusHistory
                 .OrderBy(h => h.CreatedAt)
@@ -238,7 +306,22 @@ public class OrderService : IOrderService
                     Notes = h.Notes,
                     CreatedBy = h.CreatedBy,
                     CreatedAt = h.CreatedAt
+                }).ToList(),
+            Reviews = (reviews ?? []).Select(r => new OrderReviewDto
+            {
+                Id = r.Id,
+                UserName = r.User is not null ? $"{r.User.FirstName} {r.User.LastName}" : "Anonymous",
+                ProductName = r.Product?.Name ?? "Unknown Product",
+                Rating = r.Rating,
+                Comment = r.Comment,
+                CreatedAt = r.CreatedAt,
+                Photos = r.Photos.OrderBy(p => p.SortOrder).Select(p => new OrderReviewPhotoDto
+                {
+                    Id = p.Id,
+                    PhotoUrl = p.PhotoUrl,
+                    SortOrder = p.SortOrder
                 }).ToList()
+            }).ToList()
         };
     }
 

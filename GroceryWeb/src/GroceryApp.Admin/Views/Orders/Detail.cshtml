@@ -14,7 +14,7 @@
 </div>
 
 <div class="row g-3">
-    @* ===== LEFT: Items ===== *@
+    @* ===== LEFT: Items + Reviews ===== *@
     <div class="col-lg-8">
         <div class="card data-card mb-3">
             <div class="card-header">
@@ -33,7 +33,24 @@
                     @foreach (var item in Model.Items)
                     {
                         <tr>
-                            <td class="fw-semibold">@item.ProductName</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    @if (!string.IsNullOrEmpty(item.ProductImageUrl))
+                                    {
+                                        <img src="@item.ProductImageUrl" alt="@item.ProductName"
+                                             style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px;" />
+                                    }
+                                    <div>
+                                        <div class="fw-semibold">@item.ProductName</div>
+                                        @if (!string.IsNullOrEmpty(item.Remarks))
+                                        {
+                                            <div class="text-muted" style="font-size: 0.8rem;">
+                                                <i class="bi bi-chat-left-text me-1"></i>@item.Remarks
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
                             <td class="text-end">₱@item.UnitPrice.ToString("N2")</td>
                             <td class="text-center">
                                 <span class="badge bg-light text-dark border">@item.Quantity</span>
@@ -45,7 +62,7 @@
             </table>
             <div class="card-footer bg-white px-3 py-3">
                 <div class="d-flex justify-content-end">
-                    <div style="min-width: 250px;">
+                    <div style="min-width: 280px;">
                         <div class="d-flex justify-content-between mb-1">
                             <span class="text-muted">Subtotal</span>
                             <span>₱@Model.SubTotal.ToString("N2")</span>
@@ -57,10 +74,24 @@
                                 <span>-₱@Model.DiscountAmount.ToString("N2")</span>
                             </div>
                         }
-                        <div class="d-flex justify-content-between mb-2">
+                        <div class="d-flex justify-content-between mb-1">
                             <span class="text-muted">Delivery Fee</span>
                             <span>₱@Model.DeliveryFee.ToString("N2")</span>
                         </div>
+                        @if (Model.PlatformFee > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Platform Fee</span>
+                                <span>₱@Model.PlatformFee.ToString("N2")</span>
+                            </div>
+                        }
+                        @if (Model.OtherCharges > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Other Charges</span>
+                                <span>₱@Model.OtherCharges.ToString("N2")</span>
+                            </div>
+                        }
                         <hr class="my-2" />
                         <div class="d-flex justify-content-between fw-bold fs-5">
                             <span>Total</span>
@@ -75,8 +106,63 @@
         {
             <div class="card form-card mb-3">
                 <div class="card-body">
-                    <h6 class="fw-bold mb-2"><i class="bi bi-chat-left-text me-2"></i>Order Notes</h6>
+                    <h6 class="fw-bold mb-2"><i class="bi bi-chat-left-text me-2"></i>Order Remarks</h6>
                     <p class="text-muted mb-0">@Model.Notes</p>
+                </div>
+            </div>
+        }
+
+        @* ===== Ratings & Reviews ===== *@
+        @if (Model.Reviews.Count > 0)
+        {
+            <div class="card data-card mb-3">
+                <div class="card-header">
+                    <h5><i class="bi bi-star me-2"></i>Ratings & Reviews (@Model.Reviews.Count)</h5>
+                </div>
+                <div class="card-body">
+                    @foreach (var review in Model.Reviews)
+                    {
+                        <div class="border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="fw-semibold">@review.UserName</span>
+                                    <span class="text-muted ms-2" style="font-size: 0.8rem;">@review.ProductName</span>
+                                </div>
+                                <span class="text-muted" style="font-size: 0.8rem;">@review.CreatedAt.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            <div class="mb-2">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    if (i <= review.Rating)
+                                    {
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-star text-muted"></i>
+                                    }
+                                }
+                                <span class="ms-1 text-muted" style="font-size: 0.85rem;">(@review.Rating/5)</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(review.Comment))
+                            {
+                                <p class="mb-2 text-muted">@review.Comment</p>
+                            }
+                            @if (review.Photos.Count > 0)
+                            {
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    @foreach (var photo in review.Photos)
+                                    {
+                                        <a href="@photo.PhotoUrl" target="_blank" rel="noopener noreferrer">
+                                            <img src="@photo.PhotoUrl" alt="Review photo"
+                                                 style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; cursor: pointer;"
+                                                 loading="lazy" />
+                                        </a>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
         }
@@ -139,13 +225,41 @@
             <div class="card form-card mb-3">
                 <div class="card-body">
                     <h6 class="fw-bold mb-3"><i class="bi bi-geo-alt me-2"></i>Delivery Address</h6>
-                    <div class="d-flex align-items-start gap-2">
+                    <div class="d-flex align-items-start gap-2 mb-2">
                         <span class="badge bg-primary-subtle text-primary">@Model.Address.Label</span>
                         <div>
                             <div>@Model.Address.Street</div>
                             <div class="text-muted">@Model.Address.City, @Model.Address.Province @Model.Address.ZipCode</div>
                         </div>
                     </div>
+                    @if (!string.IsNullOrEmpty(Model.Address.ContactNumber))
+                    {
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-telephone text-muted"></i>
+                            <span>@Model.Address.ContactNumber</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Address.DeliveryInstructions))
+                    {
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-info-circle text-muted mt-1"></i>
+                            <span class="text-muted">@Model.Address.DeliveryInstructions</span>
+                        </div>
+                    }
+                    @if (Model.Address.Latitude.HasValue && Model.Address.Longitude.HasValue)
+                    {
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-pin-map text-muted"></i>
+                            <span class="text-muted" style="font-size: 0.85rem;">
+                                @Model.Address.Latitude.Value.ToString("F6"), @Model.Address.Longitude.Value.ToString("F6")
+                            </span>
+                        </div>
+                        <a href="https://www.google.com/maps?q=@Model.Address.Latitude.Value,@Model.Address.Longitude.Value"
+                           target="_blank" rel="noopener noreferrer"
+                           class="btn btn-outline-primary btn-sm w-100 mt-1">
+                            <i class="bi bi-map me-1"></i> View on Map
+                        </a>
+                    }
                 </div>
             </div>
         }

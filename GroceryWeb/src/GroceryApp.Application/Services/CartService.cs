@@ -45,6 +45,7 @@ public class CartService : ICartService
         if (existing is not null)
         {
             existing.Quantity += request.Quantity;
+            existing.Remarks = request.Remarks ?? existing.Remarks;
             existing.UpdatedAt = DateTime.UtcNow;
             _cartRepo.Update(existing);
         }
@@ -54,7 +55,8 @@ public class CartService : ICartService
             {
                 UserId = userId,
                 ProductId = request.ProductId,
-                Quantity = request.Quantity
+                Quantity = request.Quantity,
+                Remarks = request.Remarks
             };
             await _cartRepo.AddAsync(existing);
         }
@@ -79,6 +81,7 @@ public class CartService : ICartService
         if (item is null) return null;
 
         item.Quantity = request.Quantity;
+        item.Remarks = request.Remarks ?? item.Remarks;
         item.UpdatedAt = DateTime.UtcNow;
         _cartRepo.Update(item);
         await _unitOfWork.SaveChangesAsync();
@@ -117,7 +120,8 @@ public class CartService : ICartService
             ProductImageFullUrl = BuildFullImageUrl(primaryImage?.ImageUrl),
             UnitPrice = item.Product.DiscountPrice ?? item.Product.Price,
             Quantity = item.Quantity,
-            TotalPrice = (item.Product.DiscountPrice ?? item.Product.Price) * item.Quantity
+            TotalPrice = (item.Product.DiscountPrice ?? item.Product.Price) * item.Quantity,
+            Remarks = item.Remarks
         };
     }
 

@@ -49,6 +49,14 @@ public class OrdersController : ControllerBase
         return Ok(orders);
     }
 
+    [HttpGet("admin/{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetOrderAdmin(Guid id)
+    {
+        var order = await _orderService.GetOrderByIdAdminAsync(id);
+        return order is null ? NotFound() : Ok(order);
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {

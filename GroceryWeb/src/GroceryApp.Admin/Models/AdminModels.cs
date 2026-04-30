@@ -127,6 +127,8 @@ public class OrderModel
     public decimal SubTotal { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal DeliveryFee { get; set; }
+    public decimal PlatformFee { get; set; }
+    public decimal OtherCharges { get; set; }
     public decimal TotalAmount { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? Notes { get; set; }
@@ -135,15 +137,18 @@ public class OrderModel
     public OrderPaymentModel? Payment { get; set; }
     public OrderAddressModel? Address { get; set; }
     public List<OrderStatusHistoryModel> StatusHistory { get; set; } = [];
+    public List<OrderReviewModel> Reviews { get; set; } = [];
 }
 
 public class OrderItemModel
 {
     public Guid ProductId { get; set; }
     public string ProductName { get; set; } = string.Empty;
+    public string? ProductImageUrl { get; set; }
     public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
     public decimal TotalPrice { get; set; }
+    public string? Remarks { get; set; }
 }
 
 public class OrderPaymentModel
@@ -160,6 +165,28 @@ public class OrderAddressModel
     public string City { get; set; } = string.Empty;
     public string Province { get; set; } = string.Empty;
     public string ZipCode { get; set; } = string.Empty;
+    public string? ContactNumber { get; set; }
+    public string? DeliveryInstructions { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+}
+
+public class OrderReviewModel
+{
+    public Guid Id { get; set; }
+    public string UserName { get; set; } = string.Empty;
+    public string ProductName { get; set; } = string.Empty;
+    public int Rating { get; set; }
+    public string? Comment { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public List<OrderReviewPhotoModel> Photos { get; set; } = [];
+}
+
+public class OrderReviewPhotoModel
+{
+    public Guid Id { get; set; }
+    public string PhotoUrl { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
 }
 
 public class OrderStatusHistoryModel
