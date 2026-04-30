@@ -577,7 +577,8 @@ struct OrderDetailView: View {
             productId: firstItem.productId,
             orderId: order.id,
             rating: rating,
-            comment: remarks.isEmpty ? nil : remarks
+            comment: remarks.isEmpty ? nil : remarks,
+            photoUrls: nil
         )
 
         do {
