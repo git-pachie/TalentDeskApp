@@ -166,6 +166,8 @@ struct AddressListView: View {
             country: nil,
             deliveryInstructions: item.deliveryInstructions.isEmpty ? nil : item.deliveryInstructions,
             contactNumber: item.contactNumber.isEmpty ? nil : item.contactNumber,
+            latitude: item.latitude != 0 ? item.latitude : nil,
+            longitude: item.longitude != 0 ? item.longitude : nil,
             isDefault: item.isDefault
         )
         do {
@@ -188,6 +190,8 @@ struct AddressListView: View {
             country: nil,
             deliveryInstructions: item.deliveryInstructions.isEmpty ? nil : item.deliveryInstructions,
             contactNumber: item.contactNumber.isEmpty ? nil : item.contactNumber,
+            latitude: item.latitude != 0 ? item.latitude : nil,
+            longitude: item.longitude != 0 ? item.longitude : nil,
             isDefault: item.isDefault
         )
         do {

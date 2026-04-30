@@ -50,16 +50,21 @@ public class AddressService : IAddressService
             Country = request.Country ?? "Philippines",
             DeliveryInstructions = request.DeliveryInstructions,
             ContactNumber = request.ContactNumber,
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
             IsDefault = request.IsDefault
         };
 
-        // Geocode
-        var fullAddress = $"{request.Street}, {request.City}, {request.Province}, {request.ZipCode}";
-        var coords = await _geocodingService.GeocodeAddressAsync(fullAddress);
-        if (coords.HasValue)
+        // Geocode only if client didn't provide coordinates
+        if (address.Latitude is null || address.Longitude is null)
         {
-            address.Latitude = coords.Value.Latitude;
-            address.Longitude = coords.Value.Longitude;
+            var fullAddress = $"{request.Street}, {request.City}, {request.Province}, {request.ZipCode}";
+            var coords = await _geocodingService.GeocodeAddressAsync(fullAddress);
+            if (coords.HasValue)
+            {
+                address.Latitude = coords.Value.Latitude;
+                address.Longitude = coords.Value.Longitude;
+            }
         }
 
         await _addressRepo.AddAsync(address);
@@ -81,6 +86,8 @@ public class AddressService : IAddressService
         if (request.Country is not null) address.Country = request.Country;
         if (request.DeliveryInstructions is not null) address.DeliveryInstructions = request.DeliveryInstructions;
         if (request.ContactNumber is not null) address.ContactNumber = request.ContactNumber;
+        if (request.Latitude.HasValue) address.Latitude = request.Latitude.Value;
+        if (request.Longitude.HasValue) address.Longitude = request.Longitude.Value;
 
         if (request.IsDefault == true)
         {
@@ -88,8 +95,9 @@ public class AddressService : IAddressService
             address.IsDefault = true;
         }
 
-        // Re-geocode if address changed
-        if (request.Street is not null || request.City is not null || request.Province is not null)
+        // Re-geocode only if address text changed and no coordinates provided
+        if ((request.Street is not null || request.City is not null || request.Province is not null)
+            && !request.Latitude.HasValue && !request.Longitude.HasValue)
         {
             var fullAddress = $"{address.Street}, {address.City}, {address.Province}, {address.ZipCode}";
             var coords = await _geocodingService.GeocodeAddressAsync(fullAddress);

@@ -26,6 +26,8 @@ public class CreateAddressRequest
     public string? Country { get; set; }
     public string? DeliveryInstructions { get; set; }
     public string? ContactNumber { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
     public bool IsDefault { get; set; }
 }
 
@@ -39,5 +41,7 @@ public class UpdateAddressRequest
     public string? Country { get; set; }
     public string? DeliveryInstructions { get; set; }
     public string? ContactNumber { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
     public bool? IsDefault { get; set; }
 }

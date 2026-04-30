@@ -282,6 +282,8 @@ struct CreateAddressRequest: Encodable {
     let country: String?
     let deliveryInstructions: String?
     let contactNumber: String?
+    let latitude: Double?
+    let longitude: Double?
     let isDefault: Bool
 }
 
@@ -294,6 +296,8 @@ struct UpdateAddressRequest: Encodable {
     let country: String?
     let deliveryInstructions: String?
     let contactNumber: String?
+    let latitude: Double?
+    let longitude: Double?
     let isDefault: Bool?
 }
 
