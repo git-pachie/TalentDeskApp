@@ -48,6 +48,8 @@ public class AddressService : IAddressService
             Province = request.Province,
             ZipCode = request.ZipCode,
             Country = request.Country ?? "Philippines",
+            DeliveryInstructions = request.DeliveryInstructions,
+            ContactNumber = request.ContactNumber,
             IsDefault = request.IsDefault
         };
 
@@ -77,6 +79,8 @@ public class AddressService : IAddressService
         if (request.Province is not null) address.Province = request.Province;
         if (request.ZipCode is not null) address.ZipCode = request.ZipCode;
         if (request.Country is not null) address.Country = request.Country;
+        if (request.DeliveryInstructions is not null) address.DeliveryInstructions = request.DeliveryInstructions;
+        if (request.ContactNumber is not null) address.ContactNumber = request.ContactNumber;
 
         if (request.IsDefault == true)
         {
@@ -133,6 +137,8 @@ public class AddressService : IAddressService
             Province = address.Province,
             ZipCode = address.ZipCode,
             Country = address.Country,
+            DeliveryInstructions = address.DeliveryInstructions,
+            ContactNumber = address.ContactNumber,
             Latitude = address.Latitude,
             Longitude = address.Longitude,
             IsDefault = address.IsDefault

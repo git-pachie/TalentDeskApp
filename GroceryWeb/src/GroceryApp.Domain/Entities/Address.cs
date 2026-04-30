@@ -10,6 +10,8 @@ public class Address
     public string Province { get; set; } = string.Empty;
     public string ZipCode { get; set; } = string.Empty;
     public string? Country { get; set; } = "Philippines";
+    public string? DeliveryInstructions { get; set; }
+    public string? ContactNumber { get; set; }
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     public bool IsDefault { get; set; }

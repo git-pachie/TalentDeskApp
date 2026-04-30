@@ -249,6 +249,8 @@ struct AddressDTO: Decodable, Identifiable {
     let province: String
     let zipCode: String
     let country: String?
+    let deliveryInstructions: String?
+    let contactNumber: String?
     let latitude: Double?
     let longitude: Double?
     let isDefault: Bool
@@ -263,8 +265,8 @@ struct AddressDTO: Decodable, Identifiable {
             label: label,
             address: fullAddress,
             isDefault: isDefault,
-            deliveryInstructions: "",
-            contactNumber: "",
+            deliveryInstructions: deliveryInstructions ?? "",
+            contactNumber: contactNumber ?? "",
             latitude: latitude ?? 0,
             longitude: longitude ?? 0
         )
@@ -278,6 +280,8 @@ struct CreateAddressRequest: Encodable {
     let province: String
     let zipCode: String
     let country: String?
+    let deliveryInstructions: String?
+    let contactNumber: String?
     let isDefault: Bool
 }
 
@@ -288,6 +292,8 @@ struct UpdateAddressRequest: Encodable {
     let province: String?
     let zipCode: String?
     let country: String?
+    let deliveryInstructions: String?
+    let contactNumber: String?
     let isDefault: Bool?
 }
 

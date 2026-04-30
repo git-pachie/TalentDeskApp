@@ -164,11 +164,13 @@ struct AddressListView: View {
             province: parts.count > 2 ? parts[2] : "",
             zipCode: parts.count > 3 ? parts[3] : "",
             country: nil,
+            deliveryInstructions: item.deliveryInstructions.isEmpty ? nil : item.deliveryInstructions,
+            contactNumber: item.contactNumber.isEmpty ? nil : item.contactNumber,
             isDefault: item.isDefault
         )
         do {
             let _: AddressDTO = try await APIClient.shared.post("/api/addresses", body: request)
-            await loadAddresses() // Reload to get server-assigned IDs
+            await loadAddresses()
         } catch {
             print("⚠️ Failed to save address: \(error)")
         }
@@ -184,6 +186,8 @@ struct AddressListView: View {
             province: parts.count > 2 ? parts[2] : "",
             zipCode: parts.count > 3 ? parts[3] : "",
             country: nil,
+            deliveryInstructions: item.deliveryInstructions.isEmpty ? nil : item.deliveryInstructions,
+            contactNumber: item.contactNumber.isEmpty ? nil : item.contactNumber,
             isDefault: item.isDefault
         )
         do {
