@@ -78,20 +78,14 @@
                             <span class="text-muted">Delivery Fee</span>
                             <span>₱@Model.DeliveryFee.ToString("N2")</span>
                         </div>
-                        @if (Model.PlatformFee > 0)
-                        {
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Platform Fee</span>
-                                <span>₱@Model.PlatformFee.ToString("N2")</span>
-                            </div>
-                        }
-                        @if (Model.OtherCharges > 0)
-                        {
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Other Charges</span>
-                                <span>₱@Model.OtherCharges.ToString("N2")</span>
-                            </div>
-                        }
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Platform Fee</span>
+                            <span>₱@Model.PlatformFee.ToString("N2")</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Other Charges</span>
+                            <span>₱@Model.OtherCharges.ToString("N2")</span>
+                        </div>
                         <hr class="my-2" />
                         <div class="d-flex justify-content-between fw-bold fs-5">
                             <span>Total</span>

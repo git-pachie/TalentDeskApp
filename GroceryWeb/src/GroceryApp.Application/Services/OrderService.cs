@@ -69,8 +69,8 @@ public class OrderService : IOrderService
         }
 
         var deliveryFee = subTotal >= 1500 ? 0 : 50; // Free delivery over ₱1500
-        var platformFee = 2m;
-        var otherCharges = 1m;
+        var platformFee = request.PlatformFee;
+        var otherCharges = request.OtherCharges;
 
         var order = new Order
         {

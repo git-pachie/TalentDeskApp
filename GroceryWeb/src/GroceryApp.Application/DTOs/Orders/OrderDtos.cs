@@ -51,6 +51,8 @@ public class CreateOrderRequest
     public Guid? AddressId { get; set; }
     public string? VoucherCode { get; set; }
     public string? Notes { get; set; }
+    public decimal PlatformFee { get; set; } = 2m;
+    public decimal OtherCharges { get; set; } = 1m;
 }
 
 public class OrderAddressDto
