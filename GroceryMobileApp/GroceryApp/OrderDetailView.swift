@@ -217,6 +217,44 @@ struct OrderDetailView: View {
                     .frame(maxWidth: .infinity)
                 }
             }
+
+            // Status history timeline from API
+            if let history = orderDetail?.statusHistory, !history.isEmpty {
+                Divider()
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(history.enumerated()), id: \.element.id) { index, entry in
+                        HStack(alignment: .top, spacing: 12) {
+                            VStack(spacing: 0) {
+                                Circle()
+                                    .fill(index == history.count - 1 ? GroceryTheme.primary : Color(.systemGray4))
+                                    .frame(width: 8, height: 8)
+                                if index < history.count - 1 {
+                                    Rectangle()
+                                        .fill(Color(.systemGray4))
+                                        .frame(width: 1.5)
+                                        .frame(maxHeight: .infinity)
+                                }
+                            }
+                            .frame(width: 8)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(entry.status)
+                                    .font(.system(.caption, design: .rounded, weight: .semibold))
+                                    .foregroundStyle(GroceryTheme.title)
+                                if let notes = entry.notes, !notes.isEmpty {
+                                    Text(notes)
+                                        .font(.system(.caption2, design: .rounded))
+                                        .foregroundStyle(GroceryTheme.subtitle)
+                                }
+                                Text("\(entry.createdAt.formatted(date: .abbreviated, time: .shortened)) · \(entry.createdBy)")
+                                    .font(.system(.caption2, design: .rounded))
+                                    .foregroundStyle(GroceryTheme.muted)
+                            }
+                            .padding(.bottom, index < history.count - 1 ? 10 : 0)
+                        }
+                    }
+                }
+            }
         }
         .padding(14)
         .background(GroceryTheme.card)

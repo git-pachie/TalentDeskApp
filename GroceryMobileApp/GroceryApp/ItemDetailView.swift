@@ -5,27 +5,17 @@ struct ItemDetailView: View {
     @State private var quantity = 1
     @Environment(FavoritesStore.self) private var favoritesStore
     @Environment(CartStore.self) private var cartStore
+    @Environment(ProductStore.self) private var productStore
     @State private var selectedImageIndex = 0
+    @State private var productDetail: ProductDTO?
 
     private var thumbnailURLs: [String] {
-        var urls: [String] = []
-        if let main = product.imageURL { urls.append(main) }
-        // Related product images by category
-        switch product.category {
-        case "Fruits":
-            urls.append(contentsOf: [
-                "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400",
-                "https://images.unsplash.com/photo-1587132137056-bfbf0166836e?w=400",
-                "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=400",
-            ])
-        default:
-            urls.append(contentsOf: [
-                "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400",
-                "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400",
-                "https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=400",
-            ])
+        // Use API images if loaded, otherwise fall back to the product's single image
+        if let detail = productDetail, !detail.imageGalleryURLs.isEmpty {
+            return detail.imageGalleryURLs
         }
-        return urls
+        if let main = product.imageURL { return [main] }
+        return []
     }
 
     private var relatedProducts: [GroceryProduct] {
@@ -61,6 +51,9 @@ struct ItemDetailView: View {
         .background(GroceryTheme.background)
         .navigationTitle(product.name)
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            productDetail = await productStore.productDetail(product.id)
+        }
     }
 
     // MARK: - Hero Image
@@ -224,10 +217,28 @@ struct ItemDetailView: View {
             Text("About this item")
                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .foregroundStyle(GroceryTheme.title)
-            Text("Fresh and organic \(product.name.lowercased()) sourced from local farms in \(product.location). Perfect for salads, cooking, or healthy snacking. Stored at optimal temperature to ensure freshness.")
+            Text(productDetail?.description ?? "Fresh and organic \(product.name.lowercased()) sourced from local farms in \(product.location). Perfect for salads, cooking, or healthy snacking. Stored at optimal temperature to ensure freshness.")
                 .font(.system(.caption, design: .rounded))
                 .foregroundStyle(GroceryTheme.subtitle)
                 .lineSpacing(4)
+
+            // Show all categories if product belongs to multiple
+            if let categories = productDetail?.allCategoryNames, categories.count > 1 {
+                HStack(spacing: 6) {
+                    Image(systemName: "tag.fill")
+                        .font(.caption2)
+                        .foregroundStyle(GroceryTheme.primary)
+                    ForEach(categories, id: \.self) { cat in
+                        Text(cat)
+                            .font(.system(.caption2, design: .rounded, weight: .medium))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(GroceryTheme.primaryLight)
+                            .foregroundStyle(GroceryTheme.primary)
+                            .clipShape(Capsule())
+                    }
+                }
+            }
         }
     }
 

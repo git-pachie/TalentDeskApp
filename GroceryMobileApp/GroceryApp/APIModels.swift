@@ -75,9 +75,11 @@ struct ProductDTO: Decodable, Identifiable {
     let isActive: Bool
     let categoryId: UUID
     let categoryName: String
+    let categories: [ProductCategoryDTO]?
     let images: [ProductImageDTO]
     let averageRating: Double
     let reviewCount: Int
+    let createdAt: Date?
 
     /// Map to the app's GroceryProduct
     var asGroceryProduct: GroceryProduct {
@@ -90,7 +92,9 @@ struct ProductDTO: Decodable, Identifiable {
         } else {
             nil
         }
-        let primaryImage = images.first(where: { $0.isPrimary })?.imageUrl ?? images.first?.imageUrl
+        // Prefer fullUrl for image display, fall back to imageUrl
+        let primaryImage = images.first(where: { $0.isPrimary }) ?? images.first
+        let imageURL = primaryImage?.fullUrl ?? primaryImage?.imageUrl
 
         return GroceryProduct(
             id: id,
@@ -101,16 +105,42 @@ struct ProductDTO: Decodable, Identifiable {
             discount: discountText,
             emoji: emojiForCategory(categoryName),
             category: categoryName,
-            imageURL: primaryImage
+            imageURL: imageURL
         )
     }
+
+    /// All category names including primary
+    var allCategoryNames: [String] {
+        var names = [categoryName]
+        if let categories {
+            names.append(contentsOf: categories.map(\.name))
+        }
+        return Array(Set(names))
+    }
+
+    /// All image full URLs for gallery display
+    var imageGalleryURLs: [String] {
+        images.sorted(by: { $0.sortOrder < $1.sortOrder })
+            .compactMap { $0.fullUrl ?? $0.imageUrl }
+    }
+}
+
+struct ProductCategoryDTO: Decodable, Identifiable {
+    let id: UUID
+    let name: String
 }
 
 struct ProductImageDTO: Decodable, Identifiable {
     let id: UUID
     let imageUrl: String
+    let fullUrl: String?
     let isPrimary: Bool
     let sortOrder: Int
+
+    /// Best URL to use for display — prefers fullUrl from API
+    var displayUrl: String {
+        fullUrl ?? imageUrl
+    }
 }
 
 // MARK: - Cart
@@ -149,6 +179,7 @@ struct OrderDTO: Decodable, Identifiable {
     let items: [OrderItemDTO]?
     let payment: PaymentSummaryDTO?
     let address: OrderAddressDTO?
+    let statusHistory: [OrderStatusHistoryDTO]?
 
     var asOrderItem: OrderItem {
         let formatter = DateFormatter()
@@ -191,6 +222,15 @@ struct OrderAddressDTO: Decodable {
     var fullAddress: String {
         [street, city, province, zipCode].filter { !$0.isEmpty }.joined(separator: ", ")
     }
+}
+
+struct OrderStatusHistoryDTO: Decodable, Identifiable {
+    let status: String
+    let notes: String?
+    let createdBy: String
+    let createdAt: Date
+
+    var id: String { "\(status)-\(createdAt.timeIntervalSince1970)" }
 }
 
 struct CreateOrderRequest: Encodable {
@@ -253,10 +293,62 @@ struct UpdateAddressRequest: Encodable {
 
 // MARK: - Favorites
 
-struct FavoriteDTO: Decodable {
-    let id: UUID
+struct FavoriteDTO: Decodable, Identifiable {
+    let id: UUID?
     let productId: UUID
+    let productName: String?
+    let price: Decimal?
+    let discountPrice: Decimal?
+    let imageUrl: String?
+    let addedAt: Date?
     let product: ProductDTO?
+
+    /// Build a GroceryProduct from the flat favorite data or nested product
+    var asGroceryProduct: GroceryProduct? {
+        if let product { return product.asGroceryProduct }
+        guard let productName else { return nil }
+        let priceDouble = price.map { NSDecimalNumber(decimal: $0).doubleValue } ?? 0
+        let discountDouble = discountPrice.map { NSDecimalNumber(decimal: $0).doubleValue }
+        return GroceryProduct(
+            id: productId,
+            name: productName,
+            location: "",
+            price: discountDouble ?? priceDouble,
+            originalPrice: discountPrice != nil ? priceDouble : nil,
+            discount: nil,
+            emoji: "🛒",
+            category: "",
+            imageURL: imageUrl
+        )
+    }
+}
+
+// MARK: - Payment Methods
+
+struct PaymentMethodDTO: Decodable, Identifiable {
+    let id: UUID
+    let name: String
+    let detail: String?
+    let paymentType: String
+    let icon: String?
+    let isDefault: Bool
+    let createdAt: Date?
+}
+
+struct CreatePaymentMethodRequest: Encodable {
+    let name: String
+    let detail: String?
+    let paymentType: String
+    let icon: String?
+    let isDefault: Bool
+}
+
+struct UpdatePaymentMethodRequest: Encodable {
+    let name: String?
+    let detail: String?
+    let paymentType: String?
+    let icon: String?
+    let isDefault: Bool?
 }
 
 // MARK: - Vouchers
@@ -317,6 +409,13 @@ struct ReviewDTO: Decodable, Identifiable {
     let rating: Int
     let comment: String?
     let createdAt: Date
+    let photos: [ReviewPhotoDTO]?
+}
+
+struct ReviewPhotoDTO: Decodable, Identifiable {
+    let id: UUID
+    let photoUrl: String
+    let sortOrder: Int
 }
 
 struct CreateReviewRequest: Encodable {
@@ -324,6 +423,7 @@ struct CreateReviewRequest: Encodable {
     let orderId: UUID
     let rating: Int
     let comment: String?
+    let photoUrls: [String]?
 }
 
 // MARK: - Payments
@@ -341,4 +441,28 @@ struct PaymentResultDTO: Decodable {
     let status: String
     let redirectUrl: String?
     let failureReason: String?
+}
+
+// MARK: - Notifications
+
+struct NotificationDTO: Decodable, Identifiable {
+    let id: UUID
+    let title: String
+    let message: String
+    let type: String?
+    let referenceId: String?
+    let isRead: Bool
+    let createdAt: Date
+}
+
+// MARK: - User Settings
+
+struct UserSettingDTO: Decodable {
+    let key: String
+    let value: String
+}
+
+struct UpdateUserSettingRequest: Encodable {
+    let key: String
+    let value: String
 }
