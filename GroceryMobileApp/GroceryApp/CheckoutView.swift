@@ -9,6 +9,11 @@ struct CheckoutView: View {
     @State private var showingPaymentPicker = false
     @State private var showingVoucherSheet = false
     @State private var appliedVoucher: (code: String, discount: Double)?
+    @State private var voucherValidationResult: VoucherValidationResult?
+    @State private var apiVouchers: [VoucherDTO] = []
+    @State private var voucherLoadError: String?
+    @State private var voucherApplyError: String?
+    @State private var isApplyingVoucher = false
     @State private var orderPlaced = false
     @State private var successScale: CGFloat = 0
     @State private var placedOrder: OrderItem?
@@ -20,13 +25,6 @@ struct CheckoutView: View {
     @State private var cardPaymentDetail = ""
     @State private var deliveryAddresses: [AddressDTO] = []
     @State private var selectedAddressId: UUID?
-
-    private let availableVouchers = [
-        (code: "FRESH10", description: "10% off your order", discount: 0.10),
-        (code: "SAVE5", description: "$5 off orders above $20", discount: 5.0),
-        (code: "NEWUSER", description: "$8 off first order", discount: 8.0),
-        (code: "FREESHIP", description: "Free delivery", discount: 5.0),
-    ]
 
     private var currentAddress: (label: String, address: String, instructions: String, contact: String) {
         if let idx = deliveryAddresses.firstIndex(where: { $0.id == selectedAddressId }) {
@@ -382,6 +380,7 @@ struct CheckoutView: View {
         }
         .task {
             await loadAddresses()
+            await loadVouchers()
         }
     }
 
@@ -400,6 +399,45 @@ struct CheckoutView: View {
             }
         } catch {
             print("⚠️ [Checkout] Failed to load addresses: \(error)")
+        }
+    }
+
+    // MARK: - Load & Apply Vouchers
+
+    private func loadVouchers() async {
+        guard APIClient.shared.isAuthenticated else { return }
+        do {
+            let dtos: [VoucherDTO] = try await APIClient.shared.get("/api/vouchers/user")
+            apiVouchers = dtos.filter { $0.isActive && $0.expiryDate > Date() }
+        } catch {
+            print("⚠️ [Checkout] Failed to load vouchers: \(error)")
+        }
+    }
+
+    private func applyVoucher(_ dto: VoucherDTO) async {
+        isApplyingVoucher = true
+        voucherApplyError = nil
+        defer { isApplyingVoucher = false }
+
+        let request = ApplyVoucherRequest(
+            code: dto.code,
+            cartTotal: Decimal(subtotal)
+        )
+        do {
+            let result: VoucherValidationResult = try await APIClient.shared.post("/api/vouchers/apply", body: request)
+            if result.isValid {
+                let discountDouble = NSDecimalNumber(decimal: result.discountAmount).doubleValue
+                appliedVoucher = (code: dto.code, discount: discountDouble)
+                voucherValidationResult = result
+                showingVoucherSheet = false
+            } else {
+                voucherApplyError = result.errorMessage ?? "Voucher could not be applied."
+            }
+        } catch APIError.badRequest(let msg) {
+            voucherApplyError = msg
+        } catch {
+            voucherApplyError = "Failed to validate voucher. Please try again."
+            print("⚠️ [Checkout] Voucher apply error: \(error)")
         }
     }
 
@@ -432,7 +470,9 @@ struct CheckoutView: View {
             voucherCode: appliedVoucher?.code,
             notes: orderRemarks.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? nil
-                : orderRemarks.trimmingCharacters(in: .whitespacesAndNewlines)
+                : orderRemarks.trimmingCharacters(in: .whitespacesAndNewlines),
+            platformFee: Decimal(platformFee),
+            otherCharges: Decimal(otherCharges)
         )
 
         do {
@@ -726,11 +766,12 @@ struct CheckoutView: View {
     private var voucherSheet: some View {
         NavigationView {
             List {
-                // Applied voucher remove option
+                // Remove applied voucher
                 if appliedVoucher != nil {
                     Section {
                         Button {
                             appliedVoucher = nil
+                            voucherValidationResult = nil
                             showingVoucherSheet = false
                         } label: {
                             Label("Remove Applied Voucher", systemImage: "xmark.circle")
@@ -739,41 +780,86 @@ struct CheckoutView: View {
                     }
                 }
 
-                Section("Available Vouchers") {
-                    ForEach(availableVouchers, id: \.code) { voucher in
-                        Button {
-                            appliedVoucher = (code: voucher.code, discount: voucher.discount)
-                            showingVoucherSheet = false
-                        } label: {
-                            HStack(spacing: 12) {
+                // Error banner
+                if let error = voucherApplyError {
+                    Section {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(GroceryTheme.badge)
+                            Text(error)
+                                .font(.system(.caption, design: .rounded))
+                                .foregroundStyle(GroceryTheme.badge)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+
+                if apiVouchers.isEmpty {
+                    Section {
+                        HStack {
+                            Spacer()
+                            VStack(spacing: 8) {
                                 Image(systemName: "ticket.fill")
-                                    .font(.title3)
-                                    .foregroundStyle(GroceryTheme.primary)
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(voucher.code)
-                                        .font(.system(.subheadline, design: .rounded, weight: .bold))
-                                        .foregroundStyle(GroceryTheme.title)
-                                    Text(voucher.description)
-                                        .font(.system(.caption, design: .rounded))
-                                        .foregroundStyle(GroceryTheme.muted)
-                                }
-
-                                Spacer()
-
-                                if appliedVoucher?.code == voucher.code {
-                                    Image(systemName: "checkmark.circle.fill")
+                                    .font(.largeTitle)
+                                    .foregroundStyle(GroceryTheme.muted)
+                                Text("No vouchers available")
+                                    .font(.system(.subheadline, design: .rounded))
+                                    .foregroundStyle(GroceryTheme.muted)
+                            }
+                            .padding(.vertical, 20)
+                            Spacer()
+                        }
+                    }
+                } else {
+                    Section("Available Vouchers") {
+                        ForEach(apiVouchers) { dto in
+                            let item = dto.asVoucherItem
+                            Button {
+                                voucherApplyError = nil
+                                Task { await applyVoucher(dto) }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "ticket.fill")
+                                        .font(.title3)
                                         .foregroundStyle(GroceryTheme.primary)
-                                } else {
-                                    Text("Apply")
-                                        .font(.system(.caption, design: .rounded, weight: .semibold))
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(GroceryTheme.primaryLight)
-                                        .foregroundStyle(GroceryTheme.primary)
-                                        .clipShape(Capsule())
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.code)
+                                            .font(.system(.subheadline, design: .rounded, weight: .bold))
+                                            .foregroundStyle(GroceryTheme.title)
+                                        Text(item.description)
+                                            .font(.system(.caption, design: .rounded))
+                                            .foregroundStyle(GroceryTheme.muted)
+                                        HStack(spacing: 8) {
+                                            Text(item.minOrder)
+                                                .font(.system(.caption2, design: .rounded))
+                                                .foregroundStyle(GroceryTheme.muted)
+                                            Text("· Valid until \(item.validUntil)")
+                                                .font(.system(.caption2, design: .rounded))
+                                                .foregroundStyle(GroceryTheme.muted)
+                                        }
+                                    }
+
+                                    Spacer()
+
+                                    if isApplyingVoucher {
+                                        ProgressView()
+                                            .scaleEffect(0.8)
+                                    } else if appliedVoucher?.code == item.code {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(GroceryTheme.primary)
+                                    } else {
+                                        Text("Apply")
+                                            .font(.system(.caption, design: .rounded, weight: .semibold))
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(GroceryTheme.primaryLight)
+                                            .foregroundStyle(GroceryTheme.primary)
+                                            .clipShape(Capsule())
+                                    }
                                 }
                             }
+                            .disabled(isApplyingVoucher)
                         }
                     }
                 }
@@ -782,7 +868,10 @@ struct CheckoutView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { showingVoucherSheet = false }
+                    Button("Close") {
+                        voucherApplyError = nil
+                        showingVoucherSheet = false
+                    }
                 }
             }
         }

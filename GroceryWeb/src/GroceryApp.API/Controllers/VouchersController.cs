@@ -25,6 +25,14 @@ public class VouchersController : ControllerBase
         return Ok(vouchers);
     }
 
+    [HttpGet("user")]
+    [Authorize]
+    public async Task<IActionResult> GetActive()
+    {
+        var vouchers = await _voucherService.GetActiveAsync();
+        return Ok(vouchers);
+    }
+
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateVoucherRequest request)

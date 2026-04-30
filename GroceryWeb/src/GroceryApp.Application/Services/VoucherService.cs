@@ -55,6 +55,14 @@ public class VoucherService : IVoucherService
         return vouchers.Select(MapToDto);
     }
 
+    public async Task<IEnumerable<VoucherDto>> GetActiveAsync()
+    {
+        var now = DateTime.UtcNow;
+        var vouchers = await _voucherRepo.FindAsync(
+            v => v.IsActive && v.StartDate <= now && v.ExpiryDate > now && v.UsedCount < v.UsageLimit);
+        return vouchers.Select(MapToDto);
+    }
+
     public async Task<VoucherDto> CreateAsync(CreateVoucherRequest request)
     {
         var voucher = new Voucher

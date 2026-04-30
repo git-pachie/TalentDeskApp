@@ -154,6 +154,7 @@ struct CartItemDTO: Decodable, Identifiable {
     let unitPrice: Decimal
     let quantity: Int
     let totalPrice: Decimal
+    let remarks: String?
 }
 
 struct AddToCartRequest: Encodable {
@@ -183,6 +184,7 @@ struct OrderDTO: Decodable, Identifiable {
     let payment: PaymentSummaryDTO?
     let address: OrderAddressDTO?
     let statusHistory: [OrderStatusHistoryDTO]?
+    let reviews: [OrderReviewDTO]?
 
     var asOrderItem: OrderItem {
         let formatter = DateFormatter()
@@ -208,6 +210,7 @@ struct OrderItemDTO: Decodable {
     let unitPrice: Decimal
     let quantity: Int
     let totalPrice: Decimal
+    let remarks: String?
 }
 
 struct PaymentSummaryDTO: Decodable {
@@ -239,10 +242,37 @@ struct OrderStatusHistoryDTO: Decodable, Identifiable {
     var id: String { "\(status)-\(createdAt.timeIntervalSince1970)" }
 }
 
+struct OrderReviewDTO: Decodable, Identifiable {
+    let id: UUID
+    let userName: String
+    let productName: String
+    let rating: Int
+    let comment: String?
+    let createdAt: Date
+    let photos: [OrderReviewPhotoDTO]?
+}
+
+struct OrderReviewPhotoDTO: Decodable, Identifiable {
+    let id: UUID
+    let photoUrl: String
+    let sortOrder: Int
+}
+
 struct CreateOrderRequest: Encodable {
     let addressId: UUID?
     let voucherCode: String?
     let notes: String?
+    let platformFee: Decimal
+    let otherCharges: Decimal
+
+    init(addressId: UUID?, voucherCode: String?, notes: String?,
+         platformFee: Decimal = 2, otherCharges: Decimal = 1) {
+        self.addressId = addressId
+        self.voucherCode = voucherCode
+        self.notes = notes
+        self.platformFee = platformFee
+        self.otherCharges = otherCharges
+    }
 }
 
 // MARK: - Addresses
