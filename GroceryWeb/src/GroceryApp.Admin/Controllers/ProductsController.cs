@@ -24,9 +24,32 @@ public class ProductsController : Controller
         base.OnActionExecuting(context);
     }
 
-    public async Task<IActionResult> Index(int page = 1)
+    public async Task<IActionResult> Index(int page = 1, string? search = null, Guid? categoryId = null)
     {
-        var result = await _apiClient.GetAsync<PagedResultModel<ProductModel>>($"/api/products?page={page}&pageSize=20&includeInactive=true");
+        PagedResultModel<ProductModel>? result;
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            // Use the dedicated search endpoint
+            var searchQuery = $"/api/products/search?q={Uri.EscapeDataString(search)}&page={page}&pageSize=60";
+            if (categoryId.HasValue && categoryId.Value != Guid.Empty)
+                searchQuery += $"&categoryId={categoryId.Value}";
+            result = await _apiClient.GetAsync<PagedResultModel<ProductModel>>(searchQuery);
+        }
+        else
+        {
+            var query = $"/api/products?page={page}&pageSize=60&includeInactive=true";
+            if (categoryId.HasValue && categoryId.Value != Guid.Empty)
+                query += $"&categoryId={categoryId.Value}";
+            result = await _apiClient.GetAsync<PagedResultModel<ProductModel>>(query);
+        }
+
+        var categories = await _apiClient.GetAsync<List<CategoryModel>>("/api/categories");
+
+        ViewBag.Categories = categories ?? [];
+        ViewBag.CurrentSearch = search;
+        ViewBag.CurrentCategoryId = categoryId;
+
         return View(result);
     }
 

@@ -33,9 +33,17 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> Search([FromQuery] string q, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> Search([FromQuery] string q, [FromQuery] Guid? categoryId = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var result = await _productService.SearchAsync(q, page, pageSize);
+        var queryParams = new ProductQueryParams
+        {
+            Search = q,
+            CategoryId = categoryId,
+            Page = page,
+            PageSize = pageSize,
+            IncludeInactive = true
+        };
+        var result = await _productService.GetAllAsync(queryParams);
         return Ok(result);
     }
 

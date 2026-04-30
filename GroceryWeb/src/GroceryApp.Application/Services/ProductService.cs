@@ -53,6 +53,13 @@ public class ProductService : IProductService
         if (!queryParams.IncludeInactive)
             query = query.Where(p => p.IsActive);
 
+        if (!string.IsNullOrWhiteSpace(queryParams.Search))
+        {
+            var searchTerm = queryParams.Search.Trim();
+            query = query.Where(p => EF.Functions.Like(p.Name, $"%{searchTerm}%")
+                || (p.Description != null && EF.Functions.Like(p.Description, $"%{searchTerm}%")));
+        }
+
         if (queryParams.CategoryId.HasValue)
             query = query.Where(p => p.CategoryId == queryParams.CategoryId.Value
                 || p.ProductCategories.Any(pc => pc.CategoryId == queryParams.CategoryId.Value));
