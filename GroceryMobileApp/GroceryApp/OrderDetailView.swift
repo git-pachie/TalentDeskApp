@@ -287,9 +287,17 @@ struct OrderDetailView: View {
             if let items = orderDetail?.items, !items.isEmpty {
                 ForEach(Array(items.enumerated()), id: \.element.productId) { index, item in
                     HStack(spacing: 10) {
-                        Text("🛒")
-                            .font(.title2)
-                            .frame(width: 36)
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(Color(.systemGray6))
+                            .frame(width: 44, height: 44)
+                            .overlay {
+                                if let urlString = item.productImageUrl, let url = URL(string: urlString) {
+                                    CachedAsyncImage(url: url, emoji: "🛒")
+                                } else {
+                                    Text("🛒").font(.title3)
+                                }
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.productName)
                                 .font(.system(.caption, design: .rounded, weight: .medium))
@@ -324,13 +332,33 @@ struct OrderDetailView: View {
     private var addressSection: some View {
         infoCard(title: "Delivery Address", icon: "mappin.circle.fill") {
             if let addr = orderDetail?.address {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(addr.label)
                         .font(.system(.subheadline, design: .rounded, weight: .semibold))
                         .foregroundStyle(GroceryTheme.title)
                     Text(addr.fullAddress)
                         .font(.system(.caption, design: .rounded))
                         .foregroundStyle(GroceryTheme.muted)
+
+                    if let contact = addr.contactNumber, !contact.isEmpty {
+                        HStack(spacing: 4) {
+                            Image(systemName: "phone.fill")
+                                .font(.caption2)
+                            Text(contact)
+                                .font(.system(.caption, design: .rounded))
+                        }
+                        .foregroundStyle(GroceryTheme.primary)
+                    }
+
+                    if let instructions = addr.deliveryInstructions, !instructions.isEmpty {
+                        HStack(spacing: 4) {
+                            Image(systemName: "text.bubble.fill")
+                                .font(.caption2)
+                            Text(instructions)
+                                .font(.system(.caption2, design: .rounded))
+                        }
+                        .foregroundStyle(GroceryTheme.subtitle)
+                    }
                 }
             } else {
                 Text("No address on file")
