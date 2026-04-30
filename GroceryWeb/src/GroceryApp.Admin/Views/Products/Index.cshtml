@@ -38,14 +38,13 @@
                             @if (primaryImage is not null)
                             {
                                 <img src="@(ViewBag.ProductImageUrl)/@(primaryImage.ImageUrl)" alt="@product.Name"
+                                     onerror="this.onerror=null;this.src='/images/default-product.svg';"
                                      style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb;" />
                             }
                             else
                             {
-                                <div class="d-flex align-items-center justify-content-center text-muted"
-                                     style="width: 40px; height: 40px; border-radius: 8px; background: #f3f4f6;">
-                                    <i class="bi bi-image"></i>
-                                </div>
+                                <img src="/images/default-product.svg" alt="No image"
+                                     style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb;" />
                             }
                         </td>
                         <td>
