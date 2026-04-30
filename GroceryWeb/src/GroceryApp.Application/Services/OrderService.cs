@@ -2,6 +2,7 @@ using GroceryApp.Application.DTOs.Orders;
 using GroceryApp.Application.Interfaces;
 using GroceryApp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace GroceryApp.Application.Services;
 
@@ -13,6 +14,7 @@ public class OrderService : IOrderService
     private readonly IRepository<OrderStatusHistory> _statusHistoryRepo;
     private readonly INotificationService _notificationService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly string _productImageBaseUrl;
 
     public OrderService(
         IRepository<Order> orderRepo,
@@ -20,7 +22,8 @@ public class OrderService : IOrderService
         IRepository<Voucher> voucherRepo,
         IRepository<OrderStatusHistory> statusHistoryRepo,
         INotificationService notificationService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IConfiguration configuration)
     {
         _orderRepo = orderRepo;
         _cartRepo = cartRepo;
@@ -28,6 +31,7 @@ public class OrderService : IOrderService
         _statusHistoryRepo = statusHistoryRepo;
         _notificationService = notificationService;
         _unitOfWork = unitOfWork;
+        _productImageBaseUrl = (configuration["ImageUrls:ProductImage"] ?? "").TrimEnd('/');
     }
 
     public async Task<OrderDto> CreateOrderAsync(Guid userId, CreateOrderRequest request)
@@ -108,7 +112,7 @@ public class OrderService : IOrderService
     public async Task<IEnumerable<OrderDto>> GetUserOrdersAsync(Guid userId)
     {
         var orders = await _orderRepo.Query()
-            .Include(o => o.Items)
+            .Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
             .Include(o => o.Payment)
             .Include(o => o.Address)
             .Include(o => o.StatusHistory)
@@ -122,7 +126,7 @@ public class OrderService : IOrderService
     public async Task<OrderDto?> GetOrderByIdAsync(Guid userId, Guid orderId)
     {
         var order = await _orderRepo.Query()
-            .Include(o => o.Items)
+            .Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
             .Include(o => o.Payment)
             .Include(o => o.Address)
             .Include(o => o.StatusHistory)
@@ -134,7 +138,7 @@ public class OrderService : IOrderService
     public async Task<OrderDto?> UpdateOrderStatusAsync(Guid orderId, string status)
     {
         var order = await _orderRepo.Query()
-            .Include(o => o.Items)
+            .Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
             .Include(o => o.Payment)
             .Include(o => o.Address)
             .Include(o => o.StatusHistory)
@@ -169,7 +173,7 @@ public class OrderService : IOrderService
     public async Task<IEnumerable<OrderDto>> GetAllOrdersAsync(int page, int pageSize)
     {
         var orders = await _orderRepo.Query()
-            .Include(o => o.Items)
+            .Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
             .Include(o => o.Payment)
             .Include(o => o.Address)
             .Include(o => o.StatusHistory)
@@ -181,7 +185,7 @@ public class OrderService : IOrderService
         return orders.Select(MapToDto);
     }
 
-    private static OrderDto MapToDto(Order order)
+    private OrderDto MapToDto(Order order)
     {
         return new OrderDto
         {
@@ -194,13 +198,19 @@ public class OrderService : IOrderService
             Status = order.Status.ToString(),
             Notes = order.Notes,
             CreatedAt = order.CreatedAt,
-            Items = order.Items.Select(i => new OrderItemDto
+            Items = order.Items.Select(i =>
             {
-                ProductId = i.ProductId,
-                ProductName = i.ProductName,
-                UnitPrice = i.UnitPrice,
-                Quantity = i.Quantity,
-                TotalPrice = i.TotalPrice
+                var primaryImage = i.Product?.Images?.FirstOrDefault(img => img.IsPrimary)
+                    ?? i.Product?.Images?.FirstOrDefault();
+                return new OrderItemDto
+                {
+                    ProductId = i.ProductId,
+                    ProductName = i.ProductName,
+                    ProductImageUrl = BuildFullImageUrl(primaryImage?.ImageUrl),
+                    UnitPrice = i.UnitPrice,
+                    Quantity = i.Quantity,
+                    TotalPrice = i.TotalPrice
+                };
             }),
             Payment = order.Payment is null ? null : new PaymentSummaryDto
             {
@@ -214,7 +224,9 @@ public class OrderService : IOrderService
                 Street = order.Address.Street,
                 City = order.Address.City,
                 Province = order.Address.Province,
-                ZipCode = order.Address.ZipCode
+                ZipCode = order.Address.ZipCode,
+                DeliveryInstructions = order.Address.DeliveryInstructions,
+                ContactNumber = order.Address.ContactNumber
             },
             StatusHistory = order.StatusHistory
                 .OrderBy(h => h.CreatedAt)
@@ -226,5 +238,19 @@ public class OrderService : IOrderService
                     CreatedAt = h.CreatedAt
                 }).ToList()
         };
+    }
+
+    private string? BuildFullImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrEmpty(imageUrl)) return null;
+        if (imageUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            imageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return imageUrl;
+        if (!string.IsNullOrEmpty(_productImageBaseUrl))
+        {
+            var fileName = imageUrl.Contains('/') ? imageUrl.Split('/').Last() : imageUrl;
+            return $"{_productImageBaseUrl}/{fileName}";
+        }
+        return imageUrl;
     }
 }

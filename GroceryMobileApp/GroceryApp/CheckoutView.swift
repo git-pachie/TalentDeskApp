@@ -31,10 +31,10 @@ struct CheckoutView: View {
     private var currentAddress: (label: String, address: String, instructions: String, contact: String) {
         if let idx = deliveryAddresses.firstIndex(where: { $0.id == selectedAddressId }) {
             let a = deliveryAddresses[idx]
-            return (a.label, a.fullAddress, "", "")
+            return (a.label, a.fullAddress, a.deliveryInstructions ?? "", a.contactNumber ?? "")
         }
         if let first = deliveryAddresses.first {
-            return (first.label, first.fullAddress, "", "")
+            return (first.label, first.fullAddress, first.deliveryInstructions ?? "", first.contactNumber ?? "")
         }
         return ("No Address", "Add a delivery address", "", "")
     }

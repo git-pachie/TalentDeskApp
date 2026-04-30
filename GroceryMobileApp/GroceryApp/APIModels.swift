@@ -202,6 +202,7 @@ struct OrderDTO: Decodable, Identifiable {
 struct OrderItemDTO: Decodable {
     let productId: UUID
     let productName: String
+    let productImageUrl: String?
     let unitPrice: Decimal
     let quantity: Int
     let totalPrice: Decimal
@@ -219,6 +220,8 @@ struct OrderAddressDTO: Decodable {
     let city: String
     let province: String
     let zipCode: String
+    let deliveryInstructions: String?
+    let contactNumber: String?
 
     var fullAddress: String {
         [street, city, province, zipCode].filter { !$0.isEmpty }.joined(separator: ", ")
