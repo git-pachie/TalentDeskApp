@@ -251,6 +251,61 @@ public class OrderService : IOrderService
         return orders.Select(o => MapToDto(o, reviewsByOrder.GetValueOrDefault(o.Id)));
     }
 
+    public async Task<OrderListResult> SearchOrdersAsync(
+        int page, int pageSize, string? search, string? status, DateTime? dateFrom, DateTime? dateTo)
+    {
+        var query = _orderRepo.Query()
+            .Include(o => o.User)
+            .Include(o => o.Payment)
+            .AsQueryable();
+
+        // Search: order number, customer name, email
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLower();
+            query = query.Where(o =>
+                o.OrderNumber.ToLower().Contains(term) ||
+                (o.User != null && (
+                    o.User.FirstName.ToLower().Contains(term) ||
+                    o.User.LastName.ToLower().Contains(term) ||
+                    o.User.Email!.ToLower().Contains(term))));
+        }
+
+        // Status filter
+        if (!string.IsNullOrWhiteSpace(status) &&
+            Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
+        {
+            query = query.Where(o => o.Status == parsedStatus);
+        }
+
+        // Date range
+        if (dateFrom.HasValue)
+            query = query.Where(o => o.CreatedAt >= dateFrom.Value.Date);
+        if (dateTo.HasValue)
+            query = query.Where(o => o.CreatedAt < dateTo.Value.Date.AddDays(1));
+
+        var totalCount = await query.CountAsync();
+
+        var orders = await query
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
+            .Include(o => o.Address)
+            .Include(o => o.StatusHistory)
+            .ToListAsync();
+
+        var items = orders.Select(o => MapToDto(o)).ToList();
+
+        return new OrderListResult
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+    }
+
     private OrderDto MapToDto(Order order, IEnumerable<Review>? reviews = null)
     {
         return new OrderDto

@@ -49,6 +49,20 @@ public class OrdersController : ControllerBase
         return Ok(orders);
     }
 
+    [HttpGet("search")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> SearchOrders(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 60,
+        [FromQuery] string? search = null,
+        [FromQuery] string? status = null,
+        [FromQuery] DateTime? dateFrom = null,
+        [FromQuery] DateTime? dateTo = null)
+    {
+        var result = await _orderService.SearchOrdersAsync(page, pageSize, search, status, dateFrom, dateTo);
+        return Ok(result);
+    }
+
     [HttpGet("admin/{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetOrderAdmin(Guid id)

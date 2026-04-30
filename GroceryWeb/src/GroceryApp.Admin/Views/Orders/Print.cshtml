@@ -1,0 +1,193 @@
+@model OrderModel
+@{
+    Layout = null; // No admin layout — clean print page
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Order @Model.OrderNumber</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; font-size: 12px; color: #1f2937; padding: 32px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #059669; padding-bottom: 16px; margin-bottom: 20px; }
+        .brand { font-size: 22px; font-weight: bold; color: #059669; }
+        .brand-sub { font-size: 12px; color: #6b7280; }
+        .order-num { font-size: 16px; font-weight: bold; text-align: right; }
+        .order-date { font-size: 11px; color: #6b7280; text-align: right; }
+        .status-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-top: 4px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .info-box { border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; }
+        .info-label { font-size: 10px; font-weight: bold; color: #6b7280; text-transform: uppercase; margin-bottom: 6px; }
+        .info-value { font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        thead th { background: #f9fafb; padding: 8px; text-align: left; font-size: 11px; color: #6b7280; border-bottom: 2px solid #e5e7eb; }
+        thead th.right { text-align: right; }
+        thead th.center { text-align: center; }
+        tbody td { padding: 8px; border-bottom: 1px solid #f3f4f6; font-size: 12px; vertical-align: top; }
+        tbody td.right { text-align: right; }
+        tbody td.center { text-align: center; }
+        .totals { margin-left: auto; width: 240px; }
+        .totals-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
+        .totals-row.total { font-weight: bold; font-size: 14px; border-top: 2px solid #e5e7eb; padding-top: 8px; margin-top: 4px; color: #059669; }
+        .totals-row.discount { color: #059669; }
+        .remarks { border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; margin-top: 16px; }
+        .footer { margin-top: 32px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 12px; }
+        .no-print { margin-bottom: 20px; }
+        @@media print {
+            .no-print { display: none !important; }
+            body { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print">
+    <button onclick="window.print()" style="background:#059669;color:#fff;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:13px;margin-right:8px;">
+        🖨️ Print
+    </button>
+    <button onclick="window.close()" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:13px;">
+        ✕ Close
+    </button>
+</div>
+
+<!-- Header -->
+<div class="header">
+    <div>
+        <div class="brand">GroceryApp</div>
+        <div class="brand-sub">Order Invoice</div>
+    </div>
+    <div>
+        <div class="order-num">@Model.OrderNumber</div>
+        <div class="order-date">@Model.CreatedAt.ToString("MMMM dd, yyyy 'at' hh:mm tt")</div>
+        @{
+            var statusColor = Model.Status switch {
+                "Delivered"  => "background:#dcfce7;color:#166534;",
+                "Cancelled"  => "background:#fee2e2;color:#991b1b;",
+                "Processing" => "background:#dbeafe;color:#1e40af;",
+                "Paid"       => "background:#cffafe;color:#155e75;",
+                _            => "background:#fef9c3;color:#854d0e;"
+            };
+        }
+        <div class="status-badge" style="@statusColor">@Model.Status</div>
+    </div>
+</div>
+
+<!-- Info Grid -->
+<div class="info-grid">
+    <div class="info-box">
+        <div class="info-label">Customer</div>
+        <div class="info-value" style="font-weight:bold;">@Model.CustomerName</div>
+        @if (!string.IsNullOrEmpty(Model.CustomerEmail))
+        {
+            <div class="info-value" style="color:#6b7280;">@Model.CustomerEmail</div>
+        }
+        @if (!string.IsNullOrEmpty(Model.CustomerPhone))
+        {
+            <div class="info-value" style="color:#6b7280;">@Model.CustomerPhone</div>
+        }
+    </div>
+
+    <div class="info-box">
+        <div class="info-label">Delivery Address</div>
+        @if (Model.Address is not null)
+        {
+            <div class="info-value" style="font-weight:bold;">@Model.Address.Label</div>
+            <div class="info-value">@Model.Address.Street</div>
+            <div class="info-value" style="color:#6b7280;">@Model.Address.City, @Model.Address.Province @Model.Address.ZipCode</div>
+            @if (!string.IsNullOrEmpty(Model.Address.ContactNumber))
+            {
+                <div class="info-value" style="color:#6b7280;">📞 @Model.Address.ContactNumber</div>
+            }
+            @if (!string.IsNullOrEmpty(Model.Address.DeliveryInstructions))
+            {
+                <div class="info-value" style="color:#6b7280;">📝 @Model.Address.DeliveryInstructions</div>
+            }
+        }
+        else
+        {
+            <div class="info-value" style="color:#9ca3af;">No address provided</div>
+        }
+    </div>
+
+    <div class="info-box">
+        <div class="info-label">Payment</div>
+        @if (Model.Payment is not null)
+        {
+            <div class="info-value" style="font-weight:bold;">@Model.Payment.Method</div>
+            <div class="info-value" style="color:#6b7280;">Status: @Model.Payment.Status</div>
+            @if (Model.Payment.PaidAt.HasValue)
+            {
+                <div class="info-value" style="color:#6b7280;">@Model.Payment.PaidAt.Value.ToString("MMM dd, yyyy HH:mm")</div>
+            }
+        }
+        else
+        {
+            <div class="info-value" style="color:#9ca3af;">Pending</div>
+        }
+    </div>
+</div>
+
+<!-- Items Table -->
+<table>
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th class="right">Unit Price</th>
+            <th class="center">Qty</th>
+            <th class="right">Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Items)
+        {
+            <tr>
+                <td>
+                    <strong>@item.ProductName</strong>
+                    @if (!string.IsNullOrEmpty(item.Remarks))
+                    {
+                        <br /><span style="font-size:11px;color:#6b7280;">Note: @item.Remarks</span>
+                    }
+                </td>
+                <td class="right">₱@item.UnitPrice.ToString("N2")</td>
+                <td class="center">@item.Quantity</td>
+                <td class="right"><strong>₱@item.TotalPrice.ToString("N2")</strong></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Totals -->
+<div class="totals">
+    <div class="totals-row"><span>Subtotal</span><span>₱@Model.SubTotal.ToString("N2")</span></div>
+    @if (Model.DiscountAmount > 0)
+    {
+        <div class="totals-row discount"><span>Discount</span><span>-₱@Model.DiscountAmount.ToString("N2")</span></div>
+    }
+    <div class="totals-row"><span>Delivery Fee</span><span>₱@Model.DeliveryFee.ToString("N2")</span></div>
+    <div class="totals-row"><span>Platform Fee</span><span>₱@Model.PlatformFee.ToString("N2")</span></div>
+    <div class="totals-row"><span>Other Charges</span><span>₱@Model.OtherCharges.ToString("N2")</span></div>
+    <div class="totals-row total"><span>TOTAL</span><span>₱@Model.TotalAmount.ToString("N2")</span></div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Notes))
+{
+    <div class="remarks">
+        <div class="info-label">Order Remarks</div>
+        <div style="margin-top:4px;">@Model.Notes</div>
+    </div>
+}
+
+<div class="footer">
+    Thank you for shopping with GroceryApp &nbsp;·&nbsp; Printed on @DateTime.Now.ToString("MMMM dd, yyyy HH:mm")
+</div>
+
+<script>
+    // Auto-trigger print dialog when opened in new tab
+    window.addEventListener('load', () => {
+        // Small delay to ensure styles are applied
+        setTimeout(() => window.print(), 300);
+    });
+</script>
+</body>
+</html>

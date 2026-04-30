@@ -24,6 +24,15 @@ public class OrderDto
     public List<OrderReviewDto> Reviews { get; set; } = [];
 }
 
+public class OrderListResult
+{
+    public List<OrderDto> Items { get; set; } = [];
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
+}
+
 public class OrderItemDto
 {
     public Guid ProductId { get; set; }
