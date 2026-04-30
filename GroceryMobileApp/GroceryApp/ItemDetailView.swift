@@ -18,10 +18,7 @@ struct ItemDetailView: View {
         return []
     }
 
-    private var relatedProducts: [GroceryProduct] {
-        SampleData.allProducts.filter { $0.id != product.id && $0.category == product.category }.prefix(5).map { $0 }
-        + SampleData.allProducts.filter { $0.id != product.id && $0.category != product.category }.prefix(2).map { $0 }
-    }
+    @State private var relatedProducts: [GroceryProduct] = []
 
     var body: some View {
         ScrollView {
@@ -53,6 +50,7 @@ struct ItemDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             productDetail = await productStore.productDetail(product.id)
+            await loadRelatedProducts()
         }
     }
 
@@ -229,39 +227,43 @@ struct ItemDetailView: View {
     // MARK: - Related
 
     private var relatedSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("You might also like")
-                .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                .foregroundStyle(GroceryTheme.title)
+        Group {
+            if !relatedProducts.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("You might also like")
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                        .foregroundStyle(GroceryTheme.title)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(relatedProducts) { item in
-                        NavigationLink {
-                            ItemDetailView(product: item)
-                        } label: {
-                            VStack(spacing: 6) {
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(Color(.systemGray6))
-                                    .frame(width: 80, height: 80)
-                                    .overlay {
-                                        if let urlString = item.imageURL, let url = URL(string: urlString) {
-                                            CachedAsyncImage(url: url, emoji: item.emoji)
-                                        } else {
-                                            Text(item.emoji)
-                                                .font(.system(size: 40))
-                                        }
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(relatedProducts) { item in
+                                NavigationLink {
+                                    ItemDetailView(product: item)
+                                } label: {
+                                    VStack(spacing: 6) {
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .fill(Color(.systemGray6))
+                                            .frame(width: 80, height: 80)
+                                            .overlay {
+                                                if let urlString = item.imageURL, let url = URL(string: urlString) {
+                                                    CachedAsyncImage(url: url, emoji: item.emoji)
+                                                } else {
+                                                    Text(item.emoji)
+                                                        .font(.system(size: 40))
+                                                }
+                                            }
+                                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                        Text(item.name)
+                                            .font(.system(.caption2, design: .rounded))
+                                            .foregroundStyle(GroceryTheme.subtitle)
+                                            .lineLimit(1)
+                                        Text("$\(Int(item.price))")
+                                            .font(.system(.caption2, design: .rounded, weight: .bold))
+                                            .foregroundStyle(GroceryTheme.primary)
                                     }
-                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                Text(item.name)
-                                    .font(.system(.caption2, design: .rounded))
-                                    .foregroundStyle(GroceryTheme.subtitle)
-                                    .lineLimit(1)
-                                Text("$\(Int(item.price))")
-                                    .font(.system(.caption2, design: .rounded, weight: .bold))
-                                    .foregroundStyle(GroceryTheme.primary)
+                                    .frame(width: 80)
+                                }
                             }
-                            .frame(width: 80)
                         }
                     }
                 }
@@ -285,6 +287,33 @@ struct ItemDetailView: View {
             .background(GroceryTheme.primary)
             .foregroundStyle(.white)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+    }
+    // MARK: - Load Related Products
+
+    private func loadRelatedProducts() async {
+        // Fetch products from the same category, sorted by rating (highest first)
+        do {
+            let categoryId = productDetail?.categoryId ?? product.id
+            let result: PagedResult<ProductDTO> = try await APIClient.shared.get(
+                "/api/products",
+                query: [
+                    URLQueryItem(name: "categoryId", value: categoryId.uuidString),
+                    URLQueryItem(name: "pageSize", value: "15"),
+                    URLQueryItem(name: "sortBy", value: "newest"),
+                ]
+            )
+
+            // Filter out the current product, take top 10
+            let related = result.items
+                .filter { $0.id != product.id && $0.isActive }
+                .sorted { $0.averageRating > $1.averageRating }
+                .prefix(10)
+                .map(\.asGroceryProduct)
+
+            relatedProducts = Array(related)
+        } catch {
+            print("⚠️ Failed to load related products: \(error)")
         }
     }
 }
