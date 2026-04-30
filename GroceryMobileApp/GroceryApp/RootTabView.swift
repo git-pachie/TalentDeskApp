@@ -13,27 +13,34 @@ struct RootTabView: View {
                 }
                 .tag(0)
 
+            ProductsTabView()
+                .tabItem {
+                    Image(systemName: "bag.fill")
+                    Text("Products")
+                }
+                .tag(1)
+
             CartView()
                 .tabItem {
                     Image(systemName: "cart.fill")
                     Text("Cart")
                 }
                 .badge(cartStore.totalItems)
-                .tag(1)
+                .tag(2)
 
             FavoritesView()
                 .tabItem {
                     Image(systemName: "heart")
                     Text("Favorites")
                 }
-                .tag(2)
+                .tag(3)
 
             ProfileView()
                 .tabItem {
                     Image(systemName: "person")
                     Text("Profile")
                 }
-                .tag(3)
+                .tag(4)
         }
         .tint(GroceryTheme.primary)
     }
