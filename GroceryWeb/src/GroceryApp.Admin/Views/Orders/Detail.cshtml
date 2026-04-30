@@ -143,7 +143,13 @@
                         @if (Model.DiscountAmount > 0)
                         {
                             <div class="d-flex justify-content-between py-1 border-bottom text-success">
-                                <span style="font-size:0.85rem;"><i class="bi bi-tag me-1"></i>Discount</span>
+                                <span style="font-size:0.85rem;">
+                                    <i class="bi bi-tag me-1"></i>Discount
+                                    @if (!string.IsNullOrEmpty(Model.VoucherCode))
+                                    {
+                                        <span class="badge bg-success-subtle text-success ms-1" style="font-size:0.7rem;">@Model.VoucherCode</span>
+                                    }
+                                </span>
                                 <span style="font-size:0.85rem;">-₱@Model.DiscountAmount.ToString("N2")</span>
                             </div>
                         }

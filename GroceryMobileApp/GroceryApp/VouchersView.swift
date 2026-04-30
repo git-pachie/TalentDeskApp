@@ -31,36 +31,63 @@ struct VouchersView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if !activeVouchers.isEmpty {
-                    Text("Available")
-                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                        .foregroundStyle(GroceryTheme.title)
-                        .padding(.horizontal, 16)
-
-                    ForEach(activeVouchers) { voucher in
-                        NavigationLink {
-                            VoucherDetailView(voucher: voucher)
-                        } label: {
-                            voucherCard(voucher, expired: false)
-                        }
-                        .buttonStyle(.plain)
+                if isLoading && vouchers.isEmpty {
+                    HStack {
+                        Spacer()
+                        ProgressView("Loading vouchers...")
+                            .padding(.top, 40)
+                        Spacer()
                     }
-                }
-
-                if !expiredVouchers.isEmpty {
-                    Text("Expired")
-                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                        .foregroundStyle(GroceryTheme.muted)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-
-                    ForEach(expiredVouchers) { voucher in
-                        NavigationLink {
-                            VoucherDetailView(voucher: voucher)
-                        } label: {
-                            voucherCard(voucher, expired: true)
+                } else if vouchers.isEmpty {
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 12) {
+                            Image(systemName: "ticket.fill")
+                                .font(.system(size: 48))
+                                .foregroundStyle(GroceryTheme.muted)
+                            Text("No Vouchers Available")
+                                .font(.system(.headline, design: .rounded))
+                                .foregroundStyle(GroceryTheme.title)
+                            Text("Vouchers assigned by admin will appear here.")
+                                .font(.system(.caption, design: .rounded))
+                                .foregroundStyle(GroceryTheme.muted)
+                                .multilineTextAlignment(.center)
                         }
-                        .buttonStyle(.plain)
+                        .padding(.top, 60)
+                        Spacer()
+                    }
+                } else {
+                    if !activeVouchers.isEmpty {
+                        Text("Available")
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                            .foregroundStyle(GroceryTheme.title)
+                            .padding(.horizontal, 16)
+
+                        ForEach(activeVouchers) { voucher in
+                            NavigationLink {
+                                VoucherDetailView(voucher: voucher)
+                            } label: {
+                                voucherCard(voucher, expired: false)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    if !expiredVouchers.isEmpty {
+                        Text("Expired")
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                            .foregroundStyle(GroceryTheme.muted)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+
+                        ForEach(expiredVouchers) { voucher in
+                            NavigationLink {
+                                VoucherDetailView(voucher: voucher)
+                            } label: {
+                                voucherCard(voucher, expired: true)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
             }
@@ -75,19 +102,15 @@ struct VouchersView: View {
 
     private func loadVouchers() async {
         guard APIClient.shared.isAuthenticated else { return }
-        isLoading = true
-        defer { isLoading = false }
+        await MainActor.run { isLoading = true }
+        defer { Task { @MainActor in isLoading = false } }
         do {
-            let dtos: [VoucherDTO] = try await APIClient.shared.get("/api/vouchers")
-            vouchers = dtos.map(\.asVoucherItem)
+            let dtos: [VoucherDTO] = try await APIClient.shared.get("/api/vouchers/user")
+            let mapped = dtos.map(\.asVoucherItem)
+            await MainActor.run { vouchers = mapped }
+            print("✅ [Vouchers] Loaded \(mapped.count) voucher(s)")
         } catch {
-            print("⚠️ Failed to load vouchers, using defaults: \(error)")
-            if vouchers.isEmpty {
-                vouchers = [
-                    VoucherItem(code: "FRESH10", description: "10% off your order", discount: "10%", minOrder: "Min. $15", validUntil: "May 31, 2026", isActive: true),
-                    VoucherItem(code: "SAVE5", description: "$5 off orders above $20", discount: "$5", minOrder: "Min. $20", validUntil: "Jun 15, 2026", isActive: true),
-                ]
-            }
+            print("⚠️ Failed to load vouchers: \(error)")
         }
     }
 

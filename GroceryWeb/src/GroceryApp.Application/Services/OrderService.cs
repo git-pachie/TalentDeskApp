@@ -144,6 +144,7 @@ public class OrderService : IOrderService
     public async Task<OrderDto?> GetOrderByIdAsync(Guid userId, Guid orderId)
     {
         var order = await _orderRepo.Query()
+            .Include(o => o.Voucher)
             .Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
             .Include(o => o.Payment)
             .Include(o => o.Address)
@@ -166,6 +167,7 @@ public class OrderService : IOrderService
     {
         var order = await _orderRepo.Query()
             .Include(o => o.User)
+            .Include(o => o.Voucher)
             .Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
             .Include(o => o.Payment)
             .Include(o => o.Address)
@@ -324,6 +326,7 @@ public class OrderService : IOrderService
             TotalAmount = order.TotalAmount,
             Status = order.Status.ToString(),
             Notes = order.Notes,
+            VoucherCode = order.Voucher?.Code,
             CreatedAt = order.CreatedAt,
             Items = order.Items.Select(i =>
             {

@@ -181,6 +181,7 @@ public class OrderModel
     public decimal TotalAmount { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? Notes { get; set; }
+    public string? VoucherCode { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<OrderItemModel> Items { get; set; } = [];
     public OrderPaymentModel? Payment { get; set; }

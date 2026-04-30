@@ -14,6 +14,7 @@ struct CheckoutView: View {
     @State private var voucherLoadError: String?
     @State private var voucherApplyError: String?
     @State private var isApplyingVoucher = false
+    @State private var isLoadingVouchers = false
     @State private var orderPlaced = false
     @State private var successScale: CGFloat = 0
     @State private var placedOrder: OrderItem?
@@ -406,9 +407,12 @@ struct CheckoutView: View {
 
     private func loadVouchers() async {
         guard APIClient.shared.isAuthenticated else { return }
+        isLoadingVouchers = true
+        defer { isLoadingVouchers = false }
         do {
             let dtos: [VoucherDTO] = try await APIClient.shared.get("/api/vouchers/user")
             apiVouchers = dtos.filter { $0.isActive && $0.expiryDate > Date() }
+            print("✅ [Checkout] Loaded \(apiVouchers.count) voucher(s) for user")
         } catch {
             print("⚠️ [Checkout] Failed to load vouchers: \(error)")
         }
@@ -799,12 +803,20 @@ struct CheckoutView: View {
                         HStack {
                             Spacer()
                             VStack(spacing: 8) {
-                                Image(systemName: "ticket.fill")
-                                    .font(.largeTitle)
-                                    .foregroundStyle(GroceryTheme.muted)
-                                Text("No vouchers available")
-                                    .font(.system(.subheadline, design: .rounded))
-                                    .foregroundStyle(GroceryTheme.muted)
+                                if isLoadingVouchers {
+                                    ProgressView()
+                                    Text("Loading vouchers...")
+                                        .font(.system(.subheadline, design: .rounded))
+                                        .foregroundStyle(GroceryTheme.muted)
+                                } else {
+                                    Image(systemName: "ticket.fill")
+                                        .font(.largeTitle)
+                                        .foregroundStyle(GroceryTheme.muted)
+                                    Text("No vouchers assigned to your account")
+                                        .font(.system(.subheadline, design: .rounded))
+                                        .foregroundStyle(GroceryTheme.muted)
+                                        .multilineTextAlignment(.center)
+                                }
                             }
                             .padding(.vertical, 20)
                             Spacer()
@@ -873,6 +885,15 @@ struct CheckoutView: View {
                         showingVoucherSheet = false
                     }
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if isApplyingVoucher {
+                        ProgressView().scaleEffect(0.8)
+                    }
+                }
+            }
+            .task {
+                // Reload every time the sheet opens to get latest assigned vouchers
+                await loadVouchers()
             }
         }
     }

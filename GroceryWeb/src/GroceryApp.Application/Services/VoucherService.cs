@@ -1,17 +1,23 @@
 using GroceryApp.Application.DTOs.Vouchers;
 using GroceryApp.Application.Interfaces;
 using GroceryApp.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace GroceryApp.Application.Services;
 
 public class VoucherService : IVoucherService
 {
     private readonly IRepository<Voucher> _voucherRepo;
+    private readonly IRepository<UserVoucher> _userVoucherRepo;
     private readonly IUnitOfWork _unitOfWork;
 
-    public VoucherService(IRepository<Voucher> voucherRepo, IUnitOfWork unitOfWork)
+    public VoucherService(
+        IRepository<Voucher> voucherRepo,
+        IRepository<UserVoucher> userVoucherRepo,
+        IUnitOfWork unitOfWork)
     {
         _voucherRepo = voucherRepo;
+        _userVoucherRepo = userVoucherRepo;
         _unitOfWork = unitOfWork;
     }
 
@@ -67,6 +73,29 @@ public class VoucherService : IVoucherService
         var vouchers = await _voucherRepo.FindAsync(
             v => v.IsActive && v.StartDate <= now && v.ExpiryDate > now && v.UsedCount < v.UsageLimit);
         return vouchers.Select(MapToDto);
+    }
+
+    /// <summary>
+    /// Returns only vouchers personally assigned to this user by admin,
+    /// that are not yet used and not expired.
+    /// </summary>
+    public async Task<IEnumerable<VoucherDto>> GetUserVouchersAsync(Guid userId)
+    {
+        var now = DateTime.UtcNow;
+
+        var userVouchers = await _userVoucherRepo.Query()
+            .Include(uv => uv.Voucher)
+            .Where(uv => uv.UserId == userId && !uv.IsUsed)
+            .ToListAsync();
+
+        return userVouchers
+            .Where(uv => uv.Voucher is not null
+                      && uv.Voucher.IsActive
+                      && uv.Voucher.ExpiryDate > now)
+            .Select(uv => uv.Voucher!)
+            .DistinctBy(v => v.Id)
+            .OrderBy(v => v.ExpiryDate)
+            .Select(MapToDto);
     }
 
     public async Task<VoucherDto> CreateAsync(CreateVoucherRequest request)

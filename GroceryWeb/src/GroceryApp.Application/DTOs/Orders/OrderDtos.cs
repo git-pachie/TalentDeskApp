@@ -16,6 +16,7 @@ public class OrderDto
     public decimal TotalAmount { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? Notes { get; set; }
+    public string? VoucherCode { get; set; }
     public DateTime CreatedAt { get; set; }
     public IEnumerable<OrderItemDto> Items { get; set; } = [];
     public PaymentSummaryDto? Payment { get; set; }

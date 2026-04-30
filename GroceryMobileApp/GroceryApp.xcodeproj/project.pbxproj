@@ -41,6 +41,7 @@
 		E2224E0D43422F8DD3C582C5 /* GrocerySettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E517CD60BD5B4404358709B8 /* GrocerySettingsStore.swift */; };
 		EBB5975F45DC8CA367C8491E /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF116DAED5D4CB053128603B /* LoginView.swift */; };
 		EBFC0D808C543088EC7FC0FE /* CardPaymentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5055B54F270580C552514F1F /* CardPaymentView.swift */; };
+		FA3914EBC5949E67E64829D8 /* ProductsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D29FCF736824A4DD768FC67B /* ProductsTabView.swift */; };
 		FB6099F28760BD463C2150C3 /* PaymentMethodsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E5E3A20C312CA0FAC686880 /* PaymentMethodsView.swift */; };
 /* End PBXBuildFile section */
 
@@ -72,10 +73,11 @@
 		9AD09A1387052CAF55476046 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		9DCB37DDB7A6222F39330CB2 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		A1483E779A0296AD806C4D15 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
-		C2B2F306173B9522B893756F /* GroceryApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GroceryApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C2B2F306173B9522B893756F /* GroceryApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GroceryApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA04ED4688EAB3DE330CD298 /* OrderDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderDetailView.swift; sourceTree = "<group>"; };
 		CD40762CD495853F71D478B4 /* GCashPaymentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GCashPaymentView.swift; sourceTree = "<group>"; };
 		CEE3DB089C5E749112202AC8 /* GroceryTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryTheme.swift; sourceTree = "<group>"; };
+		D29FCF736824A4DD768FC67B /* ProductsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductsTabView.swift; sourceTree = "<group>"; };
 		DBBA3243EF37AB308781DBF5 /* CachedAsyncImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedAsyncImage.swift; sourceTree = "<group>"; };
 		DF116DAED5D4CB053128603B /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		E517CD60BD5B4404358709B8 /* GrocerySettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrocerySettingsStore.swift; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 				5210D0584F3E13A6B46771EE /* OrdersView.swift */,
 				8E5E3A20C312CA0FAC686880 /* PaymentMethodsView.swift */,
 				0B30325B854072B86AB1890C /* PreviewHelpers.swift */,
+				D29FCF736824A4DD768FC67B /* ProductsTabView.swift */,
 				97ED26316A9AFEA3E2B4455E /* ProductStore.swift */,
 				3F78C7A0EC42D20B90652CB3 /* ProfileView.swift */,
 				0592BBB696803D14DF1EBF01 /* RootTabView.swift */,
@@ -252,6 +255,7 @@
 				FB6099F28760BD463C2150C3 /* PaymentMethodsView.swift in Sources */,
 				47641FF652818F24D598C388 /* PreviewHelpers.swift in Sources */,
 				80FEE4CCEBC850AA0C1A052D /* ProductStore.swift in Sources */,
+				FA3914EBC5949E67E64829D8 /* ProductsTabView.swift in Sources */,
 				3D6E178A422C87E0050B6DB3 /* ProfileView.swift in Sources */,
 				973E91AF2A91386FF35DB7D0 /* RootTabView.swift in Sources */,
 				E1D895F0F6712F44E4C94FA8 /* SearchView.swift in Sources */,
@@ -338,6 +342,7 @@
 				CODE_SIGN_ENTITLEMENTS = GroceryApp/GroceryApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = R3F22UC8DK;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = GroceryApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -359,6 +364,7 @@
 				CODE_SIGN_ENTITLEMENTS = GroceryApp/GroceryApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = R3F22UC8DK;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = GroceryApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;

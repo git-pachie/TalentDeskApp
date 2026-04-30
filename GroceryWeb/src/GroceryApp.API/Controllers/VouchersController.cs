@@ -37,8 +37,16 @@ public class VouchersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetActive()
     {
-        var vouchers = await _voucherService.GetActiveAsync();
-        return Ok(vouchers);
+        try
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var vouchers = await _voucherService.GetUserVouchersAsync(userId);
+            return Ok(vouchers);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
     }
 
     [HttpPost]

@@ -156,6 +156,16 @@ struct OrderDetailView: View {
             order = updatedOrder
             orderDetail = dto
             lastRefreshDate = Date()
+
+            // Check if user already submitted a review for this order
+            if let existingReviews = dto.reviews, !existingReviews.isEmpty {
+                isReviewSubmitted = true
+                if let first = existingReviews.first {
+                    rating = first.rating
+                    remarks = first.comment ?? ""
+                }
+            }
+
             print("✅ [OrderDetail] UI updated — status: \(order.status.rawValue)")
         } catch {
             print("❌ [OrderDetail] Failed to load: \(error)")
@@ -434,9 +444,20 @@ struct OrderDetailView: View {
 
             if discountAmount > 0 {
                 HStack {
-                    Text("Discount")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(GroceryTheme.subtitle)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Discount")
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundStyle(GroceryTheme.subtitle)
+                        if let code = orderDetail?.voucherCode {
+                            Text(code)
+                                .font(.system(.caption2, design: .rounded, weight: .semibold))
+                                .foregroundStyle(GroceryTheme.primary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(GroceryTheme.primaryLight)
+                                .clipShape(Capsule())
+                        }
+                    }
                     Spacer()
                     Text("-₱\(Int(discountAmount))")
                         .font(.system(.caption, design: .rounded, weight: .medium))
@@ -609,29 +630,92 @@ struct OrderDetailView: View {
     }
 
     private func submitReview() async {
-        guard let firstItem = orderDetail?.items?.first else {
+        guard rating > 0 else { return }
+
+        // 1. Upload photos first if any
+        var uploadedPhotoUrls: [String] = []
+        if !reviewPhotos.isEmpty {
+            uploadedPhotoUrls = await uploadReviewPhotos(reviewPhotos)
+        }
+
+        // 2. Submit a review for each item in the order
+        let items = orderDetail?.items ?? []
+        var submitted = false
+
+        if items.isEmpty {
+            // Fallback: no items loaded, skip API call but mark as submitted
             isReviewSubmitted = true
             showingRatingSubmitted = true
             return
         }
 
-        let request = CreateReviewRequest(
-            productId: firstItem.productId,
-            orderId: order.id,
-            rating: rating,
-            comment: remarks.isEmpty ? nil : remarks,
-            photoUrls: nil
-        )
-
-        do {
-            let _: ReviewDTO = try await APIClient.shared.post("/api/reviews", body: request)
-            print("✅ [Review] Submitted successfully")
-        } catch {
-            print("⚠️ [Review] Failed to submit: \(error)")
+        for item in items {
+            let request = CreateReviewRequest(
+                productId: item.productId,
+                orderId: order.id,
+                rating: rating,
+                comment: remarks.isEmpty ? nil : remarks,
+                photoUrls: uploadedPhotoUrls.isEmpty ? nil : uploadedPhotoUrls
+            )
+            do {
+                let _: ReviewDTO = try await APIClient.shared.post("/api/reviews", body: request)
+                submitted = true
+                print("✅ [Review] Submitted for product \(item.productName)")
+            } catch APIError.badRequest(let msg) {
+                // "already reviewed" is acceptable — treat as success
+                if msg.lowercased().contains("already") {
+                    submitted = true
+                } else {
+                    print("⚠️ [Review] \(item.productName): \(msg)")
+                }
+            } catch {
+                print("⚠️ [Review] Failed for \(item.productName): \(error)")
+            }
         }
 
-        isReviewSubmitted = true
-        showingRatingSubmitted = true
+        if submitted {
+            isReviewSubmitted = true
+            showingRatingSubmitted = true
+        }
+    }
+
+    private func uploadReviewPhotos(_ photos: [Data]) async -> [String] {
+        var urls: [String] = []
+        do {
+            let boundary = UUID().uuidString
+            var body = Data()
+
+            for (index, photoData) in photos.enumerated() {
+                body.append("--\(boundary)\r\n".data(using: .utf8)!)
+                body.append("Content-Disposition: form-data; name=\"files\"; filename=\"review_\(index).jpg\"\r\n".data(using: .utf8)!)
+                body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+                // Compress to JPEG at 0.7 quality
+                if let compressed = UIImage(data: photoData)?.jpegData(compressionQuality: 0.7) {
+                    body.append(compressed)
+                } else {
+                    body.append(photoData)
+                }
+                body.append("\r\n".data(using: .utf8)!)
+            }
+            body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+            var request = URLRequest(url: URL(string: "\(APIConfig.baseURL)/api/reviews/upload")!)
+            request.httpMethod = "POST"
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            if let token = UserDefaults.standard.string(forKey: "jwt_token") {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
+            request.httpBody = body
+
+            let (data, _) = try await URLSession.shared.data(for: request)
+            struct UploadResult: Decodable { let urls: [String] }
+            let result = try JSONDecoder().decode(UploadResult.self, from: data)
+            urls = result.urls
+            print("✅ [Review] Uploaded \(urls.count) photo(s)")
+        } catch {
+            print("⚠️ [Review] Photo upload failed: \(error)")
+        }
+        return urls
     }
 
     // MARK: - Export

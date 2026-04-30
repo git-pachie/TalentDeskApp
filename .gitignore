@@ -23,4 +23,4 @@ bin/
 obj/
 
 # Uploaded files
-wwwroot/uploads/
+**/wwwroot/uploads/

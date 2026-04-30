@@ -27,3 +27,12 @@ public class CreateReviewRequest
     public string? Comment { get; set; }
     public List<string>? PhotoUrls { get; set; }
 }
+
+/// <summary>Submits a single rating + comment for an entire order (not per-product).</summary>
+public class CreateOrderReviewRequest
+{
+    public Guid OrderId { get; set; }
+    public int Rating { get; set; }
+    public string? Comment { get; set; }
+    public List<string>? PhotoUrls { get; set; }
+}

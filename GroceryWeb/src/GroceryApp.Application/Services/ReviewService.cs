@@ -77,6 +77,18 @@ public class ReviewService : IReviewService
         return reviews.Select(MapToDto);
     }
 
+    public async Task<IEnumerable<ReviewDto>> GetOrderReviewsAsync(Guid orderId)
+    {
+        var reviews = await _reviewRepo.Query()
+            .Include(r => r.User)
+            .Include(r => r.Photos)
+            .Where(r => r.OrderId == orderId)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+
+        return reviews.Select(MapToDto);
+    }
+
     public async Task<IEnumerable<ReviewDto>> GetAllReviewsAsync(int page, int pageSize)
     {
         var reviews = await _reviewRepo.Query()

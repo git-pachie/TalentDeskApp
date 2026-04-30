@@ -160,10 +160,12 @@ struct CartItemDTO: Decodable, Identifiable {
 struct AddToCartRequest: Encodable {
     let productId: UUID
     let quantity: Int
+    let remarks: String?
 }
 
 struct UpdateCartItemRequest: Encodable {
     let quantity: Int
+    let remarks: String?
 }
 
 // MARK: - Orders
@@ -179,6 +181,7 @@ struct OrderDTO: Decodable, Identifiable {
     let totalAmount: Decimal
     let status: String
     let notes: String?
+    let voucherCode: String?
     let createdAt: Date
     let items: [OrderItemDTO]?
     let payment: PaymentSummaryDTO?
