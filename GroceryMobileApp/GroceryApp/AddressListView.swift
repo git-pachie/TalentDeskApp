@@ -123,8 +123,10 @@ struct AddressListView: View {
                     }
                     addresses[index] = updated
                 }
+                Task { await updateAddressOnServer(updated) }
             } onDelete: { toDelete in
                 addresses.removeAll { $0.id == toDelete.id }
+                Task { await deleteAddressOnServer(toDelete.id) }
             }
         }
         .sheet(isPresented: $showingAddSheet) {
@@ -166,8 +168,37 @@ struct AddressListView: View {
         )
         do {
             let _: AddressDTO = try await APIClient.shared.post("/api/addresses", body: request)
+            await loadAddresses() // Reload to get server-assigned IDs
         } catch {
             print("⚠️ Failed to save address: \(error)")
+        }
+    }
+
+    private func updateAddressOnServer(_ item: AddressItem) async {
+        guard APIClient.shared.isAuthenticated else { return }
+        let parts = item.address.components(separatedBy: ", ")
+        let request = UpdateAddressRequest(
+            label: item.label,
+            street: parts.first ?? item.address,
+            city: parts.count > 1 ? parts[1] : "",
+            province: parts.count > 2 ? parts[2] : "",
+            zipCode: parts.count > 3 ? parts[3] : "",
+            country: nil,
+            isDefault: item.isDefault
+        )
+        do {
+            let _: AddressDTO = try await APIClient.shared.put("/api/addresses/\(item.id.uuidString)", body: request)
+        } catch {
+            print("⚠️ Failed to update address: \(error)")
+        }
+    }
+
+    private func deleteAddressOnServer(_ id: UUID) async {
+        guard APIClient.shared.isAuthenticated else { return }
+        do {
+            try await APIClient.shared.delete("/api/addresses/\(id.uuidString)")
+        } catch {
+            print("⚠️ Failed to delete address: \(error)")
         }
     }
 }
@@ -313,6 +344,7 @@ struct AddressEditSheet: View {
                     // Save
                     Button {
                         let item = AddressItem(
+                            id: existingID ?? UUID(),
                             label: label.trimmingCharacters(in: .whitespacesAndNewlines),
                             address: address.trimmingCharacters(in: .whitespacesAndNewlines),
                             isDefault: isDefault,
@@ -361,7 +393,7 @@ struct AddressEditSheet: View {
             }
             .alert("Delete Address", isPresented: $showingDeleteAlert) {
                 Button("Yes", role: .destructive) {
-                    onDelete?(AddressItem(label: label, address: address, isDefault: isDefault, deliveryInstructions: deliveryInstructions, contactNumber: contactNumber, latitude: pinCoordinate.latitude, longitude: pinCoordinate.longitude))
+                    onDelete?(AddressItem(id: existingID ?? UUID(), label: label, address: address, isDefault: isDefault, deliveryInstructions: deliveryInstructions, contactNumber: contactNumber, latitude: pinCoordinate.latitude, longitude: pinCoordinate.longitude))
                     dismiss()
                 }
                 Button("No", role: .cancel) { }
