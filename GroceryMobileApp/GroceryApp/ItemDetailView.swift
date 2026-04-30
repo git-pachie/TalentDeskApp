@@ -63,12 +63,8 @@ struct ItemDetailView: View {
             .fill(Color(.systemGray6))
             .frame(height: 260)
             .overlay {
-                if let url = URL(string: thumbnailURLs[selectedImageIndex]) {
-                    AsyncImage(url: url) { image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
-                        ProgressView()
-                    }
+                if !thumbnailURLs.isEmpty, let url = URL(string: thumbnailURLs[selectedImageIndex]) {
+                    CachedAsyncImage(url: url, emoji: product.emoji)
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -115,11 +111,7 @@ struct ItemDetailView: View {
                         .frame(width: 60, height: 60)
                         .overlay {
                             if let url = URL(string: urlString) {
-                                AsyncImage(url: url) { image in
-                                    image.resizable().scaledToFill()
-                                } placeholder: {
-                                    ProgressView().scaleEffect(0.5)
-                                }
+                                CachedAsyncImage(url: url, emoji: product.emoji)
                             }
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))

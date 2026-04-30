@@ -7,6 +7,14 @@ struct CachedAsyncImage: View {
     @State private var image: UIImage?
     @State private var isLoading = false
 
+    /// Shared session that trusts self-signed dev certificates (same as APIClient)
+    private static let imageSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.urlCache = URLCache.shared
+        config.requestCachePolicy = .returnCacheDataElseLoad
+        return URLSession(configuration: config, delegate: ImageSessionDelegate.shared, delegateQueue: nil)
+    }()
+
     var body: some View {
         Group {
             if let image {
@@ -39,15 +47,28 @@ struct CachedAsyncImage: View {
         }
 
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await Self.imageSession.data(for: request)
             if let uiImage = UIImage(data: data) {
-                // Store in cache
                 let cachedResponse = CachedURLResponse(response: response, data: data)
                 URLCache.shared.storeCachedResponse(cachedResponse, for: request)
                 self.image = uiImage
             }
         } catch {
-            // Fall back to emoji (already shown)
+            print("⚠️ [Image] Failed to load \(url): \(error.localizedDescription)")
         }
+    }
+}
+
+/// Delegate that accepts self-signed certificates for image loading in development
+private final class ImageSessionDelegate: NSObject, URLSessionDelegate {
+    static let shared = ImageSessionDelegate()
+
+    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async
+        -> (URLSession.AuthChallengeDisposition, URLCredential?) {
+        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+           let trust = challenge.protectionSpace.serverTrust {
+            return (.useCredential, URLCredential(trust: trust))
+        }
+        return (.performDefaultHandling, nil)
     }
 }

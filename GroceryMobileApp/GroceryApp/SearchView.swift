@@ -116,11 +116,7 @@ struct SearchView: View {
                             .frame(width: 40, height: 40)
                             .overlay {
                                 if let urlString = product.imageURL, let url = URL(string: urlString) {
-                                    AsyncImage(url: url) { image in
-                                        image.resizable().scaledToFill()
-                                    } placeholder: {
-                                        Text(product.emoji).font(.title3)
-                                    }
+                                    CachedAsyncImage(url: url, emoji: product.emoji)
                                 } else {
                                     Text(product.emoji).font(.title3)
                                 }
