@@ -21,6 +21,18 @@ struct AuthResponse: Decodable {
     let expiresAt: Date?
     let user: UserDTO?
     let errors: [String]?
+    let requiresEmailVerification: Bool?
+}
+
+struct VerifyEmailRequest: Encodable {
+    let email: String
+    let code: String
+}
+
+struct VerifyEmailResponse: Decodable {
+    let success: Bool
+    let token: String?
+    let error: String?
 }
 
 struct UserDTO: Codable, Identifiable {
@@ -31,6 +43,8 @@ struct UserDTO: Codable, Identifiable {
     let phoneNumber: String?
     let profileImageUrl: String?
     let roles: [String]?
+    let isEmailVerified: Bool?
+    let isPhoneVerified: Bool?
 
     var fullName: String { "\(firstName) \(lastName)" }
 }

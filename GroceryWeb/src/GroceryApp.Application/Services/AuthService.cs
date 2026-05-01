@@ -14,11 +14,13 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<User> _userManager;
     private readonly IConfiguration _configuration;
+    private readonly IEmailService _emailService;
 
-    public AuthService(UserManager<User> userManager, IConfiguration configuration)
+    public AuthService(UserManager<User> userManager, IConfiguration configuration, IEmailService emailService)
     {
         _userManager = userManager;
         _configuration = configuration;
+        _emailService = emailService;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -53,17 +55,107 @@ public class AuthService : IAuthService
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
-        {
             return new AuthResponse { Success = false, Errors = ["Invalid email or password."] };
-        }
 
         var validPassword = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!validPassword)
-        {
             return new AuthResponse { Success = false, Errors = ["Invalid email or password."] };
+
+        // Check email verification — skip for Admin role
+        var roles = await _userManager.GetRolesAsync(user);
+        if (!user.IsEmailVerified && !roles.Contains("Admin"))
+        {
+            // Generate and store a 4-digit code
+            var code = new Random().Next(1000, 9999).ToString();
+            user.EmailVerificationCode = code;
+            user.EmailVerificationSentAt = DateTime.UtcNow;
+            await _userManager.UpdateAsync(user);
+
+            // Send verification code email
+            var fullName = $"{user.FirstName} {user.LastName}".Trim();
+            _ = Task.Run(() => _emailService.SendEmailVerificationCodeAsync(user.Email!, fullName, code));
+
+            return new AuthResponse
+            {
+                Success = false,
+                RequiresEmailVerification = true,
+                Errors = ["Please verify your email before logging in."]
+            };
         }
 
         return await GenerateAuthResponse(user);
+    }
+
+    public async Task<VerifyEmailResponse> VerifyEmailAsync(VerifyEmailRequest request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user is null)
+            return new VerifyEmailResponse { Success = false, Error = "User not found." };
+
+        if (string.IsNullOrEmpty(user.EmailVerificationCode))
+            return new VerifyEmailResponse { Success = false, Error = "No verification code was sent. Please log in again." };
+
+        // Code expires after 10 minutes
+        if (user.EmailVerificationSentAt.HasValue &&
+            DateTime.UtcNow > user.EmailVerificationSentAt.Value.AddMinutes(10))
+            return new VerifyEmailResponse { Success = false, Error = "Verification code has expired. Please log in again to get a new code." };
+
+        if (user.EmailVerificationCode != request.Code.Trim())
+            return new VerifyEmailResponse { Success = false, Error = "Incorrect code. Please try again." };
+
+        // Mark verified
+        user.IsEmailVerified = true;
+        user.EmailVerificationCode = null;
+        user.EmailVerificationSentAt = null;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _userManager.UpdateAsync(user);
+
+        // Send congratulations email (fire-and-forget)
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        _ = Task.Run(() => _emailService.SendEmailVerifiedConfirmationAsync(user.Email!, fullName));
+
+        // Return a full auth token so the user is logged in immediately
+        var authResponse = await GenerateAuthResponse(user);
+        return new VerifyEmailResponse
+        {
+            Success = true,
+            Token = authResponse.Token
+        };
+    }
+
+    public async Task<bool> SendEmailVerificationCodeAsync(Guid userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return false;
+        if (user.IsEmailVerified) return false; // already verified
+
+        var code = new Random().Next(1000, 9999).ToString();
+        user.EmailVerificationCode = code;
+        user.EmailVerificationSentAt = DateTime.UtcNow;
+        await _userManager.UpdateAsync(user);
+
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        _ = Task.Run(() => _emailService.SendEmailVerificationCodeAsync(user.Email!, fullName, code));
+        return true;
+    }
+
+    public async Task<DTOs.Auth.UserDto?> GetCurrentUserAsync(Guid userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return null;
+        var roles = await _userManager.GetRolesAsync(user);
+        return new DTOs.Auth.UserDto
+        {
+            Id = user.Id,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email!,
+            PhoneNumber = user.PhoneNumber,
+            ProfileImageUrl = user.ProfileImageUrl,
+            Roles = roles,
+            IsEmailVerified = user.IsEmailVerified,
+            IsPhoneVerified = user.IsPhoneVerified
+        };
     }
 
     private async Task<AuthResponse> GenerateAuthResponse(User user)
@@ -84,7 +176,9 @@ public class AuthService : IAuthService
                 Email = user.Email!,
                 PhoneNumber = user.PhoneNumber,
                 ProfileImageUrl = user.ProfileImageUrl,
-                Roles = roles
+                Roles = roles,
+                IsEmailVerified = user.IsEmailVerified,
+                IsPhoneVerified = user.IsPhoneVerified
             }
         };
     }

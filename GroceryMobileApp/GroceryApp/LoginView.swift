@@ -5,6 +5,8 @@ struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var showingRegister = false
+    @State private var showEmailVerificationAlert = false
+    @State private var navigateToVerification = false
 
     var body: some View {
         NavigationStack {
@@ -55,7 +57,7 @@ struct LoginView: View {
                     .padding(.horizontal, 4)
 
                     // Error
-                    if let error = authStore.errorMessage {
+                    if let error = authStore.errorMessage, !authStore.requiresEmailVerification {
                         Text(error)
                             .font(.system(.caption, design: .rounded))
                             .foregroundStyle(GroceryTheme.badge)
@@ -68,6 +70,9 @@ struct LoginView: View {
                             print("🔘 [LoginView] Sign In tapped — email: \(email)")
                             let success = await authStore.login(email: email, password: password)
                             print("🔘 [LoginView] Login result: \(success ? "SUCCESS" : "FAILED")")
+                            if !success && authStore.requiresEmailVerification {
+                                showEmailVerificationAlert = true
+                            }
                         }
                     } label: {
                         HStack {
@@ -115,6 +120,19 @@ struct LoginView: View {
             .background(GroceryTheme.background)
             .sheet(isPresented: $showingRegister) {
                 RegisterView()
+            }
+            .navigationDestination(isPresented: $navigateToVerification) {
+                EmailVerificationView()
+            }
+            .alert("Email Verification Required", isPresented: $showEmailVerificationAlert) {
+                Button("Verify Now") {
+                    navigateToVerification = true
+                }
+                Button("Cancel", role: .cancel) {
+                    authStore.requiresEmailVerification = false
+                }
+            } message: {
+                Text("Your email address needs to be verified before you can log in. A 4-digit code has been sent to \(authStore.pendingVerificationEmail).")
             }
         }
     }

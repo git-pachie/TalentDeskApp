@@ -6,7 +6,7 @@ enum APIConfig {
     // Change this to your server's IP/hostname
     // Use "https://192.168.7.136:5002" for iOS Simulator on the same machine
     // Use "https://<your-mac-ip>:5001" for a physical device
-    static let baseURL = "http://192.168.7.136:5010"
+    static let baseURL = "https://127.0.0.1:5001"
 
     static var base: URL {
         URL(string: baseURL)!
@@ -232,8 +232,12 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         case 404:
             throw APIError.notFound
         case 400:
-            if let body = try? decoder.decode(ErrorBody.self, from: data) {
-                throw APIError.badRequest(body.error ?? "Bad request")
+            if let body = try? decoder.decode(ErrorBody.self, from: data), let msg = body.error {
+                throw APIError.badRequest(msg)
+            }
+            if let body = try? decoder.decode(ErrorsBody.self, from: data),
+               let first = body.errors?.first {
+                throw APIError.badRequest(first)
             }
             throw APIError.badRequest("Bad request")
         default:
@@ -265,8 +269,12 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         case 404:
             throw APIError.notFound
         case 400:
-            if let body = try? decoder.decode(ErrorBody.self, from: data) {
-                throw APIError.badRequest(body.error ?? "Bad request")
+            if let body = try? decoder.decode(ErrorBody.self, from: data), let msg = body.error {
+                throw APIError.badRequest(msg)
+            }
+            if let body = try? decoder.decode(ErrorsBody.self, from: data),
+               let first = body.errors?.first {
+                throw APIError.badRequest(first)
             }
             throw APIError.badRequest("Bad request")
         default:
@@ -311,6 +319,10 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
 
 private struct ErrorBody: Decodable {
     let error: String?
+}
+
+private struct ErrorsBody: Decodable {
+    let errors: [String]?
 }
 
 // MARK: - Notification Names

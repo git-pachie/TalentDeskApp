@@ -26,6 +26,36 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var result = await _authService.LoginAsync(request);
-        return result.Success ? Ok(result) : Unauthorized(result);
+        if (result.Success) return Ok(result);
+        if (result.RequiresEmailVerification) return Ok(result);
+        return BadRequest(result); // Use 400 not 401 — 401 is reserved for missing/expired token
+    }
+
+    [HttpPost("verify-email")]
+    public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
+    {
+        var result = await _authService.VerifyEmailAsync(request);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>Authenticated user requests a new email verification code.</summary>
+    [HttpPost("send-email-code")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<IActionResult> SendEmailCode()
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null) return Unauthorized();
+        var result = await _authService.SendEmailVerificationCodeAsync(Guid.Parse(userId));
+        return result ? Ok(new { message = "Verification code sent." }) : BadRequest(new { error = "Failed to send code." });
+    }
+
+    [HttpGet("me")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<IActionResult> Me()
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId is null) return Unauthorized();
+        var user = await _authService.GetCurrentUserAsync(Guid.Parse(userId));
+        return user is null ? NotFound() : Ok(user);
     }
 }

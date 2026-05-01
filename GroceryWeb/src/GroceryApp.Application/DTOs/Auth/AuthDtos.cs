@@ -23,6 +23,7 @@ public class AuthResponse
     public DateTime? ExpiresAt { get; set; }
     public UserDto? User { get; set; }
     public IEnumerable<string> Errors { get; set; } = [];
+    public bool RequiresEmailVerification { get; set; }
 }
 
 public class UserDto
@@ -34,4 +35,19 @@ public class UserDto
     public string? PhoneNumber { get; set; }
     public string? ProfileImageUrl { get; set; }
     public IEnumerable<string> Roles { get; set; } = [];
+    public bool IsEmailVerified { get; set; }
+    public bool IsPhoneVerified { get; set; }
+}
+
+public class VerifyEmailRequest
+{
+    public string Email { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+}
+
+public class VerifyEmailResponse
+{
+    public bool Success { get; set; }
+    public string? Token { get; set; }
+    public string? Error { get; set; }
 }

@@ -14,13 +14,11 @@ public class OrdersController : Controller
 {
     private readonly ApiClient _apiClient;
     private readonly IConfiguration _config;
-    private readonly HttpClient _httpClient;
 
-    public OrdersController(ApiClient apiClient, IConfiguration config, IHttpClientFactory httpClientFactory)
+    public OrdersController(ApiClient apiClient, IConfiguration config)
     {
         _apiClient = apiClient;
         _config = config;
-        _httpClient = httpClientFactory.CreateClient("GroceryApi");
     }
 
     public async Task<IActionResult> Index(
@@ -76,47 +74,6 @@ public class OrdersController : Controller
         if (order is null) return NotFound();
         ViewBag.ReviewImageBase = _config["ImageUrls:Review"] ?? "http://localhost:5010";
         return View(order);
-    }
-
-    [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Client)]
-    public async Task<IActionResult> Image(string url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-            return NotFound();
-
-        var imageUri = ResolveImageUri(url);
-        if (imageUri is null)
-            return BadRequest();
-
-        try
-        {
-            using var response = await _httpClient.GetAsync(imageUri);
-            if (!response.IsSuccessStatusCode)
-                return NotFound();
-
-            var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
-            if (!contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-                return BadRequest();
-
-            var bytes = await response.Content.ReadAsByteArrayAsync();
-            return File(bytes, contentType);
-        }
-        catch (HttpRequestException)
-        {
-            return NotFound();
-        }
-    }
-
-    private Uri? ResolveImageUri(string url)
-    {
-        if (Uri.TryCreate(url, UriKind.Absolute, out var absoluteUri))
-            return absoluteUri.Scheme is "http" or "https" ? absoluteUri : null;
-
-        if (!url.StartsWith('/'))
-            url = $"/uploads/products/{url}";
-
-        var apiBaseUrl = _config["ApiBaseUrl"] ?? "https://localhost:5001";
-        return Uri.TryCreate(new Uri(apiBaseUrl), url, out var relativeUri) ? relativeUri : null;
     }
 
     [HttpPost]

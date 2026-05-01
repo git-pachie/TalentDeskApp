@@ -3,6 +3,8 @@ import SwiftUI
 struct ProfileView: View {
     @Environment(GrocerySettingsStore.self) private var settingsStore
     @Environment(AuthStore.self) private var authStore
+    @State private var showEmailVerifySheet = false
+    @State private var isSendingCode = false
 
     var body: some View {
         NavigationStack {
@@ -96,6 +98,35 @@ struct ProfileView: View {
                     }
                 }
 
+                // Verification Status
+                Section {
+                    verificationRow(
+                        title: "Email",
+                        value: authStore.currentUser?.email ?? "—",
+                        isVerified: authStore.currentUser?.isEmailVerified ?? false,
+                        icon: "envelope.fill"
+                    ) {
+                        Task {
+                            isSendingCode = true
+                            let sent = await authStore.sendEmailVerificationCode()
+                            isSendingCode = false
+                            if sent { showEmailVerifySheet = true }
+                        }
+                    }
+                    verificationRow(
+                        title: "Mobile",
+                        value: authStore.currentUser?.phoneNumber ?? "Not set",
+                        isVerified: authStore.currentUser?.isPhoneVerified ?? false,
+                        icon: "phone.fill",
+                        onVerify: nil // SMS not yet wired
+                    )
+                } header: {
+                    Label("Verification", systemImage: "shield.checkered")
+                }
+                .sheet(isPresented: $showEmailVerifySheet) {
+                    ProfileEmailVerifySheet()
+                }
+
                 Section("Settings") {
                     Label("Notifications", systemImage: "bell")
                     Label("Help & Support", systemImage: "questionmark.circle")
@@ -114,9 +145,225 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.large)
         }
     }
+    @ViewBuilder
+    private func verificationRow(title: String, value: String, isVerified: Bool, icon: String, onVerify: (() -> Void)?) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.subheadline)
+                .foregroundStyle(GroceryTheme.primary)
+                .frame(width: 28)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(.subheadline, design: .rounded))
+                    .foregroundStyle(GroceryTheme.title)
+                Text(value)
+                    .font(.system(.caption, design: .rounded))
+                    .foregroundStyle(GroceryTheme.muted)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            if isVerified {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption)
+                    Text("Verified")
+                        .font(.system(.caption2, design: .rounded, weight: .semibold))
+                }
+                .foregroundStyle(.green)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.green.opacity(0.1))
+                .clipShape(Capsule())
+            } else {
+                HStack(spacing: 6) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .font(.caption)
+                        Text("Unverified")
+                            .font(.system(.caption2, design: .rounded, weight: .semibold))
+                    }
+                    .foregroundStyle(.orange)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.orange.opacity(0.1))
+                    .clipShape(Capsule())
+
+                    if let onVerify {
+                        Button {
+                            onVerify()
+                        } label: {
+                            if isSendingCode {
+                                ProgressView()
+                                    .scaleEffect(0.7)
+                                    .frame(width: 52, height: 26)
+                            } else {
+                                Text("Verify")
+                                    .font(.system(.caption2, design: .rounded, weight: .semibold))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(GroceryTheme.primary)
+                                    .foregroundStyle(.white)
+                                    .clipShape(Capsule())
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isSendingCode)
+                    }
+                }
+            }
+        }
+    }
 }
 
 #Preview {
     ProfileView()
         .groceryPreviewEnvironment()
+}
+
+// MARK: - Profile Email Verify Sheet
+
+struct ProfileEmailVerifySheet: View {
+    @Environment(AuthStore.self) private var authStore
+    @Environment(\.dismiss) private var dismiss
+    @State private var digits: [String] = ["", "", "", ""]
+    @FocusState private var focusedIndex: Int?
+
+    private var code: String { digits.joined() }
+    private var isComplete: Bool { digits.allSatisfy { $0.count == 1 } }
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 32) {
+                Spacer().frame(height: 10)
+
+                ZStack {
+                    Circle()
+                        .fill(GroceryTheme.primaryLight)
+                        .frame(width: 80, height: 80)
+                    Image(systemName: "envelope.badge.fill")
+                        .font(.system(size: 34))
+                        .foregroundStyle(GroceryTheme.primary)
+                }
+
+                VStack(spacing: 8) {
+                    Text("Verify Your Email")
+                        .font(.system(.title3, design: .rounded, weight: .bold))
+                        .foregroundStyle(GroceryTheme.title)
+                    Text("Enter the 4-digit code sent to")
+                        .font(.system(.subheadline, design: .rounded))
+                        .foregroundStyle(GroceryTheme.muted)
+                    Text(authStore.currentUser?.email ?? "your email")
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                        .foregroundStyle(GroceryTheme.primary)
+                }
+                .multilineTextAlignment(.center)
+
+                // OTP boxes
+                HStack(spacing: 14) {
+                    ForEach(0..<4, id: \.self) { index in
+                        OTPBoxView(digit: $digits[index], isFocused: focusedIndex == index)
+                            .focused($focusedIndex, equals: index)
+                            .onChange(of: digits[index]) { _, newVal in
+                                handleInput(index: index, value: newVal)
+                            }
+                    }
+                }
+
+                if let error = authStore.errorMessage {
+                    Text(error)
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(GroceryTheme.badge)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+
+                Button {
+                    Task { await submit() }
+                } label: {
+                    HStack {
+                        if authStore.isLoading { ProgressView().tint(.white) }
+                        Text("Verify")
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(isComplete ? GroceryTheme.primary : Color(.systemGray4))
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .disabled(!isComplete || authStore.isLoading)
+                .padding(.horizontal, 32)
+
+                Spacer()
+            }
+            .padding(.horizontal, 32)
+            .background(GroceryTheme.background)
+            .navigationTitle("Email Verification")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        authStore.errorMessage = nil
+                        dismiss()
+                    }
+                }
+            }
+            .onAppear { focusedIndex = 0 }
+        }
+    }
+
+    private func handleInput(index: Int, value: String) {
+        let filtered = value.filter { $0.isNumber }
+        if filtered.count >= 4 {
+            for i in 0..<4 {
+                digits[i] = String(filtered[filtered.index(filtered.startIndex, offsetBy: i)])
+            }
+            focusedIndex = nil
+            Task { await submit() }
+            return
+        }
+        if filtered != value { digits[index] = filtered; return }
+        if !value.isEmpty && index < 3 { focusedIndex = index + 1 }
+        if isComplete { focusedIndex = nil; Task { await submit() } }
+    }
+
+    private func submit() async {
+        guard isComplete else { return }
+        let success = await authStore.verifyEmailFromProfile(code: code)
+        if success {
+            dismiss()
+        } else {
+            digits = ["", "", "", ""]
+            focusedIndex = 0
+        }
+    }
+}
+
+// Reusable OTP box (same style as EmailVerificationView)
+private struct OTPBoxView: View {
+    @Binding var digit: String
+    let isFocused: Bool
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(.systemGray6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(isFocused ? GroceryTheme.primary : Color(.systemGray4),
+                                lineWidth: isFocused ? 2 : 1)
+                )
+                .frame(width: 64, height: 72)
+            TextField("", text: $digit)
+                .font(.system(.title, design: .rounded, weight: .bold))
+                .foregroundStyle(GroceryTheme.title)
+                .multilineTextAlignment(.center)
+                .keyboardType(.numberPad)
+                .frame(width: 64, height: 72)
+        }
+        .animation(.easeInOut(duration: 0.15), value: isFocused)
+    }
 }

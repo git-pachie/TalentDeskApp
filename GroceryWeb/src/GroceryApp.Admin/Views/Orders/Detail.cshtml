@@ -521,7 +521,7 @@
     string ImageProxyUrl(string? url)
     {
         if (string.IsNullOrWhiteSpace(url)) return string.Empty;
-        return Url.Action("Image", "Orders", new { url }) ?? url;
+        return $"/image-proxy?url={Uri.EscapeDataString(url)}";
     }
 
     string GetStatusBadge(string status) => status switch

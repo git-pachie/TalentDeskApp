@@ -32,6 +32,8 @@ struct ThemeRoot: View {
         Group {
             if authStore.isAuthenticated {
                 RootTabView()
+            } else if authStore.requiresEmailVerification {
+                EmailVerificationView()
             } else {
                 LoginView()
             }

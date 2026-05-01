@@ -2,6 +2,7 @@ using GroceryApp.Admin.Filters;
 using GroceryApp.Admin.Models;
 using GroceryApp.Admin.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace GroceryApp.Admin.Controllers;
 
@@ -31,27 +32,26 @@ public class UsersController : Controller
 
     // ── Detail (profile hub) ───────────────────────────────────────────────────
 
-    public async Task<IActionResult> Detail(Guid id)
+    public async Task<IActionResult> Detail(Guid id, string? tab = null)
     {
         var user = await _apiClient.GetAsync<UserModel>($"/api/users/{id}");
         if (user is null) return NotFound();
 
-        // Load all sub-lists in parallel
-        var addressesTask = _apiClient.GetAsync<List<UserAddressModel>>($"/api/users/{id}/addresses");
-        var ordersTask = _apiClient.GetAsync<List<OrderModel>>($"/api/users/{id}/orders");
-        var paymentsTask = _apiClient.GetAsync<List<UserPaymentMethodModel>>($"/api/users/{id}/payment-methods");
-        var userVouchersTask = _apiClient.GetAsync<List<UserVoucherModel>>($"/api/users/{id}/vouchers");
-        var allVouchersTask = _apiClient.GetAsync<List<VoucherModel>>("/api/vouchers");
+        var loadErrors = new List<string>();
+        var addresses = await LoadListAsync<UserAddressModel>($"/api/users/{id}/addresses", "addresses", loadErrors);
+        var orders = await LoadListAsync<OrderModel>($"/api/users/{id}/orders", "orders", loadErrors);
+        var payments = await LoadListAsync<UserPaymentMethodModel>($"/api/users/{id}/payment-methods", "payment methods", loadErrors);
+        var userVouchers = await LoadListAsync<UserVoucherModel>($"/api/users/{id}/vouchers", "assigned vouchers", loadErrors);
+        var allVouchers = await LoadListAsync<VoucherModel>("/api/vouchers", "available vouchers", loadErrors);
 
-        await Task.WhenAll(addressesTask, ordersTask, paymentsTask, userVouchersTask, allVouchersTask);
-
-        ViewBag.Addresses = addressesTask.Result ?? [];
-        ViewBag.Orders = ordersTask.Result ?? [];
-        ViewBag.Payments = paymentsTask.Result ?? [];
-        ViewBag.UserVouchers = userVouchersTask.Result ?? [];
-        ViewBag.AllVouchers = (allVouchersTask.Result ?? [])
-            .Where(v => v.IsActive && v.ExpiryDate > DateTime.UtcNow)
-            .ToList();
+        ViewBag.Addresses    = addresses;
+        ViewBag.Orders       = orders;
+        ViewBag.Payments     = payments;
+        ViewBag.UserVouchers = userVouchers;
+        ViewBag.AllVouchers  = allVouchers
+            .Where(v => v.IsActive && v.ExpiryDate > DateTime.UtcNow).ToList();
+        ViewBag.ActiveTab    = NormalizeTab(tab);
+        ViewBag.LoadErrors   = loadErrors;
 
         return View(user);
     }
@@ -61,7 +61,8 @@ public class UsersController : Controller
     [HttpPost]
     public async Task<IActionResult> ToggleActive(Guid id)
     {
-        await _apiClient.PostAsync<object, object>($"/api/users/{id}/toggle-active", new { });
+        await _apiClient.PostVoidAsync($"/api/users/{id}/toggle-active", new { });
+        TempData["SuccessMessage"] = "Account status updated.";
         return RedirectToAction(nameof(Detail), new { id });
     }
 
@@ -70,30 +71,46 @@ public class UsersController : Controller
     [HttpPost]
     public async Task<IActionResult> SetEmailVerified(Guid id, bool verified)
     {
-        await _apiClient.PostAsync<object, object>($"/api/users/{id}/set-email-verified", new { verified });
+        try
+        {
+            await _apiClient.PostVoidAsync($"/api/users/{id}/set-email-verified", new { verified });
+            TempData["SuccessMessage"] = verified ? "Email marked as verified." : "Email verification revoked.";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Failed to update email verification: {ex.Message}";
+        }
         return RedirectToAction(nameof(Detail), new { id });
     }
 
     [HttpPost]
     public async Task<IActionResult> SetPhoneVerified(Guid id, bool verified)
     {
-        await _apiClient.PostAsync<object, object>($"/api/users/{id}/set-phone-verified", new { verified });
+        try
+        {
+            await _apiClient.PostVoidAsync($"/api/users/{id}/set-phone-verified", new { verified });
+            TempData["SuccessMessage"] = verified ? "Mobile marked as verified." : "Mobile verification revoked.";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Failed to update mobile verification: {ex.Message}";
+        }
         return RedirectToAction(nameof(Detail), new { id });
     }
 
     [HttpPost]
     public async Task<IActionResult> SendEmailVerification(Guid id)
     {
-        await _apiClient.PostAsync<object, object>($"/api/users/{id}/send-email-verification", new { });
-        TempData["SuccessMessage"] = "Email verification code sent successfully.";
+        await _apiClient.PostVoidAsync($"/api/users/{id}/send-email-verification", new { });
+        TempData["SuccessMessage"] = "Email verification code sent.";
         return RedirectToAction(nameof(Detail), new { id });
     }
 
     [HttpPost]
     public async Task<IActionResult> SendPhoneVerification(Guid id)
     {
-        await _apiClient.PostAsync<object, object>($"/api/users/{id}/send-phone-verification", new { });
-        TempData["SuccessMessage"] = "SMS verification code sent successfully.";
+        await _apiClient.PostVoidAsync($"/api/users/{id}/send-phone-verification", new { });
+        TempData["SuccessMessage"] = "SMS verification code sent.";
         return RedirectToAction(nameof(Detail), new { id });
     }
 
@@ -104,19 +121,16 @@ public class UsersController : Controller
     {
         await _apiClient.PostAsync<object, object>($"/api/users/{id}/addresses", new
         {
-            label = model.Label,
-            street = model.Street,
-            city = model.City,
-            province = model.Province,
-            zipCode = model.ZipCode,
+            label = model.Label, street = model.Street, city = model.City,
+            province = model.Province, zipCode = model.ZipCode,
             country = model.Country ?? "Philippines",
             deliveryInstructions = model.DeliveryInstructions,
             contactNumber = model.ContactNumber,
-            latitude = model.Latitude,
-            longitude = model.Longitude,
+            latitude = model.Latitude, longitude = model.Longitude,
             isDefault = model.IsDefault
         });
-        return RedirectToAction(nameof(Detail), new { id });
+        TempData["SuccessMessage"] = "Address added.";
+        return RedirectToAction(nameof(Detail), new { id, tab = "addresses" });
     }
 
     [HttpPost]
@@ -124,26 +138,24 @@ public class UsersController : Controller
     {
         await _apiClient.PutAsync<object, object>($"/api/users/{id}/addresses/{addressId}", new
         {
-            label = model.Label,
-            street = model.Street,
-            city = model.City,
-            province = model.Province,
-            zipCode = model.ZipCode,
+            label = model.Label, street = model.Street, city = model.City,
+            province = model.Province, zipCode = model.ZipCode,
             country = model.Country,
             deliveryInstructions = model.DeliveryInstructions,
             contactNumber = model.ContactNumber,
-            latitude = model.Latitude,
-            longitude = model.Longitude,
+            latitude = model.Latitude, longitude = model.Longitude,
             isDefault = (bool?)model.IsDefault
         });
-        return RedirectToAction(nameof(Detail), new { id });
+        TempData["SuccessMessage"] = "Address updated.";
+        return RedirectToAction(nameof(Detail), new { id, tab = "addresses" });
     }
 
     [HttpPost]
     public async Task<IActionResult> DeleteAddress(Guid id, Guid addressId)
     {
         await _apiClient.DeleteAsync($"/api/users/{id}/addresses/{addressId}");
-        return RedirectToAction(nameof(Detail), new { id });
+        TempData["SuccessMessage"] = "Address deleted.";
+        return RedirectToAction(nameof(Detail), new { id, tab = "addresses" });
     }
 
     // ── Payment Methods ────────────────────────────────────────────────────────
@@ -153,13 +165,12 @@ public class UsersController : Controller
     {
         await _apiClient.PostAsync<object, object>($"/api/users/{id}/payment-methods", new
         {
-            name = model.Name,
-            detail = model.Detail,
-            paymentType = model.PaymentType,
-            icon = model.Icon,
+            name = model.Name, detail = model.Detail,
+            paymentType = model.PaymentType, icon = model.Icon,
             isDefault = model.IsDefault
         });
-        return RedirectToAction(nameof(Detail), new { id });
+        TempData["SuccessMessage"] = "Payment method added.";
+        return RedirectToAction(nameof(Detail), new { id, tab = "payments" });
     }
 
     [HttpPost]
@@ -167,20 +178,20 @@ public class UsersController : Controller
     {
         await _apiClient.PutAsync<object, object>($"/api/users/{id}/payment-methods/{pmId}", new
         {
-            name = model.Name,
-            detail = model.Detail,
-            paymentType = model.PaymentType,
-            icon = model.Icon,
+            name = model.Name, detail = model.Detail,
+            paymentType = model.PaymentType, icon = model.Icon,
             isDefault = (bool?)model.IsDefault
         });
-        return RedirectToAction(nameof(Detail), new { id });
+        TempData["SuccessMessage"] = "Payment method updated.";
+        return RedirectToAction(nameof(Detail), new { id, tab = "payments" });
     }
 
     [HttpPost]
     public async Task<IActionResult> DeletePaymentMethod(Guid id, Guid pmId)
     {
         await _apiClient.DeleteAsync($"/api/users/{id}/payment-methods/{pmId}");
-        return RedirectToAction(nameof(Detail), new { id });
+        TempData["SuccessMessage"] = "Payment method deleted.";
+        return RedirectToAction(nameof(Detail), new { id, tab = "payments" });
     }
 
     // ── Vouchers ───────────────────────────────────────────────────────────────
@@ -188,14 +199,48 @@ public class UsersController : Controller
     [HttpPost]
     public async Task<IActionResult> AssignVoucher(Guid id, Guid voucherId)
     {
-        await _apiClient.PostAsync<object, object>($"/api/users/{id}/vouchers", new { voucherId });
-        return RedirectToAction(nameof(Detail), new { id });
+        try
+        {
+            await _apiClient.PostAsync<object, object>($"/api/users/{id}/vouchers", new { voucherId });
+            TempData["SuccessMessage"] = "Voucher assigned.";
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("400"))
+        {
+            TempData["ErrorMessage"] = "Voucher is already assigned to this user or could not be assigned.";
+        }
+        catch
+        {
+            TempData["ErrorMessage"] = "Failed to assign voucher. Please try again.";
+        }
+        return RedirectToAction(nameof(Detail), new { id, tab = "vouchers" });
     }
 
     [HttpPost]
     public async Task<IActionResult> RevokeVoucher(Guid id, Guid userVoucherId)
     {
         await _apiClient.DeleteAsync($"/api/users/{id}/vouchers/{userVoucherId}");
-        return RedirectToAction(nameof(Detail), new { id });
+        TempData["SuccessMessage"] = "Voucher revoked.";
+        return RedirectToAction(nameof(Detail), new { id, tab = "vouchers" });
+    }
+
+    private static string NormalizeTab(string? tab) => tab switch
+    {
+        "orders" => "orders",
+        "payments" => "payments",
+        "vouchers" => "vouchers",
+        _ => "addresses"
+    };
+
+    private async Task<List<T>> LoadListAsync<T>(string endpoint, string label, List<string> errors)
+    {
+        try
+        {
+            return await _apiClient.GetAsync<List<T>>(endpoint) ?? [];
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            errors.Add($"Unable to load {label}.");
+            return [];
+        }
     }
 }

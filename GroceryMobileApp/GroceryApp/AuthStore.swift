@@ -7,6 +7,8 @@ final class AuthStore {
     var isAuthenticated: Bool = false
     var isLoading = false
     var errorMessage: String?
+    var requiresEmailVerification: Bool = false
+    var pendingVerificationEmail: String = ""
 
     init() {
         // Restore session from UserDefaults if token exists and is not expired
@@ -67,15 +69,28 @@ final class AuthStore {
                 currentUser = response.user
                 saveUser(response.user)
                 isAuthenticated = true
+                requiresEmailVerification = false
                 print("✅ [Login] SUCCESS — token saved, user: \(response.user?.fullName ?? "nil")")
                 return true
+            } else if response.requiresEmailVerification == true {
+                pendingVerificationEmail = email
+                requiresEmailVerification = true
+                errorMessage = nil
+                print("📧 [Login] Email verification required for: \(email)")
+                return false
             } else {
                 errorMessage = response.errors?.first ?? "Login failed"
                 print("❌ [Login] FAILED — \(errorMessage ?? "unknown")")
                 return false
             }
         } catch let error as APIError {
-            errorMessage = error.localizedDescription
+            switch error {
+            case .badRequest(let msg):
+                // Login returned 400 — wrong credentials or unverified
+                errorMessage = msg
+            default:
+                errorMessage = error.localizedDescription
+            }
             print("❌ [Login] APIError — \(error.localizedDescription)")
             return false
         } catch {
@@ -121,11 +136,95 @@ final class AuthStore {
         }
     }
 
+    /// Sends a verification code to the current user's email (must be logged in).
+    func sendEmailVerificationCode() async -> Bool {
+        guard APIClient.shared.isAuthenticated else { return false }
+        do {
+            struct Resp: Decodable { let message: String? }
+            let _: Resp = try await APIClient.shared.post("/api/auth/send-email-code", body: EmptyBody())
+            print("📧 [Auth] Email verification code sent")
+            return true
+        } catch {
+            print("⚠️ [Auth] Failed to send email code: \(error)")
+            return false
+        }
+    }
+
+    /// Verifies email using a code — used from Profile (user already logged in).
+    func verifyEmailFromProfile(code: String) async -> Bool {
+        guard let email = currentUser?.email else { return false }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            let response: VerifyEmailResponse = try await APIClient.shared.post(
+                "/api/auth/verify-email",
+                body: VerifyEmailRequest(email: email, code: code)
+            )
+            if response.success {
+                // Refresh user profile to get updated verification status
+                if let updated: UserDTO = try? await APIClient.shared.get("/api/auth/me") {
+                    currentUser = updated
+                    saveUser(updated)
+                }
+                print("✅ [Auth] Email verified from profile")
+                return true
+            } else {
+                errorMessage = response.error ?? "Incorrect code. Please try again."
+                return false
+            }
+        } catch let error as APIError {
+            errorMessage = error.localizedDescription
+            return false
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     func logout() {
         APIClient.shared.clearToken()
         currentUser = nil
         isAuthenticated = false
+        requiresEmailVerification = false
+        pendingVerificationEmail = ""
         UserDefaults.standard.removeObject(forKey: "current_user")
+    }
+
+    func verifyEmail(code: String) async -> Bool {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            let response: VerifyEmailResponse = try await APIClient.shared.post(
+                "/api/auth/verify-email",
+                body: VerifyEmailRequest(email: pendingVerificationEmail, code: code)
+            )
+            if response.success, let token = response.token {
+                APIClient.shared.setToken(token)
+                // Fetch full user profile now that we have a valid token
+                if let user: UserDTO = try? await APIClient.shared.get("/api/auth/me") {
+                    currentUser = user
+                    saveUser(user)
+                }
+                isAuthenticated = true
+                requiresEmailVerification = false
+                pendingVerificationEmail = ""
+                print("✅ [EmailVerify] Verified successfully")
+                return true
+            } else {
+                errorMessage = response.error ?? "Verification failed."
+                return false
+            }
+        } catch let error as APIError {
+            errorMessage = error.localizedDescription
+            return false
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
     }
 
     private func saveUser(_ user: UserDTO?) {
@@ -135,3 +234,6 @@ final class AuthStore {
         }
     }
 }
+
+// Used for POST requests with no body
+private struct EmptyBody: Encodable {}
