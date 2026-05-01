@@ -27,6 +27,20 @@ public class UserSettingsController : ControllerBase
         return Ok(settings);
     }
 
+    [HttpGet("notifications")]
+    public async Task<IActionResult> GetNotificationSettings()
+    {
+        var settings = await _userSettingService.GetNotificationSettingsAsync(UserId);
+        return Ok(settings);
+    }
+
+    [HttpPut("notifications")]
+    public async Task<IActionResult> UpdateNotificationSettings([FromBody] NotificationSettingsDto request)
+    {
+        var settings = await _userSettingService.UpdateNotificationSettingsAsync(UserId, request);
+        return Ok(settings);
+    }
+
     [HttpGet("{key}")]
     public async Task<IActionResult> GetByKey(string key)
     {

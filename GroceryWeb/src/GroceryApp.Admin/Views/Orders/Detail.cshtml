@@ -1,6 +1,7 @@
 @model OrderModel
 @{
     ViewData["Title"] = $"Order {Model.OrderNumber}";
+    var apiBaseUrl = ViewBag.ApiBaseUrl as string ?? "";
     var initials = string.Concat(
         (Model.CustomerName ?? "")
         .Split(' ', StringSplitOptions.RemoveEmptyEntries)
@@ -99,7 +100,7 @@
                                     <div class="d-flex align-items-center gap-2">
                                         @if (!string.IsNullOrEmpty(item.ProductImageUrl))
                                         {
-                                            <img src="@ImageProxyUrl(item.ProductImageUrl)" alt="@item.ProductName"
+                                            <img src="@ResolveApiImageUrl(item.ProductImageUrl, apiBaseUrl)" alt="@item.ProductName"
                                                  class="rounded flex-shrink-0"
                                                  style="width:42px;height:42px;object-fit:cover;"
                                                  onerror="this.onerror=null;this.src='/images/default-product.svg';" />
@@ -220,16 +221,14 @@
                             @if (review.Photos.Count > 0)
                             {
                                 var reviewBase = ViewBag.ReviewImageBase as string ?? "";
-                                string ResolvePhoto(string url) =>
-                                    ImageProxyUrl(url.StartsWith("http") ? url : $"{reviewBase.TrimEnd('/')}{url}");
                                 <div class="d-flex flex-wrap gap-2 mt-2">
                                     @foreach (var photo in review.Photos)
                                     {
-                                        var fullUrl = ResolvePhoto(photo.PhotoUrl);
+                                        var fullUrl = ResolveReviewPhotoUrl(photo.PhotoUrl, reviewBase);
                                         <img src="@fullUrl" alt="Review photo" loading="lazy"
                                              class="rounded-2 border review-photo-thumb"
                                              style="width:72px;height:72px;object-fit:cover;cursor:pointer;"
-                                             data-photos="@string.Join(",", review.Photos.Select(p => ResolvePhoto(p.PhotoUrl)))"
+                                             data-photos="@string.Join(",", review.Photos.Select(p => ResolveReviewPhotoUrl(p.PhotoUrl, reviewBase)))"
                                              data-index="@review.Photos.IndexOf(photo)"
                                              onclick="openPhotoCarousel(this)" />
                                     }
@@ -518,6 +517,35 @@
 </div>
 
 @functions {
+    string ResolveApiImageUrl(string? url, string apiBaseUrl)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return string.Empty;
+
+        if (Uri.TryCreate(url, UriKind.Absolute, out var absoluteUri))
+        {
+            var host = absoluteUri.Host.ToLowerInvariant();
+            if ((host == "localhost" || host == "127.0.0.1") && Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var apiBase))
+            {
+                var rebuilt = new UriBuilder(apiBase)
+                {
+                    Path = absoluteUri.AbsolutePath,
+                    Query = absoluteUri.Query.TrimStart('?')
+                };
+                return rebuilt.Uri.ToString();
+            }
+
+            return url;
+        }
+
+        return $"{apiBaseUrl.TrimEnd('/')}{(url.StartsWith('/') ? "" : "/")}{url}";
+    }
+
+    string ResolveReviewPhotoUrl(string? url, string reviewBaseUrl)
+    {
+        var absoluteUrl = ResolveApiImageUrl(url, reviewBaseUrl);
+        return ImageProxyUrl(absoluteUrl);
+    }
+
     string ImageProxyUrl(string? url)
     {
         if (string.IsNullOrWhiteSpace(url)) return string.Empty;

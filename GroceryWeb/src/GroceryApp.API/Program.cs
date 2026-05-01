@@ -62,6 +62,8 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+var swaggerEnabled = app.Configuration.GetValue("Swagger:Enabled", true);
+
 // Seed data
 await SeedData.InitializeAsync(app.Services);
 
@@ -71,8 +73,11 @@ if (!Path.IsPathRooted(uploadPath))
     uploadPath = Path.Combine(app.Environment.ContentRootPath, uploadPath);
 Directory.CreateDirectory(Path.Combine(uploadPath, "products"));
 
-app.UseSwagger();
-app.UseSwaggerUI();
+if (swaggerEnabled)
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 // Only redirect to HTTPS in production — dev devices use plain HTTP
 if (!app.Environment.IsDevelopment())

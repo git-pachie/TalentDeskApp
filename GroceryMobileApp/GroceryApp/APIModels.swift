@@ -120,9 +120,6 @@ struct ProductDTO: Decodable, Identifiable {
         let primaryImage = images.first(where: { $0.isPrimary }) ?? images.first
         let imageURL = primaryImage?.fullUrl ?? primaryImage?.imageUrl
 
-        // Debug: print image URL resolution
-        print("🖼️ [\(name)] images: \(images.count), primary: \(primaryImage?.imageUrl ?? "none"), fullUrl: \(primaryImage?.fullUrl ?? "nil"), resolved: \(imageURL ?? "nil")")
-
         return GroceryProduct(
             id: id,
             name: name,
@@ -538,4 +535,19 @@ struct UserSettingDTO: Decodable {
 struct UpdateUserSettingRequest: Encodable {
     let key: String
     let value: String
+}
+
+struct NotificationSettingsDTO: Codable, Equatable {
+    var marketingPromotions: Bool = false
+    var productUpdates: Bool = false
+    var newsAnnouncements: Bool = false
+    var transactionsBilling: Bool = true
+    var alertsCritical: Bool = true
+    var usageActivity: Bool = false
+    var accountSecurity: Bool = true
+    var reminders: Bool = false
+    var messagesSupport: Bool = false
+    var personalizedRecommendations: Bool = false
+
+    static let defaults = NotificationSettingsDTO()
 }

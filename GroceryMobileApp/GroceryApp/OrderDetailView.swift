@@ -2,7 +2,9 @@ import SwiftUI
 import PhotosUI
 
 struct OrderDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var order: OrderItem
+    private let lockBackNavigation: Bool
     @State private var orderDetail: OrderDTO?
     @State private var rating: Int = 0
     @State private var remarks: String = ""
@@ -10,14 +12,16 @@ struct OrderDetailView: View {
     @State private var reviewPhotos: [Data] = []
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var isReviewSubmitted = false
+    @State private var isSubmittingReview = false
     @State private var lastRefreshDate = Date()
     @State private var isLoading = false
     @State private var photoViewerPhotos: [String] = []
     @State private var photoViewerIndex: Int = 0
     @State private var showingPhotoViewer = false
 
-    init(order: OrderItem) {
+    init(order: OrderItem, lockBackNavigation: Bool = false) {
         self._order = State(initialValue: order)
+        self.lockBackNavigation = lockBackNavigation
     }
 
     // Use API data for price breakdown when available
@@ -106,7 +110,15 @@ struct OrderDetailView: View {
         }
         .navigationTitle("Order Details")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(lockBackNavigation)
         .toolbar {
+            if lockBackNavigation {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     exportAndShare()
@@ -619,6 +631,7 @@ struct OrderDetailView: View {
                                             .frame(width: 70, height: 70)
                                             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                                         Button {
+                                            guard !isSubmittingReview else { return }
                                             reviewPhotos.remove(at: index)
                                         } label: {
                                             Image(systemName: "xmark.circle.fill")
@@ -646,6 +659,7 @@ struct OrderDetailView: View {
                                         .stroke(GroceryTheme.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [5]))
                                 )
                             }
+                            .disabled(isSubmittingReview)
                         }
                     }
                 }
@@ -664,17 +678,22 @@ struct OrderDetailView: View {
                     Task { await submitReview() }
                 } label: {
                     HStack {
-                        Image(systemName: "paperplane.fill")
-                        Text("Submit Review")
+                        if isSubmittingReview {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Image(systemName: "paperplane.fill")
+                        }
+                        Text(isSubmittingReview ? "Submitting..." : "Submit Review")
                             .font(.system(.subheadline, design: .rounded, weight: .semibold))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(rating > 0 ? GroceryTheme.primary : Color(.systemGray4))
+                    .background((rating > 0 && !isSubmittingReview) ? GroceryTheme.primary : Color(.systemGray4))
                     .foregroundStyle(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
-                .disabled(rating == 0)
+                .disabled(rating == 0 || isSubmittingReview)
             }
         }
         .padding(14)
@@ -684,7 +703,9 @@ struct OrderDetailView: View {
     }
 
     private func submitReview() async {
-        guard rating > 0 else { return }
+        guard rating > 0, !isSubmittingReview else { return }
+        isSubmittingReview = true
+        defer { isSubmittingReview = false }
 
         // 1. Upload photos first if any
         var uploadedPhotoUrls: [String] = []

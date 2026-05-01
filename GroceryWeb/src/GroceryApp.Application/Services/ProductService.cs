@@ -1,6 +1,7 @@
 using GroceryApp.Application.DTOs;
 using GroceryApp.Application.DTOs.Products;
 using GroceryApp.Application.Interfaces;
+using GroceryApp.Application.Utilities;
 using GroceryApp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -13,7 +14,7 @@ public class ProductService : IProductService
     private readonly IRepository<ProductImage> _imageRepo;
     private readonly IRepository<ProductCategory> _productCategoryRepo;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly string _productImageBaseUrl;
+    private readonly string _appBaseUrl;
 
     public ProductService(
         IRepository<Product> productRepo,
@@ -26,7 +27,7 @@ public class ProductService : IProductService
         _imageRepo = imageRepo;
         _productCategoryRepo = productCategoryRepo;
         _unitOfWork = unitOfWork;
-        _productImageBaseUrl = (configuration["ImageUrls:ProductImage"] ?? "").TrimEnd('/');
+        _appBaseUrl = (configuration["App:BaseUrl"] ?? "").TrimEnd('/');
     }
 
     public async Task<ProductDto?> GetByIdAsync(Guid id)
@@ -273,22 +274,6 @@ public class ProductService : IProductService
     /// - Otherwise it's a filename — prepend the configured product image base URL.
     private string BuildFullImageUrl(string imageUrl)
     {
-        if (string.IsNullOrEmpty(imageUrl)) return imageUrl;
-
-        // Already a full URL
-        if (imageUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-            imageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            return imageUrl;
-
-        // Has a configured base URL — treat imageUrl as filename
-        if (!string.IsNullOrEmpty(_productImageBaseUrl))
-        {
-            // If imageUrl starts with / it's a legacy path like /images/products/banana.png
-            // Extract just the filename
-            var fileName = imageUrl.Contains('/') ? imageUrl.Split('/').Last() : imageUrl;
-            return $"{_productImageBaseUrl}/{fileName}";
-        }
-
-        return imageUrl;
+        return AppUrlBuilder.BuildUploadUrl(_appBaseUrl, "products", imageUrl) ?? imageUrl;
     }
 }

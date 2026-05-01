@@ -3,6 +3,7 @@ using System.Net.Mail;
 using GroceryApp.Admin.Filters;
 using GroceryApp.Admin.Models;
 using GroceryApp.Admin.Services;
+using GroceryApp.Admin.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
@@ -72,7 +73,8 @@ public class OrdersController : Controller
     {
         var order = await _apiClient.GetAsync<OrderModel>($"/api/orders/admin/{id}");
         if (order is null) return NotFound();
-        ViewBag.ReviewImageBase = _config["ImageUrls:Review"] ?? "http://localhost:5010";
+        ViewBag.ApiBaseUrl = _config["ApiBaseUrl"] ?? string.Empty;
+        ViewBag.ReviewImageBase = AdminUrlBuilder.BuildUploadsBase(_config["ApiBaseUrl"], "reviews");
         return View(order);
     }
 

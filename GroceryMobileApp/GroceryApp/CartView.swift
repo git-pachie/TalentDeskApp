@@ -4,9 +4,10 @@ struct CartView: View {
     @Environment(CartStore.self) private var cartStore
     @State private var editingRemarkItem: CartItem?
     @State private var remarkText = ""
+    @State private var navigationPath: [CartRoute] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if cartStore.items.isEmpty {
                     ContentUnavailableView(
@@ -39,9 +40,7 @@ struct CartView: View {
                                         .foregroundStyle(GroceryTheme.primary)
                                 }
                                 Spacer()
-                                NavigationLink {
-                                    CheckoutView()
-                                } label: {
+                                NavigationLink(value: CartRoute.checkout) {
                                     Text("Checkout (\(cartStore.totalItems))")
                                         .font(.system(.subheadline, design: .rounded, weight: .semibold))
                                         .padding(.horizontal, 28)
@@ -61,6 +60,16 @@ struct CartView: View {
             .background(GroceryTheme.background)
             .navigationTitle("Cart")
             .navigationBarTitleDisplayMode(.large)
+            .navigationDestination(for: CartRoute.self) { route in
+                switch route {
+                case .checkout:
+                    CheckoutView { order in
+                        navigationPath = [.order(order)]
+                    }
+                case .order(let order):
+                    OrderDetailView(order: order, lockBackNavigation: true)
+                }
+            }
             .alert("Add Note", isPresented: Binding(
                 get: { editingRemarkItem != nil },
                 set: { if !$0 { editingRemarkItem = nil } }
@@ -186,6 +195,11 @@ struct CartView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: .black.opacity(0.04), radius: 4, y: 2)
     }
+}
+
+private enum CartRoute: Hashable {
+    case checkout
+    case order(OrderItem)
 }
 
 #Preview {

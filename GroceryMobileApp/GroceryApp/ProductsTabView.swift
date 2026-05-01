@@ -13,6 +13,9 @@ struct ProductsTabView: View {
     private var categories: [GroceryCategory] {
         productStore.categories.isEmpty ? SampleData.categories : productStore.categories
     }
+    private let adaptiveProductColumns = [
+        GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 12)
+    ]
 
     var body: some View {
         NavigationStack {
@@ -29,10 +32,7 @@ struct ProductsTabView: View {
 
                 // Product grid
                 ScrollView {
-                    LazyVGrid(columns: [
-                        GridItem(.flexible(), spacing: 12),
-                        GridItem(.flexible(), spacing: 12)
-                    ], spacing: 14) {
+                    LazyVGrid(columns: adaptiveProductColumns, spacing: 14) {
                         ForEach(products) { product in
                             NavigationLink {
                                 ItemDetailView(product: product)
@@ -204,6 +204,9 @@ struct ProductsTabView: View {
 
             hasMore = result.page < result.totalPages
         } catch {
+            if let apiError = error as? APIError, apiError.isCancellation {
+                return
+            }
             print("⚠️ Products load failed: \(error)")
             if reset && products.isEmpty {
                 products = SampleData.freshProducts

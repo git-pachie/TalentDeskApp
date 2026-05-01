@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct OrderItem: Identifiable {
+struct OrderItem: Identifiable, Hashable {
     let id: UUID
     let orderNumber: String
     let date: String
@@ -24,7 +24,7 @@ struct OrderItem: Identifiable {
     }
 }
 
-enum OrderStatus: String {
+enum OrderStatus: String, Hashable {
     case pending = "Pending"
     case paid = "Paid"
     case processing = "Processing"

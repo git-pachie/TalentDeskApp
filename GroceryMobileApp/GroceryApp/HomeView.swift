@@ -8,6 +8,12 @@ struct HomeView: View {
     @State private var addresses: [(label: String, address: String, contact: String, instructions: String)] = [
         ("Home", "123 Main St, New York, NY 10001", "+1 (555) 123-4567", ""),
     ]
+    private let adaptiveProductColumns = [
+        GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 12)
+    ]
+    private let adaptiveCategoryColumns = [
+        GridItem(.adaptive(minimum: 76, maximum: 110), spacing: 12)
+    ]
 
     private var currentAddress: (label: String, address: String, contact: String, instructions: String) {
         guard selectedAddressIndex < addresses.count else {
@@ -271,33 +277,28 @@ struct HomeView: View {
                     .foregroundStyle(GroceryTheme.primary)
             }
 
-            let rows = [
-                GridItem(.fixed(90), spacing: 10),
-                GridItem(.fixed(90), spacing: 10)
-            ]
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHGrid(rows: rows, spacing: 14) {
-                    ForEach(productStore.categories.isEmpty ? SampleData.categories : productStore.categories) { cat in
-                        Button {
-                            print("📂 Category tapped: \(cat.name)")
-                        } label: {
-                            VStack(spacing: 6) {
-                                ZStack {
-                                    Circle()
-                                        .fill(GroceryTheme.primaryLight)
-                                        .frame(width: 52, height: 52)
-                                    Text(cat.emoji)
-                                        .font(.title2)
-                                }
-                                Text(cat.name)
-                                    .font(.caption2)
-                                    .foregroundStyle(GroceryTheme.subtitle)
+            LazyVGrid(columns: adaptiveCategoryColumns, spacing: 14) {
+                ForEach(productStore.categories.isEmpty ? SampleData.categories : productStore.categories) { cat in
+                    Button {
+                        print("📂 Category tapped: \(cat.name)")
+                    } label: {
+                        VStack(spacing: 6) {
+                            ZStack {
+                                Circle()
+                                    .fill(GroceryTheme.primaryLight)
+                                    .frame(width: 52, height: 52)
+                                Text(cat.emoji)
+                                    .font(.title2)
                             }
-                            .frame(width: 65)
+                            Text(cat.name)
+                                .font(.caption2)
+                                .foregroundStyle(GroceryTheme.subtitle)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.center)
                         }
-                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity)
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -319,10 +320,7 @@ struct HomeView: View {
                 .foregroundStyle(GroceryTheme.primary)
             }
 
-            LazyVGrid(columns: [
-                    GridItem(.flexible(), spacing: 12),
-                    GridItem(.flexible(), spacing: 12)
-                ], spacing: 14) {
+            LazyVGrid(columns: adaptiveProductColumns, spacing: 14) {
                 ForEach(productStore.deals.isEmpty ? SampleData.deals : productStore.deals) { product in
                         NavigationLink {
                             ItemDetailView(product: product)

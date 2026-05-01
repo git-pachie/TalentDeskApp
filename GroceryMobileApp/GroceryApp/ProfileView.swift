@@ -128,7 +128,11 @@ struct ProfileView: View {
                 }
 
                 Section("Settings") {
-                    Label("Notifications", systemImage: "bell")
+                    NavigationLink {
+                        NotificationSettingsView()
+                    } label: {
+                        Label("Notifications", systemImage: "bell")
+                    }
                     Label("Help & Support", systemImage: "questionmark.circle")
                 }
 
@@ -211,6 +215,67 @@ struct ProfileView: View {
 #Preview {
     ProfileView()
         .groceryPreviewEnvironment()
+}
+
+// MARK: - Notification Settings
+
+struct NotificationSettingsView: View {
+    @Environment(GrocerySettingsStore.self) private var settingsStore
+
+    private let options: [NotificationSettingOption] = [
+        .init(title: "Marketing & Promotions", keyPath: \.marketingPromotions),
+        .init(title: "Product Updates", keyPath: \.productUpdates),
+        .init(title: "News & Announcements", keyPath: \.newsAnnouncements),
+        .init(title: "Transactions & Billing", keyPath: \.transactionsBilling),
+        .init(title: "Alerts & Critical", keyPath: \.alertsCritical),
+        .init(title: "Usage & Activity", keyPath: \.usageActivity),
+        .init(title: "Account & Security", keyPath: \.accountSecurity),
+        .init(title: "Reminders", keyPath: \.reminders),
+        .init(title: "Messages & Support", keyPath: \.messagesSupport),
+        .init(title: "Personalized Recommendations", keyPath: \.personalizedRecommendations)
+    ]
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(options) { option in
+                    Toggle(option.title, isOn: binding(for: option.keyPath))
+                        .font(.system(.body, design: .rounded))
+                }
+            } footer: {
+                if settingsStore.isLoadingNotificationSettings {
+                    Text("Loading preferences...")
+                } else if let error = settingsStore.notificationSettingsError {
+                    Text("Last update failed: \(error)")
+                }
+            }
+        }
+        .navigationTitle("Notifications")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await settingsStore.loadNotificationSettings()
+        }
+        .refreshable {
+            await settingsStore.loadNotificationSettings()
+        }
+    }
+
+    private func binding(for keyPath: WritableKeyPath<NotificationSettingsDTO, Bool>) -> Binding<Bool> {
+        Binding(
+            get: { settingsStore.notificationSettings[keyPath: keyPath] },
+            set: { newValue in
+                var settings = settingsStore.notificationSettings
+                settings[keyPath: keyPath] = newValue
+                settingsStore.updateNotificationSettings(settings)
+            }
+        )
+    }
+}
+
+private struct NotificationSettingOption: Identifiable {
+    let title: String
+    let keyPath: WritableKeyPath<NotificationSettingsDTO, Bool>
+    var id: String { title }
 }
 
 // MARK: - Profile Email Verify Sheet

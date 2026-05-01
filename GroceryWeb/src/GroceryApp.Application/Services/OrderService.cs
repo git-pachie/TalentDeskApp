@@ -1,5 +1,6 @@
 using GroceryApp.Application.DTOs.Orders;
 using GroceryApp.Application.Interfaces;
+using GroceryApp.Application.Utilities;
 using GroceryApp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -15,7 +16,7 @@ public class OrderService : IOrderService
     private readonly IRepository<Review> _reviewRepo;
     private readonly INotificationService _notificationService;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly string _productImageBaseUrl;
+    private readonly string _appBaseUrl;
 
     public OrderService(
         IRepository<Order> orderRepo,
@@ -34,7 +35,7 @@ public class OrderService : IOrderService
         _reviewRepo = reviewRepo;
         _notificationService = notificationService;
         _unitOfWork = unitOfWork;
-        _productImageBaseUrl = (configuration["ImageUrls:ProductImage"] ?? "").TrimEnd('/');
+        _appBaseUrl = (configuration["App:BaseUrl"] ?? "").TrimEnd('/');
     }
 
     public async Task<OrderDto> CreateOrderAsync(Guid userId, CreateOrderRequest request)
@@ -381,7 +382,7 @@ public class OrderService : IOrderService
                 Photos = r.Photos.OrderBy(p => p.SortOrder).Select(p => new OrderReviewPhotoDto
                 {
                     Id = p.Id,
-                    PhotoUrl = p.PhotoUrl,
+                    PhotoUrl = AppUrlBuilder.BuildUploadUrl(_appBaseUrl, "reviews", p.PhotoUrl) ?? p.PhotoUrl,
                     SortOrder = p.SortOrder
                 }).ToList()
             }).ToList()
@@ -390,15 +391,6 @@ public class OrderService : IOrderService
 
     private string? BuildFullImageUrl(string? imageUrl)
     {
-        if (string.IsNullOrEmpty(imageUrl)) return null;
-        if (imageUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-            imageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            return imageUrl;
-        if (!string.IsNullOrEmpty(_productImageBaseUrl))
-        {
-            var fileName = imageUrl.Contains('/') ? imageUrl.Split('/').Last() : imageUrl;
-            return $"{_productImageBaseUrl}/{fileName}";
-        }
-        return imageUrl;
+        return AppUrlBuilder.BuildUploadUrl(_appBaseUrl, "products", imageUrl);
     }
 }

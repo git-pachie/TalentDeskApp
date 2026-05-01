@@ -45,12 +45,17 @@ public class UsersController : Controller
         var userVouchers = await LoadListAsync<UserVoucherModel>($"/api/users/{id}/vouchers", "assigned vouchers", loadErrors);
         var userDevices = await LoadListAsync<UserDeviceModel>($"/api/users/{id}/devices", "user devices", loadErrors);
         var allVouchers = await LoadListAsync<VoucherModel>("/api/vouchers", "available vouchers", loadErrors);
+        var notificationSettings = await LoadOptionalAsync<NotificationSettingsModel>(
+            $"/api/users/{id}/notification-settings",
+            "notification settings",
+            loadErrors) ?? new NotificationSettingsModel();
 
         ViewBag.Addresses    = addresses;
         ViewBag.Orders       = orders;
         ViewBag.Payments     = payments;
         ViewBag.UserVouchers = userVouchers;
         ViewBag.UserDevices  = userDevices;
+        ViewBag.NotificationSettings = notificationSettings;
         ViewBag.AllVouchers  = allVouchers
             .Where(v => v.IsActive && v.ExpiryDate > DateTime.UtcNow).ToList();
         ViewBag.ActiveTab    = NormalizeTab(tab);
@@ -240,12 +245,33 @@ public class UsersController : Controller
         return RedirectToAction(nameof(Detail), new { id, tab = "vouchers" });
     }
 
+    // ── Notification Settings ─────────────────────────────────────────────────
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateNotificationSettings(Guid id, NotificationSettingsModel model)
+    {
+        try
+        {
+            await _apiClient.PutAsync<NotificationSettingsModel, NotificationSettingsModel>(
+                $"/api/users/{id}/notification-settings",
+                model);
+            TempData["SuccessMessage"] = "Notification settings updated.";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Failed to update notification settings: {ex.Message}";
+        }
+
+        return RedirectToAction(nameof(Detail), new { id, tab = "notifications" });
+    }
+
     private static string NormalizeTab(string? tab) => tab switch
     {
         "orders" => "orders",
         "payments" => "payments",
         "vouchers" => "vouchers",
         "devices" => "devices",
+        "notifications" => "notifications",
         _ => "addresses"
     };
 
@@ -259,6 +285,19 @@ public class UsersController : Controller
         {
             errors.Add($"Unable to load {label}.");
             return [];
+        }
+    }
+
+    private async Task<T?> LoadOptionalAsync<T>(string endpoint, string label, List<string> errors)
+    {
+        try
+        {
+            return await _apiClient.GetAsync<T>(endpoint);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            errors.Add($"Unable to load {label}.");
+            return default;
         }
     }
 }

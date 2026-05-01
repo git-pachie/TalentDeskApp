@@ -8,6 +8,7 @@
     var payments    = ViewBag.Payments    as List<UserPaymentMethodModel> ?? [];
     var userVouchers= ViewBag.UserVouchers as List<UserVoucherModel>      ?? [];
     var userDevices = ViewBag.UserDevices as List<UserDeviceModel>         ?? [];
+    var notificationSettings = ViewBag.NotificationSettings as NotificationSettingsModel ?? new NotificationSettingsModel();
     var allVouchers = ViewBag.AllVouchers  as List<VoucherModel>          ?? [];
     var loadErrors = ViewBag.LoadErrors as List<string> ?? [];
     var activeTab = ViewBag.ActiveTab as string ?? "addresses";
@@ -258,6 +259,11 @@
                         <a class="nav-link @(IsActiveTab("devices") ? "active" : "")" data-bs-toggle="tab" href="#tab-devices">
                             <i class="bi bi-phone me-1"></i>User Devices
                             <span class="badge bg-secondary ms-1" style="font-size:0.68rem;">@userDevices.Count</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(IsActiveTab("notifications") ? "active" : "")" data-bs-toggle="tab" href="#tab-notifications">
+                            <i class="bi bi-bell me-1"></i>Notifications
                         </a>
                     </li>
                 </ul>
@@ -607,6 +613,68 @@
                             </tbody>
                         </table>
                     }
+                </div>
+
+                <!-- ===== NOTIFICATION SETTINGS ===== -->
+                <div class="tab-pane fade @(IsActiveTab("notifications") ? "show active" : "")" id="tab-notifications">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap">
+                        <div>
+                            <h6 class="fw-bold mb-1">Notification Settings</h6>
+                            <p class="text-muted mb-0" style="font-size:0.82rem;">Preference categories shown in the customer mobile profile.</p>
+                        </div>
+                        <span class="badge bg-light text-muted border px-3 py-2">
+                            @(
+                                new[]
+                                {
+                                    notificationSettings.MarketingPromotions,
+                                    notificationSettings.ProductUpdates,
+                                    notificationSettings.NewsAnnouncements,
+                                    notificationSettings.TransactionsBilling,
+                                    notificationSettings.AlertsCritical,
+                                    notificationSettings.UsageActivity,
+                                    notificationSettings.AccountSecurity,
+                                    notificationSettings.Reminders,
+                                    notificationSettings.MessagesSupport,
+                                    notificationSettings.PersonalizedRecommendations
+                                }.Count(v => v)
+                            ) enabled
+                        </span>
+                    </div>
+
+                    <form asp-action="UpdateNotificationSettings" asp-route-id="@Model.Id" method="post">
+                        <div class="row g-2 mb-3">
+                            @{
+                                var notificationOptions = new (string Name, string Label, bool Enabled)[]
+                                {
+                                    (nameof(NotificationSettingsModel.MarketingPromotions), "Marketing & Promotions", notificationSettings.MarketingPromotions),
+                                    (nameof(NotificationSettingsModel.ProductUpdates), "Product Updates", notificationSettings.ProductUpdates),
+                                    (nameof(NotificationSettingsModel.NewsAnnouncements), "News & Announcements", notificationSettings.NewsAnnouncements),
+                                    (nameof(NotificationSettingsModel.TransactionsBilling), "Transactions & Billing", notificationSettings.TransactionsBilling),
+                                    (nameof(NotificationSettingsModel.AlertsCritical), "Alerts & Critical", notificationSettings.AlertsCritical),
+                                    (nameof(NotificationSettingsModel.UsageActivity), "Usage & Activity", notificationSettings.UsageActivity),
+                                    (nameof(NotificationSettingsModel.AccountSecurity), "Account & Security", notificationSettings.AccountSecurity),
+                                    (nameof(NotificationSettingsModel.Reminders), "Reminders", notificationSettings.Reminders),
+                                    (nameof(NotificationSettingsModel.MessagesSupport), "Messages & Support", notificationSettings.MessagesSupport),
+                                    (nameof(NotificationSettingsModel.PersonalizedRecommendations), "Personalized Recommendations", notificationSettings.PersonalizedRecommendations)
+                                };
+                            }
+                            @foreach (var option in notificationOptions)
+                            {
+                                <div class="col-md-6 col-xl-4">
+                                    <label class="border rounded-3 p-3 d-flex align-items-center gap-3 h-100 bg-white" style="cursor:pointer;">
+                                        <input class="form-check-input mt-0" type="checkbox" name="@option.Name" value="true" checked="@option.Enabled" />
+                                        <input type="hidden" name="@option.Name" value="false" />
+                                        <span class="fw-semibold" style="font-size:0.9rem;">@option.Label</span>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-save me-1"></i>Save Settings
+                            </button>
+                        </div>
+                    </form>
                 </div>
 
             </div>

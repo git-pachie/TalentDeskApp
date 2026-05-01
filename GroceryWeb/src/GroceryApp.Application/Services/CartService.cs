@@ -1,5 +1,6 @@
 using GroceryApp.Application.DTOs.Cart;
 using GroceryApp.Application.Interfaces;
+using GroceryApp.Application.Utilities;
 using GroceryApp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -11,7 +12,7 @@ public class CartService : ICartService
     private readonly IRepository<CartItem> _cartRepo;
     private readonly IRepository<Product> _productRepo;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly string _productImageBaseUrl;
+    private readonly string _appBaseUrl;
 
     public CartService(
         IRepository<CartItem> cartRepo,
@@ -22,7 +23,7 @@ public class CartService : ICartService
         _cartRepo = cartRepo;
         _productRepo = productRepo;
         _unitOfWork = unitOfWork;
-        _productImageBaseUrl = (configuration["ImageUrls:ProductImage"] ?? "").TrimEnd('/');
+        _appBaseUrl = (configuration["App:BaseUrl"] ?? "").TrimEnd('/');
     }
 
     public async Task<IEnumerable<CartItemDto>> GetCartAsync(Guid userId)
@@ -127,15 +128,6 @@ public class CartService : ICartService
 
     private string? BuildFullImageUrl(string? imageUrl)
     {
-        if (string.IsNullOrEmpty(imageUrl)) return null;
-        if (imageUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-            imageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            return imageUrl;
-        if (!string.IsNullOrEmpty(_productImageBaseUrl))
-        {
-            var fileName = imageUrl.Contains('/') ? imageUrl.Split('/').Last() : imageUrl;
-            return $"{_productImageBaseUrl}/{fileName}";
-        }
-        return imageUrl;
+        return AppUrlBuilder.BuildUploadUrl(_appBaseUrl, "products", imageUrl);
     }
 }

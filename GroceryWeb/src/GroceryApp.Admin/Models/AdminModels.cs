@@ -84,6 +84,20 @@ public class UserDeviceModel
     public DateTime LastLoginAt { get; set; }
 }
 
+public class NotificationSettingsModel
+{
+    public bool MarketingPromotions { get; set; }
+    public bool ProductUpdates { get; set; }
+    public bool NewsAnnouncements { get; set; }
+    public bool TransactionsBilling { get; set; } = true;
+    public bool AlertsCritical { get; set; } = true;
+    public bool UsageActivity { get; set; }
+    public bool AccountSecurity { get; set; } = true;
+    public bool Reminders { get; set; }
+    public bool MessagesSupport { get; set; }
+    public bool PersonalizedRecommendations { get; set; }
+}
+
 public class PagedResultModel<T>
 {
     public List<T> Items { get; set; } = [];

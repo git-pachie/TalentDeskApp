@@ -1,4 +1,5 @@
 using GroceryApp.Admin.Filters;
+using GroceryApp.Admin.Utilities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GroceryApp.Admin.Controllers;
@@ -32,11 +33,11 @@ public class ImageProxyController : Controller
         if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
             url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
-            fullUrl = url;
+            fullUrl = AdminUrlBuilder.NormalizeToApiBase(_config["ApiBaseUrl"], url);
         }
         else
         {
-            var apiBase = (_config["ApiBaseUrl"] ?? "http://localhost:5010").TrimEnd('/');
+            var apiBase = (_config["ApiBaseUrl"] ?? string.Empty).TrimEnd('/');
             fullUrl = $"{apiBase}{(url.StartsWith('/') ? "" : "/")}{url}";
         }
 

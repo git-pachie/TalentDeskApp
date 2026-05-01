@@ -4,6 +4,9 @@ struct FavoritesView: View {
     @Environment(FavoritesStore.self) private var favoritesStore
     @Environment(ProductStore.self) private var productStore
     @State private var refreshID = UUID()
+    private let adaptiveProductColumns = [
+        GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 12)
+    ]
 
     var body: some View {
         NavigationStack {
@@ -21,10 +24,7 @@ struct FavoritesView: View {
                     )
                 } else {
                     ScrollView {
-                        LazyVGrid(columns: [
-                            GridItem(.flexible(), spacing: 12),
-                            GridItem(.flexible(), spacing: 12)
-                        ], spacing: 14) {
+                        LazyVGrid(columns: adaptiveProductColumns, spacing: 14) {
                             ForEach(favorites) { product in
                                 NavigationLink {
                                     ItemDetailView(product: product)

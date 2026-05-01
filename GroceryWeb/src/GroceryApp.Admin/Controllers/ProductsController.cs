@@ -1,6 +1,7 @@
 using GroceryApp.Admin.Filters;
 using GroceryApp.Admin.Models;
 using GroceryApp.Admin.Services;
+using GroceryApp.Admin.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -15,7 +16,7 @@ public class ProductsController : Controller
     public ProductsController(ApiClient apiClient, IConfiguration configuration)
     {
         _apiClient = apiClient;
-        _productImageUrl = (configuration["ImageUrls:ProductImage"] ?? "https://localhost:5001/uploads/products").TrimEnd('/');
+        _productImageUrl = AdminUrlBuilder.BuildUploadsBase(configuration["ApiBaseUrl"], "products");
     }
 
     public override void OnActionExecuting(ActionExecutingContext context)

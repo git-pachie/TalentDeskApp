@@ -1,7 +1,9 @@
 using GroceryApp.Application.DTOs.Reviews;
 using GroceryApp.Application.Interfaces;
+using GroceryApp.Application.Utilities;
 using GroceryApp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace GroceryApp.Application.Services;
 
@@ -10,15 +12,18 @@ public class ReviewService : IReviewService
     private readonly IRepository<Review> _reviewRepo;
     private readonly IRepository<Order> _orderRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly string _appBaseUrl;
 
     public ReviewService(
         IRepository<Review> reviewRepo,
         IRepository<Order> orderRepo,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IConfiguration configuration)
     {
         _reviewRepo = reviewRepo;
         _orderRepo = orderRepo;
         _unitOfWork = unitOfWork;
+        _appBaseUrl = (configuration["App:BaseUrl"] ?? "").TrimEnd('/');
     }
 
     public async Task<ReviewDto> CreateAsync(Guid userId, CreateReviewRequest request)
@@ -62,7 +67,7 @@ public class ReviewService : IReviewService
         await _reviewRepo.AddAsync(review);
         await _unitOfWork.SaveChangesAsync();
 
-        return MapToDto(review);
+        return MapToDto(review, _appBaseUrl);
     }
 
     public async Task<IEnumerable<ReviewDto>> GetProductReviewsAsync(Guid productId)
@@ -74,7 +79,7 @@ public class ReviewService : IReviewService
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
 
-        return reviews.Select(MapToDto);
+        return reviews.Select(r => MapToDto(r, _appBaseUrl));
     }
 
     public async Task<IEnumerable<ReviewDto>> GetOrderReviewsAsync(Guid orderId)
@@ -86,7 +91,7 @@ public class ReviewService : IReviewService
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
 
-        return reviews.Select(MapToDto);
+        return reviews.Select(r => MapToDto(r, _appBaseUrl));
     }
 
     public async Task<IEnumerable<ReviewDto>> GetAllReviewsAsync(int page, int pageSize)
@@ -100,7 +105,7 @@ public class ReviewService : IReviewService
             .Take(pageSize)
             .ToListAsync();
 
-        return reviews.Select(MapToDto);
+        return reviews.Select(r => MapToDto(r, _appBaseUrl));
     }
 
     public async Task<bool> DeleteAsync(Guid reviewId)
@@ -113,7 +118,7 @@ public class ReviewService : IReviewService
         return true;
     }
 
-    private static ReviewDto MapToDto(Review review)
+    private static ReviewDto MapToDto(Review review, string appBaseUrl)
     {
         return new ReviewDto
         {
@@ -127,7 +132,7 @@ public class ReviewService : IReviewService
             Photos = review.Photos.OrderBy(p => p.SortOrder).Select(p => new ReviewPhotoDto
             {
                 Id = p.Id,
-                PhotoUrl = p.PhotoUrl,
+                PhotoUrl = AppUrlBuilder.BuildUploadUrl(appBaseUrl, "reviews", p.PhotoUrl) ?? p.PhotoUrl,
                 SortOrder = p.SortOrder
             }).ToList()
         };

@@ -6,7 +6,8 @@ enum APIConfig {
     // Change this to your server's IP/hostname
     // Use "https://192.168.7.136:5002" for iOS Simulator on the same machine
     // Use "https://<your-mac-ip>:5001" for a physical device
-    static let baseURL = "https://127.0.0.1:5001"
+    //static let baseURL = "https://127.0.0.1:5001"
+    static let baseURL = "https://sandboxapi.sansharecab.com"
 
     static var base: URL {
         URL(string: baseURL)!
@@ -16,6 +17,7 @@ enum APIConfig {
 // MARK: - API Error
 
 enum APIError: LocalizedError {
+    case cancelled
     case invalidURL
     case unauthorized
     case forbidden
@@ -28,6 +30,7 @@ enum APIError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
+        case .cancelled: "Request cancelled."
         case .invalidURL: "Invalid URL"
         case .unauthorized: "Session expired. Please log in again."
         case .forbidden: "You don't have permission for this action."
@@ -37,6 +40,24 @@ enum APIError: LocalizedError {
         case .decodingError(let err): "Data error: \(err.localizedDescription)"
         case .networkError(let err): err.localizedDescription
         case .unknown: "An unknown error occurred."
+        }
+    }
+
+    var isCancellation: Bool {
+        switch self {
+        case .cancelled:
+            return true
+        case .networkError(let err):
+            if err is CancellationError {
+                return true
+            }
+            if let urlError = err as? URLError, urlError.code == .cancelled {
+                return true
+            }
+            let nsError = err as NSError
+            return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
+        default:
+            return false
         }
     }
 }
@@ -213,6 +234,12 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         do {
             (data, response) = try await session.data(for: request)
         } catch {
+            if error is CancellationError {
+                throw APIError.cancelled
+            }
+            if let urlError = error as? URLError, urlError.code == .cancelled {
+                throw APIError.cancelled
+            }
             throw APIError.networkError(error)
         }
 
@@ -256,6 +283,12 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         do {
             (data, response) = try await session.data(for: request)
         } catch {
+            if error is CancellationError {
+                throw APIError.cancelled
+            }
+            if let urlError = error as? URLError, urlError.code == .cancelled {
+                throw APIError.cancelled
+            }
             throw APIError.networkError(error)
         }
 

@@ -3,6 +3,7 @@ import PassKit
 
 struct CheckoutView: View {
     @Environment(CartStore.self) private var cartStore
+    let onOrderPlaced: ((OrderItem) -> Void)?
     @State private var paymentMethod = "Credit Card"
     @State private var showingConfirmation = false
     @State private var showingAddressPicker = false
@@ -26,6 +27,11 @@ struct CheckoutView: View {
     @State private var cardPaymentDetail = ""
     @State private var deliveryAddresses: [AddressDTO] = []
     @State private var selectedAddressId: UUID?
+    @State private var isPlacingOrder = false
+
+    init(onOrderPlaced: ((OrderItem) -> Void)? = nil) {
+        self.onOrderPlaced = onOrderPlaced
+    }
 
     private var currentAddress: (label: String, address: String, instructions: String, contact: String) {
         if let idx = deliveryAddresses.firstIndex(where: { $0.id == selectedAddressId }) {
@@ -275,7 +281,9 @@ struct CheckoutView: View {
                     // Apple Pay button
                     if ApplePayService.isAvailable && paymentMethod == "Apple Pay" {
                         ApplePayButtonView {
-                            payWithApplePay()
+                            if !isPlacingOrder && !orderPlaced {
+                                payWithApplePay()
+                            }
                         }
                         .frame(height: 50)
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -298,6 +306,7 @@ struct CheckoutView: View {
                             .foregroundStyle(.white)
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
+                        .disabled(isPlacingOrder || orderPlaced)
                     }
 
                     // Credit/Debit Card button
@@ -318,6 +327,7 @@ struct CheckoutView: View {
                             .foregroundStyle(.white)
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
+                        .disabled(isPlacingOrder || orderPlaced)
                     }
 
                     // Cash on Delivery — direct place order
@@ -336,6 +346,7 @@ struct CheckoutView: View {
                             .foregroundStyle(.white)
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
+                        .disabled(isPlacingOrder || orderPlaced)
                     }
                 }
                 .sheet(isPresented: $showingGCashPayment) {
@@ -448,6 +459,8 @@ struct CheckoutView: View {
     // MARK: - Place Order
 
     private func placeOrder() {
+        guard !isPlacingOrder, !orderPlaced else { return }
+        isPlacingOrder = true
         Task {
             await placeOrderOnServer()
         }
@@ -465,7 +478,9 @@ struct CheckoutView: View {
 
     private func placeOrderOnServer() async {
         guard APIClient.shared.isAuthenticated else {
-            placeOrderLocally()
+            await MainActor.run {
+                placeOrderLocally()
+            }
             return
         }
 
@@ -513,10 +528,7 @@ struct CheckoutView: View {
             )
 
             await MainActor.run {
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
-                    orderPlaced = true
-                    successScale = 1
-                }
+                showOrderSuccess()
                 cartStore.clearCart()
             }
         } catch {
@@ -527,6 +539,7 @@ struct CheckoutView: View {
         }
     }
 
+    @MainActor
     private func placeOrderLocally() {
         let orderNumber = "#GR-\(Int.random(in: 2000...9999))"
         let formatter = DateFormatter()
@@ -545,11 +558,27 @@ struct CheckoutView: View {
         )
 
         withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
+            showOrderSuccess()
+        }
+
+        cartStore.items.removeAll()
+    }
+
+    @MainActor
+    private func showOrderSuccess() {
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
             orderPlaced = true
             successScale = 1
         }
 
-        cartStore.items.removeAll()
+        guard let placedOrder, let onOrderPlaced else { return }
+
+        Task {
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            await MainActor.run {
+                onOrderPlaced(placedOrder)
+            }
+        }
     }
 
     // MARK: - Apple Pay
@@ -615,33 +644,43 @@ struct CheckoutView: View {
                         .foregroundStyle(.white.opacity(0.6))
                 }
 
-                VStack(spacing: 10) {
-                    Button {
-                        orderPlaced = false
-                        navigateToOrder = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "shippingbox.fill")
-                            Text("View Order Status")
-                                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                if onOrderPlaced == nil {
+                    VStack(spacing: 10) {
+                        Button {
+                            orderPlaced = false
+                            navigateToOrder = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "shippingbox.fill")
+                                Text("View Order Status")
+                                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(.white)
+                            .foregroundStyle(GroceryTheme.primary)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(.white)
-                        .foregroundStyle(GroceryTheme.primary)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
 
-                    Button {
-                        orderPlaced = false
-                    } label: {
-                        Text("Continue Shopping")
-                            .font(.system(.subheadline, design: .rounded, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.8))
+                        Button {
+                            orderPlaced = false
+                        } label: {
+                            Text("Continue Shopping")
+                                .font(.system(.subheadline, design: .rounded, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.8))
+                        }
                     }
+                    .padding(.horizontal, 40)
+                    .padding(.top, 10)
+                } else {
+                    ProgressView()
+                        .tint(.white)
+                        .padding(.top, 8)
+
+                    Text("Opening order details...")
+                        .font(.system(.caption, design: .rounded, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
                 }
-                .padding(.horizontal, 40)
-                .padding(.top, 10)
             }
         }
         .transition(.opacity)

@@ -1,5 +1,6 @@
 using GroceryApp.Application.DTOs.Addresses;
 using GroceryApp.Application.DTOs.PaymentMethods;
+using GroceryApp.Application.DTOs.UserSettings;
 using GroceryApp.Application.DTOs.Vouchers;
 using GroceryApp.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -13,10 +14,12 @@ namespace GroceryApp.API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IUserSettingService _userSettingService;
 
-    public UsersController(IUserService userService)
+    public UsersController(IUserService userService, IUserSettingService userSettingService)
     {
         _userService = userService;
+        _userSettingService = userSettingService;
     }
 
     // ── Users ──────────────────────────────────────────────────────────────────
@@ -163,6 +166,26 @@ public class UsersController : ControllerBase
     {
         var devices = await _userService.GetUserDevicesAsync(id);
         return Ok(devices);
+    }
+
+    [HttpGet("{id:guid}/notification-settings")]
+    public async Task<IActionResult> GetNotificationSettings(Guid id)
+    {
+        var user = await _userService.GetByIdAsync(id);
+        if (user is null) return NotFound();
+
+        var settings = await _userSettingService.GetNotificationSettingsAsync(id);
+        return Ok(settings);
+    }
+
+    [HttpPut("{id:guid}/notification-settings")]
+    public async Task<IActionResult> UpdateNotificationSettings(Guid id, [FromBody] NotificationSettingsDto request)
+    {
+        var user = await _userService.GetByIdAsync(id);
+        if (user is null) return NotFound();
+
+        var settings = await _userSettingService.UpdateNotificationSettingsAsync(id, request);
+        return Ok(settings);
     }
 
     [HttpPost("{id:guid}/vouchers")]

@@ -6,6 +6,9 @@ struct FreshProductsView: View {
     private var products: [GroceryProduct] {
         productStore.freshProducts.isEmpty ? SampleData.freshProducts : productStore.freshProducts
     }
+    private let adaptiveProductColumns = [
+        GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 12)
+    ]
 
     var body: some View {
         ScrollView {
@@ -18,10 +21,7 @@ struct FreshProductsView: View {
                 }
 
                 // Product grid
-                LazyVGrid(columns: [
-                    GridItem(.flexible(), spacing: 12),
-                    GridItem(.flexible(), spacing: 12)
-                ], spacing: 14) {
+                LazyVGrid(columns: adaptiveProductColumns, spacing: 14) {
                     ForEach(products) { product in
                         NavigationLink {
                             ItemDetailView(product: product)

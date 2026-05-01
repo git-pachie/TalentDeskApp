@@ -35,6 +35,9 @@ final class ProductStore {
             let dtos: [CategoryDTO] = try await APIClient.shared.get("/api/categories")
             categories = dtos.filter(\.isActive).map(\.asGroceryCategory)
         } catch {
+            if let apiError = error as? APIError, apiError.isCancellation {
+                return
+            }
             print("⚠️ Categories API failed, using sample data: \(error)")
             categories = SampleData.categories
         }
@@ -64,6 +67,9 @@ final class ProductStore {
             )
             freshProducts = freshResult.items.filter(\.isActive).map(\.asGroceryProduct)
         } catch {
+            if let apiError = error as? APIError, apiError.isCancellation {
+                return
+            }
             print("⚠️ Products API failed, using sample data: \(error)")
             deals = SampleData.deals
             freshProducts = SampleData.freshProducts
@@ -84,6 +90,9 @@ final class ProductStore {
             )
             return result.items.filter(\.isActive).map(\.asGroceryProduct)
         } catch {
+            if let apiError = error as? APIError, apiError.isCancellation {
+                return []
+            }
             print("⚠️ Search API failed, falling back to local: \(error)")
             let q = query.lowercased()
             return allProducts.filter {
@@ -104,6 +113,9 @@ final class ProductStore {
             )
             return result.items.filter(\.isActive).map(\.asGroceryProduct)
         } catch {
+            if let apiError = error as? APIError, apiError.isCancellation {
+                return []
+            }
             print("⚠️ Category products API failed: \(error)")
             return []
         }
@@ -113,6 +125,9 @@ final class ProductStore {
         do {
             return try await APIClient.shared.get("/api/products/\(id.uuidString)")
         } catch {
+            if let apiError = error as? APIError, apiError.isCancellation {
+                return nil
+            }
             print("⚠️ Product detail API failed: \(error)")
             return nil
         }
