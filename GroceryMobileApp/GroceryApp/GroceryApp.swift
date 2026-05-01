@@ -22,6 +22,8 @@ struct GroceryApp: App {
 }
 
 struct ThemeRoot: View {
+    @Environment(\.scenePhase) private var scenePhase
+
     let settingsStore: GrocerySettingsStore
     let favoritesStore: FavoritesStore
     let cartStore: CartStore
@@ -30,10 +32,10 @@ struct ThemeRoot: View {
 
     var body: some View {
         Group {
-            if authStore.isAuthenticated {
-                RootTabView()
-            } else if authStore.requiresEmailVerification {
+            if authStore.requiresEmailVerification {
                 EmailVerificationView()
+            } else if authStore.isAuthenticated {
+                RootTabView()
             } else {
                 LoginView()
             }
@@ -48,10 +50,17 @@ struct ThemeRoot: View {
         }
         .task(id: authStore.isAuthenticated) {
             if authStore.isAuthenticated {
+                await authStore.refreshCurrentUser()
                 // Load data from server on login
                 await productStore.loadHome()
                 await cartStore.loadFromServer()
                 await favoritesStore.loadFromServer()
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active, authStore.isAuthenticated else { return }
+            Task {
+                await authStore.refreshCurrentUser()
             }
         }
     }

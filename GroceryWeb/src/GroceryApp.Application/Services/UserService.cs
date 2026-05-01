@@ -18,6 +18,7 @@ public class UserService : IUserService
     private readonly IRepository<UserPaymentMethod> _paymentMethodRepo;
     private readonly IRepository<UserVoucher> _userVoucherRepo;
     private readonly IRepository<Voucher> _voucherRepo;
+    private readonly IRepository<UserDevice> _userDeviceRepo;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailService _emailService;
 
@@ -28,6 +29,7 @@ public class UserService : IUserService
         IRepository<UserPaymentMethod> paymentMethodRepo,
         IRepository<UserVoucher> userVoucherRepo,
         IRepository<Voucher> voucherRepo,
+        IRepository<UserDevice> userDeviceRepo,
         IUnitOfWork unitOfWork,
         IEmailService emailService)
     {
@@ -37,6 +39,7 @@ public class UserService : IUserService
         _paymentMethodRepo = paymentMethodRepo;
         _userVoucherRepo = userVoucherRepo;
         _voucherRepo = voucherRepo;
+        _userDeviceRepo = userDeviceRepo;
         _unitOfWork = unitOfWork;
         _emailService = emailService;
     }
@@ -308,6 +311,26 @@ public class UserService : IUserService
         _userVoucherRepo.Remove(uv);
         await _unitOfWork.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<IEnumerable<UserDeviceDto>> GetUserDevicesAsync(Guid userId)
+    {
+        return await _userDeviceRepo.Query()
+            .Where(d => d.UserId == userId)
+            .OrderByDescending(d => d.LastLoginAt)
+            .Select(d => new UserDeviceDto
+            {
+                Id = d.Id,
+                UserId = d.UserId,
+                Email = d.Email,
+                DeviceGuid = d.DeviceGuid,
+                OSVersion = d.OSVersion,
+                HardwareVersion = d.HardwareVersion,
+                CreatedAt = d.CreatedAt,
+                UpdatedAt = d.UpdatedAt,
+                LastLoginAt = d.LastLoginAt
+            })
+            .ToListAsync();
     }
 
     // ── Verification ───────────────────────────────────────────────────────────

@@ -46,6 +46,7 @@ public static class DependencyInjection
         // External services
         services.AddHttpClient<IGeocodingService, GoogleGeocodingService>();
         services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IUserDeviceService, UserDeviceService>();
 
         return services;
     }

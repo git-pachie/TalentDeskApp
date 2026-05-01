@@ -13,9 +13,9 @@ struct ProfileView: View {
                     HStack(spacing: 14) {
                         GroceryIconView(size: 50)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(authStore.currentUser?.fullName ?? "Guest User")
+                            Text(authStore.currentUser?.fullName ?? "Loading profile")
                                 .font(.system(.headline, design: .rounded))
-                            Text(authStore.currentUser?.email ?? "guest@grocery.app")
+                            Text(authStore.currentUser?.email ?? "Fetching your account")
                                 .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(.secondary)
                         }
@@ -143,6 +143,12 @@ struct ProfileView: View {
             }
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.large)
+            .task {
+                await authStore.refreshCurrentUser()
+            }
+            .refreshable {
+                await authStore.refreshCurrentUser()
+            }
         }
     }
     @ViewBuilder
@@ -161,58 +167,42 @@ struct ProfileView: View {
                     .font(.system(.caption, design: .rounded))
                     .foregroundStyle(GroceryTheme.muted)
                     .lineLimit(1)
+                HStack(spacing: 4) {
+                    Image(systemName: isVerified ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                        .font(.caption)
+                    Text(isVerified ? "Verified" : "Unverified")
+                        .font(.system(.caption2, design: .rounded, weight: .semibold))
+                }
+                .foregroundStyle(isVerified ? .green : .orange)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background((isVerified ? Color.green : Color.orange).opacity(0.1))
+                .clipShape(Capsule())
+                .padding(.top, 2)
             }
 
             Spacer()
 
-            if isVerified {
-                HStack(spacing: 4) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.caption)
-                    Text("Verified")
-                        .font(.system(.caption2, design: .rounded, weight: .semibold))
-                }
-                .foregroundStyle(.green)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.green.opacity(0.1))
-                .clipShape(Capsule())
-            } else {
-                HStack(spacing: 6) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "exclamationmark.circle.fill")
-                            .font(.caption)
-                        Text("Unverified")
+            if !isVerified, let onVerify {
+                Button {
+                    onVerify()
+                } label: {
+                    if isSendingCode {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                            .frame(width: 52, height: 26)
+                    } else {
+                        Text("Verify")
                             .font(.system(.caption2, design: .rounded, weight: .semibold))
-                    }
-                    .foregroundStyle(.orange)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.orange.opacity(0.1))
-                    .clipShape(Capsule())
-
-                    if let onVerify {
-                        Button {
-                            onVerify()
-                        } label: {
-                            if isSendingCode {
-                                ProgressView()
-                                    .scaleEffect(0.7)
-                                    .frame(width: 52, height: 26)
-                            } else {
-                                Text("Verify")
-                                    .font(.system(.caption2, design: .rounded, weight: .semibold))
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 5)
-                                    .background(GroceryTheme.primary)
-                                    .foregroundStyle(.white)
-                                    .clipShape(Capsule())
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(isSendingCode)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(GroceryTheme.primary)
+                            .foregroundStyle(.white)
+                            .clipShape(Capsule())
                     }
                 }
+                .buttonStyle(.plain)
+                .disabled(isSendingCode)
             }
         }
     }

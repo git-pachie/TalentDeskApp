@@ -71,6 +71,19 @@ public class UserVoucherModel
     public string AssignedBy { get; set; } = string.Empty;
 }
 
+public class UserDeviceModel
+{
+    public Guid Id { get; set; }
+    public Guid? UserId { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string DeviceGuid { get; set; } = string.Empty;
+    public string? OSVersion { get; set; }
+    public string? HardwareVersion { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public DateTime LastLoginAt { get; set; }
+}
+
 public class PagedResultModel<T>
 {
     public List<T> Items { get; set; } = [];

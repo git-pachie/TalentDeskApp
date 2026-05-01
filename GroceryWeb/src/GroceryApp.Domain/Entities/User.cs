@@ -26,4 +26,5 @@ public class User : IdentityUser<Guid>
     public ICollection<UserPaymentMethod> PaymentMethods { get; set; } = [];
     public ICollection<UserSetting> Settings { get; set; } = [];
     public ICollection<UserVoucher> UserVouchers { get; set; } = [];
+    public ICollection<UserDevice> Devices { get; set; } = [];
 }

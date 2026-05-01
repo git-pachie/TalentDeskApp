@@ -71,11 +71,8 @@ if (!Path.IsPathRooted(uploadPath))
     uploadPath = Path.Combine(app.Environment.ContentRootPath, uploadPath);
 Directory.CreateDirectory(Path.Combine(uploadPath, "products"));
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 // Only redirect to HTTPS in production — dev devices use plain HTTP
 if (!app.Environment.IsDevelopment())

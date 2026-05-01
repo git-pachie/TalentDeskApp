@@ -5,6 +5,9 @@ import Foundation
 struct LoginRequest: Encodable {
     let email: String
     let password: String
+    let deviceGuid: String?
+    let osVersion: String?
+    let hardwareVersion: String?
 }
 
 struct RegisterRequest: Encodable {
@@ -13,6 +16,9 @@ struct RegisterRequest: Encodable {
     let email: String
     let password: String
     let phoneNumber: String?
+    let deviceGuid: String?
+    let osVersion: String?
+    let hardwareVersion: String?
 }
 
 struct AuthResponse: Decodable {
@@ -46,7 +52,11 @@ struct UserDTO: Codable, Identifiable {
     let isEmailVerified: Bool?
     let isPhoneVerified: Bool?
 
-    var fullName: String { "\(firstName) \(lastName)" }
+    var fullName: String {
+        let name = "\(firstName) \(lastName)"
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? email : name
+    }
 }
 
 // MARK: - Categories

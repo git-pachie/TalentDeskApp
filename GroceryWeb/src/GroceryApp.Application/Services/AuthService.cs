@@ -15,12 +15,18 @@ public class AuthService : IAuthService
     private readonly UserManager<User> _userManager;
     private readonly IConfiguration _configuration;
     private readonly IEmailService _emailService;
+    private readonly IUserDeviceService _userDeviceService;
 
-    public AuthService(UserManager<User> userManager, IConfiguration configuration, IEmailService emailService)
+    public AuthService(
+        UserManager<User> userManager,
+        IConfiguration configuration,
+        IEmailService emailService,
+        IUserDeviceService userDeviceService)
     {
         _userManager = userManager;
         _configuration = configuration;
         _emailService = emailService;
+        _userDeviceService = userDeviceService;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -47,6 +53,12 @@ public class AuthService : IAuthService
         }
 
         await _userManager.AddToRoleAsync(user, "User");
+        await _userDeviceService.RegisterLoginAsync(
+            user.Id,
+            user.Email!,
+            request.DeviceGuid,
+            request.OSVersion,
+            request.HardwareVersion);
 
         var roles = await _userManager.GetRolesAsync(user);
         if (!roles.Contains("Admin"))
@@ -94,6 +106,12 @@ public class AuthService : IAuthService
             };
         }
 
+        await _userDeviceService.RegisterLoginAsync(
+            user.Id,
+            user.Email!,
+            request.DeviceGuid,
+            request.OSVersion,
+            request.HardwareVersion);
         return await GenerateAuthResponse(user);
     }
 

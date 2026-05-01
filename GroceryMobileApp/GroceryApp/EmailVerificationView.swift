@@ -2,9 +2,12 @@ import SwiftUI
 
 struct EmailVerificationView: View {
     @Environment(AuthStore.self) private var authStore
+    @Environment(\.dismiss) private var dismiss
     @State private var digits: [String] = ["", "", "", ""]
     @FocusState private var focusedIndex: Int?
     @State private var isSubmitting = false
+    @State private var statusMessage: String?
+    @State private var didRequestCodeOnAppear = false
 
     private var code: String { digits.joined() }
     private var isComplete: Bool { digits.allSatisfy { $0.count == 1 } }
@@ -63,6 +66,14 @@ struct EmailVerificationView: View {
                             .padding(.horizontal)
                     }
 
+                    if let statusMessage {
+                        Text(statusMessage)
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundStyle(GroceryTheme.primary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+
                     // Verify button
                     Button {
                         Task { await submitCode() }
@@ -91,15 +102,16 @@ struct EmailVerificationView: View {
                             .foregroundStyle(GroceryTheme.primary)
                     }
 
-                    // Back to login
                     Button {
-                        authStore.requiresEmailVerification = false
-                        authStore.pendingVerificationEmail = ""
-                        authStore.errorMessage = nil
+                        goToLogin()
                     } label: {
-                        Text("Back to Login")
-                            .font(.system(.caption, design: .rounded))
-                            .foregroundStyle(GroceryTheme.muted)
+                        Text("Log In Instead")
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color(.systemGray6))
+                            .foregroundStyle(GroceryTheme.primary)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                 }
                 .padding(.horizontal, 32)
@@ -109,6 +121,14 @@ struct EmailVerificationView: View {
             .navigationBarHidden(true)
             .onAppear {
                 focusedIndex = 0
+            }
+            .task {
+                guard authStore.isAuthenticated, !didRequestCodeOnAppear else { return }
+                didRequestCodeOnAppear = true
+                let sent = await authStore.sendEmailVerificationCode()
+                if sent {
+                    statusMessage = "A new verification code has been sent."
+                }
             }
         }
     }
@@ -157,12 +177,24 @@ struct EmailVerificationView: View {
     }
 
     private func resendCode() async {
-        // Re-trigger login to generate a new code
         authStore.errorMessage = nil
+        statusMessage = nil
         digits = ["", "", "", ""]
         focusedIndex = 0
-        // The code is regenerated on each login attempt — just inform the user
-        authStore.errorMessage = "A new code will be sent when you log in again."
+
+        if authStore.isAuthenticated {
+            let sent = await authStore.sendEmailVerificationCode()
+            statusMessage = sent
+                ? "A new verification code has been sent."
+                : "Unable to send a new code. Please try again."
+        } else {
+            authStore.errorMessage = "A new code will be sent when you log in again."
+        }
+    }
+
+    private func goToLogin() {
+        authStore.logout()
+        dismiss()
     }
 }
 

@@ -28,6 +28,7 @@ public interface IUserService
     Task<IEnumerable<UserVoucherDto>> GetUserVouchersAsync(Guid userId);
     Task<UserVoucherDto> AssignVoucherAsync(Guid userId, Guid voucherId);
     Task<bool> RevokeVoucherAsync(Guid userId, Guid userVoucherId);
+    Task<IEnumerable<UserDeviceDto>> GetUserDevicesAsync(Guid userId);
 
     // Verification
     Task<bool> SetEmailVerifiedAsync(Guid userId, bool verified);
@@ -50,4 +51,17 @@ public class UserDto
     public DateTime CreatedAt { get; set; }
     public List<string> Roles { get; set; } = [];
     public int OrderCount { get; set; }
+}
+
+public class UserDeviceDto
+{
+    public Guid Id { get; set; }
+    public Guid? UserId { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string DeviceGuid { get; set; } = string.Empty;
+    public string? OSVersion { get; set; }
+    public string? HardwareVersion { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public DateTime LastLoginAt { get; set; }
 }

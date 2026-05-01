@@ -27,6 +27,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<OrderStatusHistory> OrderStatusHistory => Set<OrderStatusHistory>();
     public DbSet<UserSetting> UserSettings => Set<UserSetting>();
     public DbSet<UserVoucher> UserVouchers => Set<UserVoucher>();
+    public DbSet<UserDevice> UserDevices => Set<UserDevice>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -37,6 +38,18 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         {
             e.Property(u => u.FirstName).HasMaxLength(100);
             e.Property(u => u.LastName).HasMaxLength(100);
+        });
+
+        // UserDevice
+        builder.Entity<UserDevice>(e =>
+        {
+            e.HasIndex(d => d.DeviceGuid).IsUnique();
+            e.HasIndex(d => d.Email);
+            e.Property(d => d.Email).HasMaxLength(256);
+            e.Property(d => d.DeviceGuid).HasMaxLength(100);
+            e.Property(d => d.OSVersion).HasMaxLength(100);
+            e.Property(d => d.HardwareVersion).HasMaxLength(100);
+            e.HasOne(d => d.User).WithMany(u => u.Devices).HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         // Category

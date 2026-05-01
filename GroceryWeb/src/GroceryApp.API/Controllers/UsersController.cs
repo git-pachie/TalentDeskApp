@@ -64,8 +64,13 @@ public class UsersController : ControllerBase
     [HttpPost("{id:guid}/send-email-verification")]
     public async Task<IActionResult> SendEmailVerification(Guid id)
     {
+        var user = await _userService.GetByIdAsync(id);
+        if (user is null) return NotFound();
+
         var result = await _userService.SendEmailVerificationAsync(id);
-        return result ? Ok() : NotFound();
+        return result
+            ? Ok(new { message = "Email verification code sent." })
+            : StatusCode(StatusCodes.Status500InternalServerError, new { error = "Failed to send email verification code. Check SMTP settings and API email log." });
     }
 
     [HttpPost("{id:guid}/send-phone-verification")]
@@ -151,6 +156,13 @@ public class UsersController : ControllerBase
     {
         var vouchers = await _userService.GetUserVouchersAsync(id);
         return Ok(vouchers);
+    }
+
+    [HttpGet("{id:guid}/devices")]
+    public async Task<IActionResult> GetDevices(Guid id)
+    {
+        var devices = await _userService.GetUserDevicesAsync(id);
+        return Ok(devices);
     }
 
     [HttpPost("{id:guid}/vouchers")]

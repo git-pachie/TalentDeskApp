@@ -122,11 +122,13 @@ public class OrdersController : Controller
             QuestPDF.Settings.License = LicenseType.Community;
             var pdfBytes = new OrderPdfDocument(order).GeneratePdf();
 
+            // Admin SMTP is only used for invoice emails. User verification emails are sent by the API.
             var smtp = _config.GetSection("Smtp");
             using var client = new SmtpClient(smtp["Host"], int.Parse(smtp["Port"] ?? "587"))
             {
                 EnableSsl = bool.Parse(smtp["EnableSsl"] ?? "true"),
-                Credentials = new NetworkCredential(smtp["UserName"], smtp["Password"])
+                UseDefaultCredentials = false,
+                Credentials = new NetworkCredential(smtp["UserName"], RemoveWhitespace(smtp["Password"]))
             };
 
             var from = new MailAddress(smtp["FromAddress"]!, smtp["FromName"] ?? "GroceryApp Admin");
@@ -206,5 +208,24 @@ public class OrdersController : Controller
           </div>
         </div>
         """;
+    }
+
+    private static string RemoveWhitespace(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return "";
+
+        var chars = new char[value.Length];
+        var index = 0;
+
+        foreach (var character in value)
+        {
+            if (!char.IsWhiteSpace(character))
+            {
+                chars[index] = character;
+                index++;
+            }
+        }
+
+        return new string(chars, 0, index);
     }
 }

@@ -187,9 +187,13 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        // Don't send auth header on login/register — a stale token causes 401
-        let isAuthEndpoint = path.contains("/api/auth/")
-        if let token, !isAuthEndpoint {
+        let anonymousAuthEndpoints = [
+            "/api/auth/login",
+            "/api/auth/register",
+            "/api/auth/verify-email"
+        ]
+
+        if let token, !anonymousAuthEndpoints.contains(path) {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 

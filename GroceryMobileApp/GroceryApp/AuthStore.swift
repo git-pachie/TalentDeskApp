@@ -1,5 +1,7 @@
 import Foundation
 import Observation
+import UIKit
+import Darwin
 
 @Observable
 final class AuthStore {
@@ -9,6 +11,7 @@ final class AuthStore {
     var errorMessage: String?
     var requiresEmailVerification: Bool = false
     var pendingVerificationEmail: String = ""
+    private let deviceGuidKey = "device_guid"
 
     init() {
         // Restore session from UserDefaults if token exists and is not expired
@@ -42,6 +45,34 @@ final class AuthStore {
         print("⚠️ [Auth] Session expired — redirecting to login")
     }
 
+    func refreshCurrentUser() async {
+        guard APIClient.shared.isAuthenticated else {
+            handleSessionExpired()
+            return
+        }
+
+        do {
+            let user: UserDTO = try await APIClient.shared.get("/api/auth/me")
+            currentUser = user
+            saveUser(user)
+            isAuthenticated = true
+            if user.isEmailVerified == false {
+                pendingVerificationEmail = user.email
+                requiresEmailVerification = true
+            } else {
+                pendingVerificationEmail = ""
+                requiresEmailVerification = false
+            }
+            print("✅ [Auth] Current user refreshed: \(user.fullName) (\(user.email))")
+        } catch let error as APIError {
+            errorMessage = error.localizedDescription
+            print("⚠️ [Auth] Failed to refresh current user: \(error.localizedDescription)")
+        } catch {
+            errorMessage = error.localizedDescription
+            print("⚠️ [Auth] Failed to refresh current user: \(error)")
+        }
+    }
+
     func login(email: String, password: String) async -> Bool {
         isLoading = true
         errorMessage = nil
@@ -53,7 +84,13 @@ final class AuthStore {
         do {
             let response: AuthResponse = try await APIClient.shared.post(
                 "/api/auth/login",
-                body: LoginRequest(email: email, password: password)
+                body: LoginRequest(
+                    email: email,
+                    password: password,
+                    deviceGuid: deviceGuid,
+                    osVersion: osVersion,
+                    hardwareVersion: hardwareVersion
+                )
             )
 
             print("🔐 [Login] Response received — success: \(response.success)")
@@ -113,7 +150,10 @@ final class AuthStore {
                     lastName: lastName,
                     email: email,
                     password: password,
-                    phoneNumber: phone
+                    phoneNumber: phone,
+                    deviceGuid: deviceGuid,
+                    osVersion: osVersion,
+                    hardwareVersion: hardwareVersion
                 )
             )
 
@@ -122,6 +162,12 @@ final class AuthStore {
                 currentUser = response.user
                 saveUser(response.user)
                 isAuthenticated = true
+                return true
+            } else if response.requiresEmailVerification == true {
+                pendingVerificationEmail = email
+                requiresEmailVerification = true
+                errorMessage = nil
+                print("📧 [Register] Email verification required for: \(email)")
                 return true
             } else {
                 errorMessage = response.errors?.first ?? "Registration failed"
@@ -164,10 +210,7 @@ final class AuthStore {
             )
             if response.success {
                 // Refresh user profile to get updated verification status
-                if let updated: UserDTO = try? await APIClient.shared.get("/api/auth/me") {
-                    currentUser = updated
-                    saveUser(updated)
-                }
+                await refreshCurrentUser()
                 print("✅ [Auth] Email verified from profile")
                 return true
             } else {
@@ -205,10 +248,7 @@ final class AuthStore {
             if response.success, let token = response.token {
                 APIClient.shared.setToken(token)
                 // Fetch full user profile now that we have a valid token
-                if let user: UserDTO = try? await APIClient.shared.get("/api/auth/me") {
-                    currentUser = user
-                    saveUser(user)
-                }
+                await refreshCurrentUser()
                 isAuthenticated = true
                 requiresEmailVerification = false
                 pendingVerificationEmail = ""
@@ -231,6 +271,31 @@ final class AuthStore {
         guard let user else { return }
         if let data = try? JSONEncoder().encode(user) {
             UserDefaults.standard.set(data, forKey: "current_user")
+        }
+    }
+
+    private var deviceGuid: String {
+        if let existing = UserDefaults.standard.string(forKey: deviceGuidKey), !existing.isEmpty {
+            return existing
+        }
+
+        let newValue = UUID().uuidString
+        UserDefaults.standard.set(newValue, forKey: deviceGuidKey)
+        return newValue
+    }
+
+    private var osVersion: String {
+        "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)"
+    }
+
+    private var hardwareVersion: String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        return machineMirror.children.reduce(into: "") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return }
+            identifier.append(String(UnicodeScalar(UInt8(value))))
         }
     }
 }

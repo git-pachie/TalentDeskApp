@@ -43,7 +43,7 @@ public class ApiClient
     {
         using var request = CreateRequest(HttpMethod.Get, endpoint);
         using var response = await _httpClient.SendAsync(request);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response);
         var json = await response.Content.ReadAsStringAsync();
         if (string.IsNullOrWhiteSpace(json)) return default;
         return JsonSerializer.Deserialize<T>(json, JsonOptions);
@@ -55,7 +55,7 @@ public class ApiClient
         var content = new StringContent(json, Encoding.UTF8, "application/json");
         using var request = CreateRequest(HttpMethod.Post, endpoint, content);
         using var response = await _httpClient.SendAsync(request);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response);
         var responseJson = await response.Content.ReadAsStringAsync();
         if (string.IsNullOrWhiteSpace(responseJson)) return default;
         return JsonSerializer.Deserialize<TResponse>(responseJson, JsonOptions);
@@ -67,7 +67,7 @@ public class ApiClient
         var content = new StringContent(json, Encoding.UTF8, "application/json");
         using var request = CreateRequest(HttpMethod.Post, endpoint, content);
         using var response = await _httpClient.SendAsync(request);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response);
     }
 
     public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data)
@@ -76,7 +76,7 @@ public class ApiClient
         var content = new StringContent(json, Encoding.UTF8, "application/json");
         using var request = CreateRequest(HttpMethod.Put, endpoint, content);
         using var response = await _httpClient.SendAsync(request);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response);
         var responseJson = await response.Content.ReadAsStringAsync();
         if (string.IsNullOrWhiteSpace(responseJson)) return default;
         return JsonSerializer.Deserialize<TResponse>(responseJson, JsonOptions);
@@ -93,9 +93,21 @@ public class ApiClient
     {
         using var request = CreateRequest(HttpMethod.Post, endpoint, content);
         using var response = await _httpClient.SendAsync(request);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response);
         var responseJson = await response.Content.ReadAsStringAsync();
         if (string.IsNullOrWhiteSpace(responseJson)) return default;
         return JsonSerializer.Deserialize<TResponse>(responseJson, JsonOptions);
+    }
+
+    private static async Task EnsureSuccessAsync(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode) return;
+
+        var content = await response.Content.ReadAsStringAsync();
+        var message = string.IsNullOrWhiteSpace(content)
+            ? $"API request failed with status {(int)response.StatusCode} ({response.ReasonPhrase})."
+            : $"API request failed with status {(int)response.StatusCode} ({response.ReasonPhrase}): {content}";
+
+        throw new HttpRequestException(message, null, response.StatusCode);
     }
 }

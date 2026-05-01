@@ -2,6 +2,7 @@ using GroceryApp.Admin.Filters;
 using GroceryApp.Admin.Models;
 using GroceryApp.Admin.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 using System.Text.Json;
 
 namespace GroceryApp.Admin.Controllers;
@@ -42,12 +43,14 @@ public class UsersController : Controller
         var orders = await LoadListAsync<OrderModel>($"/api/users/{id}/orders", "orders", loadErrors);
         var payments = await LoadListAsync<UserPaymentMethodModel>($"/api/users/{id}/payment-methods", "payment methods", loadErrors);
         var userVouchers = await LoadListAsync<UserVoucherModel>($"/api/users/{id}/vouchers", "assigned vouchers", loadErrors);
+        var userDevices = await LoadListAsync<UserDeviceModel>($"/api/users/{id}/devices", "user devices", loadErrors);
         var allVouchers = await LoadListAsync<VoucherModel>("/api/vouchers", "available vouchers", loadErrors);
 
         ViewBag.Addresses    = addresses;
         ViewBag.Orders       = orders;
         ViewBag.Payments     = payments;
         ViewBag.UserVouchers = userVouchers;
+        ViewBag.UserDevices  = userDevices;
         ViewBag.AllVouchers  = allVouchers
             .Where(v => v.IsActive && v.ExpiryDate > DateTime.UtcNow).ToList();
         ViewBag.ActiveTab    = NormalizeTab(tab);
@@ -101,8 +104,22 @@ public class UsersController : Controller
     [HttpPost]
     public async Task<IActionResult> SendEmailVerification(Guid id)
     {
-        await _apiClient.PostVoidAsync($"/api/users/{id}/send-email-verification", new { });
-        TempData["SuccessMessage"] = "Email verification code sent.";
+        try
+        {
+            // Email verification is sent by the API, not by the Admin web app's SMTP settings.
+            await _apiClient.PostVoidAsync($"/api/users/{id}/send-email-verification", new { });
+            TempData["SuccessMessage"] = "Email verification code sent.";
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            HttpContext.Session.Clear();
+            TempData["ErrorMessage"] = "Admin session is missing, expired, or does not have the Admin role. Please sign in again.";
+            return RedirectToAction("Login", "Account");
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Failed to send email verification code: {ex.Message}";
+        }
         return RedirectToAction(nameof(Detail), new { id });
     }
 
@@ -228,6 +245,7 @@ public class UsersController : Controller
         "orders" => "orders",
         "payments" => "payments",
         "vouchers" => "vouchers",
+        "devices" => "devices",
         _ => "addresses"
     };
 

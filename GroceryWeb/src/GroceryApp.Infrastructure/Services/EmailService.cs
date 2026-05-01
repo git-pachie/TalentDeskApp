@@ -1,5 +1,8 @@
 using System.Net;
 using System.Net.Mail;
+using System.Runtime.ExceptionServices;
+using System.Security.Cryptography;
+using System.Text;
 using GroceryApp.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -84,8 +87,26 @@ public class EmailService : IEmailService
         var enableSsl = bool.Parse(smtp["EnableSsl"] ?? "true");
         var userName = smtp["UserName"];
         var password = smtp["Password"];
+        var passwordForAuth = RemoveWhitespace(password);
         var fromAddress = smtp["FromAddress"] ?? userName ?? "";
         var fromName = smtp["FromName"] ?? "GroceryApp";
+
+        await WriteEmailLogAsync(
+            "CONFIG",
+            "SMTP effective config: " +
+            $"Host={FormatConfigValue(host)}, " +
+            $"Port={port}, " +
+            $"EnableSsl={enableSsl}, " +
+            $"UserName={MaskEmail(userName)}, " +
+            $"FromAddress={MaskEmail(fromAddress)}, " +
+            $"FromName={FormatConfigValue(fromName)}, " +
+            $"PasswordConfigured={!string.IsNullOrWhiteSpace(password)}, " +
+            $"PasswordLength={GetLength(password)}, " +
+            $"PasswordLengthWithoutWhitespace={GetLength(passwordForAuth)}, " +
+            $"PasswordShape={GetPasswordShape(password)}, " +
+            $"PasswordWhitespaceIndexes={GetWhitespaceIndexes(password)}, " +
+            $"PasswordSha256={GetSha256(password)}, " +
+            $"PasswordWithoutWhitespaceSha256={GetSha256(passwordForAuth)}");
 
         if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(userName) ||
             string.IsNullOrWhiteSpace(password) || userName.Contains("your-email") ||
@@ -97,37 +118,88 @@ public class EmailService : IEmailService
             throw new InvalidOperationException(message);
         }
 
-        try
+        var attempts = passwordForAuth == password
+            ? [new PasswordAttempt("configured", password)]
+            : new[]
+            {
+                new PasswordAttempt("without-whitespace", passwordForAuth),
+                new PasswordAttempt("configured", password)
+            };
+
+        Exception? lastException = null;
+
+        foreach (var attempt in attempts)
         {
-            using var client = new SmtpClient(host, port)
+            try
             {
-                EnableSsl = enableSsl,
-                Credentials = new NetworkCredential(userName, password)
-            };
+                await SendWithPasswordAsync(host, port, enableSsl, userName, attempt.Password, fromAddress, fromName, toEmail, subject, htmlBody);
 
-            using var mail = new MailMessage(
-                new MailAddress(fromAddress, fromName),
-                new MailAddress(toEmail))
+                var message = $"Sent '{subject}' to {toEmail} via {host}:{port} using password variant '{attempt.Name}'.";
+                _logger.LogInformation("{Message}", message);
+                await WriteEmailLogAsync("SENT", message);
+                return;
+            }
+            catch (Exception ex) when (IsSmtpAuthenticationFailure(ex) && attempt != attempts[^1])
             {
-                Subject = subject,
-                Body = htmlBody,
-                IsBodyHtml = true
-            };
-
-            await client.SendMailAsync(mail);
-
-            var message = $"Sent '{subject}' to {toEmail} via {host}:{port}.";
-            _logger.LogInformation("{Message}", message);
-            await WriteEmailLogAsync("SENT", message);
+                lastException = ex;
+                var retryMessage = $"SMTP authentication failed using password variant '{attempt.Name}'. Retrying with next variant.";
+                _logger.LogWarning(ex, "{Message}", retryMessage);
+                await WriteEmailLogAsync("WARN", $"{retryMessage} {ex.GetType().Name}: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                lastException = ex;
+                break;
+            }
         }
-        catch (Exception ex)
+
+        if (lastException is not null)
         {
-            var message = $"Failed to send '{subject}' to {toEmail} via {host}:{port}. {ex.GetType().Name}: {ex.Message}";
-            _logger.LogError(ex, "{Message}", message);
+            var message = $"Failed to send '{subject}' to {toEmail} via {host}:{port}. {lastException.GetType().Name}: {lastException.Message}";
+            _logger.LogError(lastException, "{Message}", message);
             await WriteEmailLogAsync("ERROR", message);
-            throw;
+            ExceptionDispatchInfo.Capture(lastException).Throw();
         }
     }
+
+    private static async Task SendWithPasswordAsync(
+        string host,
+        int port,
+        bool enableSsl,
+        string userName,
+        string password,
+        string fromAddress,
+        string fromName,
+        string toEmail,
+        string subject,
+        string htmlBody)
+    {
+        using var client = new SmtpClient(host, port)
+        {
+            EnableSsl = enableSsl,
+            UseDefaultCredentials = false,
+            Credentials = new NetworkCredential(userName, password)
+        };
+
+        using var mail = new MailMessage(
+            new MailAddress(fromAddress, fromName),
+            new MailAddress(toEmail))
+        {
+            Subject = subject,
+            Body = htmlBody,
+            IsBodyHtml = true
+        };
+
+        await client.SendMailAsync(mail);
+    }
+
+    private static bool IsSmtpAuthenticationFailure(Exception ex)
+    {
+        return ex is SmtpException smtpException &&
+            smtpException.Message.Contains("authenticated", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private sealed record PasswordAttempt(string Name, string Password);
 
     private async Task WriteEmailLogAsync(string level, string message)
     {
@@ -144,5 +216,75 @@ public class EmailService : IEmailService
 
         var line = $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC [{level}] {message}{Environment.NewLine}";
         await File.AppendAllTextAsync(path, line);
+    }
+
+    private static string FormatConfigValue(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "[missing]" : value;
+    }
+
+    private static int GetLength(string? value)
+    {
+        return string.IsNullOrEmpty(value) ? 0 : value.Length;
+    }
+
+    private static string RemoveWhitespace(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return "";
+
+        var chars = new char[value.Length];
+        var index = 0;
+
+        foreach (var character in value)
+        {
+            if (!char.IsWhiteSpace(character))
+            {
+                chars[index] = character;
+                index++;
+            }
+        }
+
+        return new string(chars, 0, index);
+    }
+
+    private static string GetPasswordShape(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return "[missing]";
+
+        return string.Concat(value.Select(character => char.IsWhiteSpace(character) ? "_" : "*"));
+    }
+
+    private static string GetWhitespaceIndexes(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return "[]";
+
+        var indexes = value
+            .Select((character, index) => new { character, index })
+            .Where(item => char.IsWhiteSpace(item.character))
+            .Select(item => item.index.ToString());
+
+        return $"[{string.Join(",", indexes)}]";
+    }
+
+    private static string GetSha256(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return "[missing]";
+
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(value));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
+    }
+
+    private static string MaskEmail(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "[missing]";
+
+        var atIndex = value.IndexOf('@');
+        if (atIndex <= 1) return "[redacted]";
+
+        var local = value[..atIndex];
+        var domain = value[(atIndex + 1)..];
+        var visibleLocal = local.Length <= 2 ? local[0].ToString() : local[..2];
+
+        return $"{visibleLocal}***@{domain}";
     }
 }

@@ -7,6 +7,7 @@
     var orders      = ViewBag.Orders      as List<OrderModel>             ?? [];
     var payments    = ViewBag.Payments    as List<UserPaymentMethodModel> ?? [];
     var userVouchers= ViewBag.UserVouchers as List<UserVoucherModel>      ?? [];
+    var userDevices = ViewBag.UserDevices as List<UserDeviceModel>         ?? [];
     var allVouchers = ViewBag.AllVouchers  as List<VoucherModel>          ?? [];
     var loadErrors = ViewBag.LoadErrors as List<string> ?? [];
     var activeTab = ViewBag.ActiveTab as string ?? "addresses";
@@ -56,83 +57,99 @@
     </div>
 }
 
-<div class="row g-3">
+<div class="row g-3 align-items-stretch mb-3">
 
-    <!-- ===== LEFT SIDEBAR ===== -->
-    <div class="col-lg-3">
-
-        <!-- Profile Card -->
-        <div class="card form-card text-center mb-3">
-            <div class="card-body py-4">
-                @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
-                {
-                    <img src="@ImageProxyUrl(Model.ProfileImageUrl)" alt="@Model.FirstName @Model.LastName"
-                         class="rounded-circle mx-auto mb-3 d-block border"
-                         style="width:80px;height:80px;object-fit:cover;"
-                         onerror="this.onerror=null;this.classList.add('d-none');this.nextElementSibling.classList.remove('d-none');" />
-                    <div class="rounded-circle d-flex d-none align-items-center justify-content-center text-white fw-bold mx-auto mb-3"
-                         style="width:80px;height:80px;font-size:1.5rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);">
-                        @initials
-                    </div>
-                }
-                else
-                {
-                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-bold mx-auto mb-3"
-                         style="width:80px;height:80px;font-size:1.5rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);">
-                        @initials
-                    </div>
-                }
-                <h5 class="fw-bold mb-1">@Model.FirstName @Model.LastName</h5>
-                <p class="text-muted mb-1" style="font-size:0.85rem;">@Model.Email</p>
-                @if (!string.IsNullOrEmpty(Model.PhoneNumber))
-                {
-                    <p class="text-muted mb-2" style="font-size:0.82rem;"><i class="bi bi-telephone me-1"></i>@Model.PhoneNumber</p>
-                }
-                <div class="d-flex justify-content-center gap-1 flex-wrap mb-3">
-                    @foreach (var role in Model.Roles)
+    <!-- ===== USER SUMMARY ===== -->
+    <div class="col-xl-5 col-lg-6">
+        <div class="card form-card h-100">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex align-items-start gap-3">
+                    @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
                     {
-                        <span class="badge @(role == "Admin" ? "bg-danger" : "bg-primary") px-2 py-1" style="font-size:0.7rem;">@role</span>
+                        <img src="@ImageProxyUrl(Model.ProfileImageUrl)" alt="@Model.FirstName @Model.LastName"
+                             class="rounded-circle border flex-shrink-0"
+                             style="width:72px;height:72px;object-fit:cover;"
+                             onerror="this.onerror=null;this.classList.add('d-none');this.nextElementSibling.classList.remove('d-none');" />
+                        <div class="rounded-circle d-flex d-none align-items-center justify-content-center text-white fw-bold flex-shrink-0"
+                             style="width:72px;height:72px;font-size:1.35rem;background:linear-gradient(135deg,#4f46e5,#7c3aed);">
+                            @initials
+                        </div>
                     }
+                    else
+                    {
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
+                             style="width:72px;height:72px;font-size:1.35rem;background:linear-gradient(135deg,#4f46e5,#7c3aed);">
+                            @initials
+                        </div>
+                    }
+
+                    <div class="flex-grow-1" style="min-width:0;">
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <h4 class="fw-bold mb-0">@Model.FirstName @Model.LastName</h4>
+                            <span class="badge @(Model.IsActive ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") px-2 py-1">
+                                <i class="bi @(Model.IsActive ? "bi-check-circle" : "bi-x-circle") me-1"></i>
+                                @(Model.IsActive ? "Active" : "Locked")
+                            </span>
+                        </div>
+                        <div class="text-muted text-truncate mb-1" style="font-size:0.88rem;">
+                            <i class="bi bi-envelope me-1"></i>@Model.Email
+                        </div>
+                        <div class="text-muted text-truncate mb-2" style="font-size:0.88rem;">
+                            <i class="bi bi-telephone me-1"></i>@(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "No mobile number" : Model.PhoneNumber)
+                        </div>
+                        <div class="d-flex gap-1 flex-wrap">
+                            @foreach (var role in Model.Roles)
+                            {
+                                <span class="badge @(role == "Admin" ? "bg-danger" : "bg-primary") px-2 py-1" style="font-size:0.7rem;">@role</span>
+                            }
+                        </div>
+                    </div>
                 </div>
-                <span class="badge @(Model.IsActive ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") px-3 py-2 d-block mb-3">
-                    <i class="bi @(Model.IsActive ? "bi-check-circle" : "bi-x-circle") me-1"></i>
-                    @(Model.IsActive ? "Active" : "Locked")
-                </span>
-                <form asp-action="ToggleActive" asp-route-id="@Model.Id" method="post">
-                    <button type="submit" class="btn btn-sm @(Model.IsActive ? "btn-outline-warning" : "btn-outline-success") w-100">
-                        <i class="bi @(Model.IsActive ? "bi-lock" : "bi-unlock") me-1"></i>
-                        @(Model.IsActive ? "Lock Account" : "Unlock Account")
-                    </button>
-                </form>
+
+                <div class="border-top mt-4 pt-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                    <div style="min-width:0;">
+                        <div class="text-muted text-uppercase fw-semibold" style="font-size:0.68rem;">User ID</div>
+                        <code class="text-muted text-break" style="font-size:0.76rem;">@Model.Id</code>
+                    </div>
+                    <form asp-action="ToggleActive" asp-route-id="@Model.Id" method="post" class="ms-auto">
+                        <button type="submit" class="btn btn-sm @(Model.IsActive ? "btn-outline-warning" : "btn-outline-success")">
+                            <i class="bi @(Model.IsActive ? "bi-lock" : "bi-unlock") me-1"></i>
+                            @(Model.IsActive ? "Lock Account" : "Unlock Account")
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
+    </div>
 
-        <!-- Verification Card -->
-        <div class="card form-card mb-3">
-            <div class="card-body">
-                <h6 class="fw-bold mb-3"><i class="bi bi-shield-check me-2"></i>Verification</h6>
+    <!-- ===== VERIFICATION SUMMARY ===== -->
+    <div class="col-xl-4 col-lg-6">
+        <div class="card form-card h-100">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-shield-check me-2"></i>Verification</h6>
+                    <span class="badge bg-light text-muted border">@((Model.IsEmailVerified && Model.IsPhoneVerified) ? "Complete" : "Action needed")</span>
+                </div>
 
-                <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+                <div class="d-flex align-items-center justify-content-between gap-3 py-3 border-bottom">
                     <div>
-                        <div class="fw-semibold" style="font-size:0.85rem;"><i class="bi bi-envelope me-1"></i>Email</div>
-                        <span class="badge @(Model.IsEmailVerified ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning")" style="font-size:0.72rem;">
+                        <div class="fw-semibold mb-1" style="font-size:0.9rem;"><i class="bi bi-envelope me-1"></i>Email</div>
+                        <span class="badge @(Model.IsEmailVerified ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning")">
                             <i class="bi @(Model.IsEmailVerified ? "bi-check-circle" : "bi-exclamation-circle") me-1"></i>
                             @(Model.IsEmailVerified ? "Verified" : "Unverified")
                         </span>
                     </div>
-                    <div class="d-flex flex-column gap-1 align-items-end">
+                    <div class="d-flex gap-2 flex-wrap justify-content-end">
                         <form asp-action="SetEmailVerified" asp-route-id="@Model.Id" method="post">
                             <input type="hidden" name="verified" value="@(!Model.IsEmailVerified ? "true" : "false")" />
-                            <button type="submit" class="btn btn-sm @(Model.IsEmailVerified ? "btn-outline-warning" : "btn-outline-success")"
-                                    style="font-size:0.72rem;padding:3px 10px;">
+                            <button type="submit" class="btn btn-sm @(Model.IsEmailVerified ? "btn-outline-warning" : "btn-outline-success")">
                                 @(Model.IsEmailVerified ? "Revoke" : "Mark Verified")
                             </button>
                         </form>
                         @if (!Model.IsEmailVerified)
                         {
                             <form asp-action="SendEmailVerification" asp-route-id="@Model.Id" method="post">
-                                <button type="submit" class="btn btn-sm btn-outline-primary"
-                                        style="font-size:0.72rem;padding:3px 10px;">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-envelope-arrow-up me-1"></i>Send Code
                                 </button>
                             </form>
@@ -140,27 +157,25 @@
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center justify-content-between gap-3 pt-3">
                     <div>
-                        <div class="fw-semibold" style="font-size:0.85rem;"><i class="bi bi-phone me-1"></i>Mobile</div>
-                        <span class="badge @(Model.IsPhoneVerified ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning")" style="font-size:0.72rem;">
+                        <div class="fw-semibold mb-1" style="font-size:0.9rem;"><i class="bi bi-phone me-1"></i>Mobile</div>
+                        <span class="badge @(Model.IsPhoneVerified ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning")">
                             <i class="bi @(Model.IsPhoneVerified ? "bi-check-circle" : "bi-exclamation-circle") me-1"></i>
                             @(Model.IsPhoneVerified ? "Verified" : "Unverified")
                         </span>
                     </div>
-                    <div class="d-flex flex-column gap-1 align-items-end">
+                    <div class="d-flex gap-2 flex-wrap justify-content-end">
                         <form asp-action="SetPhoneVerified" asp-route-id="@Model.Id" method="post">
                             <input type="hidden" name="verified" value="@(!Model.IsPhoneVerified ? "true" : "false")" />
-                            <button type="submit" class="btn btn-sm @(Model.IsPhoneVerified ? "btn-outline-warning" : "btn-outline-success")"
-                                    style="font-size:0.72rem;padding:3px 10px;">
+                            <button type="submit" class="btn btn-sm @(Model.IsPhoneVerified ? "btn-outline-warning" : "btn-outline-success")">
                                 @(Model.IsPhoneVerified ? "Revoke" : "Mark Verified")
                             </button>
                         </form>
                         @if (!Model.IsPhoneVerified && !string.IsNullOrEmpty(Model.PhoneNumber))
                         {
                             <form asp-action="SendPhoneVerification" asp-route-id="@Model.Id" method="post">
-                                <button type="submit" class="btn btn-sm btn-outline-primary"
-                                        style="font-size:0.72rem;padding:3px 10px;">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-phone-vibrate me-1"></i>Send SMS
                                 </button>
                             </form>
@@ -169,37 +184,49 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Stats Card -->
-        <div class="card form-card">
-            <div class="card-body">
-                <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart me-2"></i>Stats</h6>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted" style="font-size:0.85rem;">Total Orders</span>
-                    <span class="fw-bold">@Model.OrderCount</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted" style="font-size:0.85rem;">Addresses</span>
-                    <span class="fw-bold">@addresses.Count</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted" style="font-size:0.85rem;">Payment Methods</span>
-                    <span class="fw-bold">@payments.Count</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted" style="font-size:0.85rem;">Vouchers</span>
-                    <span class="fw-bold">@userVouchers.Count</span>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span class="text-muted" style="font-size:0.85rem;">Member Since</span>
-                    <span class="fw-bold">@Model.CreatedAt.ToString("MMM yyyy")</span>
+    <!-- ===== ACCOUNT SNAPSHOT ===== -->
+    <div class="col-xl-3 col-lg-12">
+        <div class="card form-card h-100">
+            <div class="card-body p-3">
+                <h6 class="fw-bold mb-2 d-flex align-items-center" style="font-size:0.95rem;">
+                    <i class="bi bi-bar-chart me-2"></i>Account Snapshot
+                </h6>
+                <div>
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <span class="text-muted" style="font-size:0.82rem;">Orders</span>
+                        <span class="fw-bold" style="font-size:0.9rem;">@Model.OrderCount</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <span class="text-muted" style="font-size:0.82rem;">Addresses</span>
+                        <span class="fw-bold" style="font-size:0.9rem;">@addresses.Count</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <span class="text-muted" style="font-size:0.82rem;">Payments</span>
+                        <span class="fw-bold" style="font-size:0.9rem;">@payments.Count</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <span class="text-muted" style="font-size:0.82rem;">Vouchers</span>
+                        <span class="fw-bold" style="font-size:0.9rem;">@userVouchers.Count</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <span class="text-muted" style="font-size:0.82rem;">Devices</span>
+                        <span class="fw-bold" style="font-size:0.9rem;">@userDevices.Count</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-2">
+                        <span class="text-muted" style="font-size:0.82rem;">Member Since</span>
+                        <span class="fw-bold text-nowrap" style="font-size:0.9rem;">@Model.CreatedAt.ToString("MMM yyyy")</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- ===== RIGHT: TABS ===== -->
-    <div class="col-lg-9">
+<div class="row g-3">
+    <!-- ===== DETAIL TABS ===== -->
+    <div class="col-12">
         <div class="card data-card">
             <div class="card-header p-0">
                 <ul class="nav nav-tabs border-0 px-3 pt-2" id="profileTabs">
@@ -225,6 +252,12 @@
                         <a class="nav-link @(IsActiveTab("vouchers") ? "active" : "")" data-bs-toggle="tab" href="#tab-vouchers">
                             <i class="bi bi-ticket me-1"></i>Vouchers
                             <span class="badge bg-secondary ms-1" style="font-size:0.68rem;">@userVouchers.Count</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(IsActiveTab("devices") ? "active" : "")" data-bs-toggle="tab" href="#tab-devices">
+                            <i class="bi bi-phone me-1"></i>User Devices
+                            <span class="badge bg-secondary ms-1" style="font-size:0.68rem;">@userDevices.Count</span>
                         </a>
                     </li>
                 </ul>
@@ -509,6 +542,66 @@
                                                 </button>
                                             </form>
                                         </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+
+                <!-- ===== USER DEVICES ===== -->
+                <div class="tab-pane fade @(IsActiveTab("devices") ? "show active" : "")" id="tab-devices">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap">
+                        <div>
+                            <h6 class="fw-bold mb-1">Registered Devices</h6>
+                            <p class="text-muted mb-0" style="font-size:0.82rem;">Devices captured from mobile sign-up and login activity.</p>
+                        </div>
+                        <span class="badge bg-light text-muted border px-3 py-2">@userDevices.Count active record@(userDevices.Count == 1 ? "" : "s")</span>
+                    </div>
+                    @if (!userDevices.Any())
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-phone fs-3 d-block mb-2"></i>No devices registered.
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="table data-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Device</th>
+                                    <th>Account</th>
+                                    <th>Platform</th>
+                                    <th>First Seen</th>
+                                    <th>Last Login</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var device in userDevices)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-start gap-2">
+                                                <span class="rounded-2 bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                                                      style="width:32px;height:32px;">
+                                                    <i class="bi bi-phone"></i>
+                                                </span>
+                                                <div style="min-width:0;">
+                                                    <div class="fw-semibold" style="font-size:0.85rem;">Mobile Device</div>
+                                                    <code class="text-muted text-break d-block" style="font-size:0.74rem;line-height:1.35;">@device.DeviceGuid</code>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold" style="font-size:0.85rem;">@device.Email</div>
+                                            <div class="text-muted" style="font-size:0.76rem;">Linked to this user</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold" style="font-size:0.85rem;">@(device.OSVersion ?? "Unknown OS")</div>
+                                            <div class="text-muted" style="font-size:0.76rem;">@(device.HardwareVersion ?? "Unknown hardware")</div>
+                                        </td>
+                                        <td class="text-muted text-nowrap" style="font-size:0.82rem;">@device.CreatedAt.ToString("MMM dd, yyyy HH:mm")</td>
+                                        <td class="text-muted text-nowrap" style="font-size:0.82rem;">@device.LastLoginAt.ToString("MMM dd, yyyy HH:mm")</td>
                                     </tr>
                                 }
                             </tbody>
