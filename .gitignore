@@ -21,6 +21,7 @@ Keys/
 # .NET
 bin/
 obj/
+**/Logs/
 
 # Uploaded files
 **/wwwroot/uploads/

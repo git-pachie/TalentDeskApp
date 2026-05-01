@@ -19,6 +19,7 @@ public class UserService : IUserService
     private readonly IRepository<UserVoucher> _userVoucherRepo;
     private readonly IRepository<Voucher> _voucherRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IEmailService _emailService;
 
     public UserService(
         UserManager<User> userManager,
@@ -27,7 +28,8 @@ public class UserService : IUserService
         IRepository<UserPaymentMethod> paymentMethodRepo,
         IRepository<UserVoucher> userVoucherRepo,
         IRepository<Voucher> voucherRepo,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IEmailService emailService)
     {
         _userManager = userManager;
         _addressRepo = addressRepo;
@@ -36,6 +38,7 @@ public class UserService : IUserService
         _userVoucherRepo = userVoucherRepo;
         _voucherRepo = voucherRepo;
         _unitOfWork = unitOfWork;
+        _emailService = emailService;
     }
 
     // ── List / Detail ──────────────────────────────────────────────────────────
@@ -334,16 +337,23 @@ public class UserService : IUserService
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null) return false;
 
-        // Generate a 6-digit code
-        var code = new Random().Next(100000, 999999).ToString();
+        var code = Security.VerificationCodeGenerator.CreateFourDigitCode();
         user.EmailVerificationCode = code;
         user.EmailVerificationSentAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
         await _userManager.UpdateAsync(user);
 
-        // TODO: Integrate with email provider (SendGrid, SMTP, etc.)
-        // For now, the code is stored and can be validated from the mobile app.
-        return true;
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        try
+        {
+            await _emailService.SendEmailVerificationCodeAsync(user.Email!, fullName, code);
+            return true;
+        }
+        catch
+        {
+            // EmailService already writes the error to the application log file.
+            return false;
+        }
     }
 
     public async Task<bool> SendPhoneVerificationAsync(Guid userId)

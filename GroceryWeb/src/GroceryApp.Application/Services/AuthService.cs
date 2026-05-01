@@ -48,6 +48,22 @@ public class AuthService : IAuthService
 
         await _userManager.AddToRoleAsync(user, "User");
 
+        var roles = await _userManager.GetRolesAsync(user);
+        if (!roles.Contains("Admin"))
+        {
+            if (!await TrySendVerificationCodeAsync(user))
+            {
+                return new AuthResponse { Success = false, Errors = ["Failed to send verification email."] };
+            }
+
+            return new AuthResponse
+            {
+                Success = false,
+                RequiresEmailVerification = true,
+                Errors = ["Please verify your email before logging in."]
+            };
+        }
+
         return await GenerateAuthResponse(user);
     }
 
@@ -65,15 +81,10 @@ public class AuthService : IAuthService
         var roles = await _userManager.GetRolesAsync(user);
         if (!user.IsEmailVerified && !roles.Contains("Admin"))
         {
-            // Generate and store a 4-digit code
-            var code = new Random().Next(1000, 9999).ToString();
-            user.EmailVerificationCode = code;
-            user.EmailVerificationSentAt = DateTime.UtcNow;
-            await _userManager.UpdateAsync(user);
-
-            // Send verification code email
-            var fullName = $"{user.FirstName} {user.LastName}".Trim();
-            _ = Task.Run(() => _emailService.SendEmailVerificationCodeAsync(user.Email!, fullName, code));
+            if (!await TrySendVerificationCodeAsync(user))
+            {
+                return new AuthResponse { Success = false, Errors = ["Failed to send verification email."] };
+            }
 
             return new AuthResponse
             {
@@ -110,9 +121,16 @@ public class AuthService : IAuthService
         user.UpdatedAt = DateTime.UtcNow;
         await _userManager.UpdateAsync(user);
 
-        // Send congratulations email (fire-and-forget)
+        // Do not block email verification if the confirmation email fails.
         var fullName = $"{user.FirstName} {user.LastName}".Trim();
-        _ = Task.Run(() => _emailService.SendEmailVerifiedConfirmationAsync(user.Email!, fullName));
+        try
+        {
+            await _emailService.SendEmailVerifiedConfirmationAsync(user.Email!, fullName);
+        }
+        catch
+        {
+            // EmailService already writes the error to the application log file.
+        }
 
         // Return a full auth token so the user is logged in immediately
         var authResponse = await GenerateAuthResponse(user);
@@ -129,14 +147,28 @@ public class AuthService : IAuthService
         if (user is null) return false;
         if (user.IsEmailVerified) return false; // already verified
 
-        var code = new Random().Next(1000, 9999).ToString();
+        return await TrySendVerificationCodeAsync(user);
+    }
+
+    private async Task<bool> TrySendVerificationCodeAsync(User user)
+    {
+        var code = VerificationCodeGenerator.CreateFourDigitCode();
         user.EmailVerificationCode = code;
         user.EmailVerificationSentAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
         await _userManager.UpdateAsync(user);
 
         var fullName = $"{user.FirstName} {user.LastName}".Trim();
-        _ = Task.Run(() => _emailService.SendEmailVerificationCodeAsync(user.Email!, fullName, code));
-        return true;
+        try
+        {
+            await _emailService.SendEmailVerificationCodeAsync(user.Email!, fullName, code);
+            return true;
+        }
+        catch
+        {
+            // EmailService already writes the error to the application log file.
+            return false;
+        }
     }
 
     public async Task<DTOs.Auth.UserDto?> GetCurrentUserAsync(Guid userId)

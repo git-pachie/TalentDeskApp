@@ -2,16 +2,19 @@ using System.Net;
 using System.Net.Mail;
 using GroceryApp.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace GroceryApp.Infrastructure.Services;
 
 public class EmailService : IEmailService
 {
     private readonly IConfiguration _config;
+    private readonly ILogger<EmailService> _logger;
 
-    public EmailService(IConfiguration config)
+    public EmailService(IConfiguration config, ILogger<EmailService> logger)
     {
         _config = config;
+        _logger = logger;
     }
 
     public async Task SendEmailVerificationCodeAsync(string toEmail, string toName, string code)
@@ -84,30 +87,62 @@ public class EmailService : IEmailService
         var fromAddress = smtp["FromAddress"] ?? userName ?? "";
         var fromName = smtp["FromName"] ?? "GroceryApp";
 
-        // Skip sending if SMTP is not configured
         if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(userName) ||
-            string.IsNullOrWhiteSpace(password) || userName!.Contains("your-email"))
+            string.IsNullOrWhiteSpace(password) || userName.Contains("your-email") ||
+            userName.Contains("REPLACE_VIA_USER_SECRETS") || password.Contains("REPLACE_VIA_USER_SECRETS"))
         {
-            Console.WriteLine($"📧 [Email] SMTP not configured — skipping send to {toEmail}. Subject: {subject}");
-            return;
+            var message = $"SMTP not configured; cannot send email to {toEmail}. Subject: {subject}";
+            _logger.LogError("{Message}", message);
+            await WriteEmailLogAsync("ERROR", message);
+            throw new InvalidOperationException(message);
         }
 
-        using var client = new SmtpClient(host, port)
+        try
         {
-            EnableSsl = enableSsl,
-            Credentials = new NetworkCredential(userName, password)
-        };
+            using var client = new SmtpClient(host, port)
+            {
+                EnableSsl = enableSsl,
+                Credentials = new NetworkCredential(userName, password)
+            };
 
-        using var mail = new MailMessage(
-            new MailAddress(fromAddress, fromName),
-            new MailAddress(toEmail))
+            using var mail = new MailMessage(
+                new MailAddress(fromAddress, fromName),
+                new MailAddress(toEmail))
+            {
+                Subject = subject,
+                Body = htmlBody,
+                IsBodyHtml = true
+            };
+
+            await client.SendMailAsync(mail);
+
+            var message = $"Sent '{subject}' to {toEmail} via {host}:{port}.";
+            _logger.LogInformation("{Message}", message);
+            await WriteEmailLogAsync("SENT", message);
+        }
+        catch (Exception ex)
         {
-            Subject = subject,
-            Body = htmlBody,
-            IsBodyHtml = true
-        };
+            var message = $"Failed to send '{subject}' to {toEmail} via {host}:{port}. {ex.GetType().Name}: {ex.Message}";
+            _logger.LogError(ex, "{Message}", message);
+            await WriteEmailLogAsync("ERROR", message);
+            throw;
+        }
+    }
 
-        await client.SendMailAsync(mail);
-        Console.WriteLine($"📧 [Email] Sent '{subject}' to {toEmail}");
+    private async Task WriteEmailLogAsync(string level, string message)
+    {
+        var configuredPath = _config["EmailLog:Path"] ?? Path.Combine("Logs", "email-log.txt");
+        var path = Path.IsPathRooted(configuredPath)
+            ? configuredPath
+            : Path.Combine(Directory.GetCurrentDirectory(), configuredPath);
+
+        var directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var line = $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC [{level}] {message}{Environment.NewLine}";
+        await File.AppendAllTextAsync(path, line);
     }
 }
