@@ -1,8 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using GroceryApp.Application.DTOs.Auth;
 using GroceryApp.Application.Interfaces;
+using GroceryApp.Application.Security;
 using GroceryApp.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -185,8 +185,7 @@ public class AuthService : IAuthService
 
     private string GenerateJwtToken(User user, IList<string> roles)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-            _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured")));
+        var key = JwtSigningKey.Create(_configuration);
 
         var claims = new List<Claim>
         {

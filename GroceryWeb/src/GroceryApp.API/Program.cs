@@ -1,5 +1,5 @@
-using System.Text;
 using GroceryApp.Application;
+using GroceryApp.Application.Security;
 using GroceryApp.Infrastructure;
 using GroceryApp.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -28,8 +28,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        IssuerSigningKey = JwtSigningKey.Create(builder.Configuration)
     };
 });
 
