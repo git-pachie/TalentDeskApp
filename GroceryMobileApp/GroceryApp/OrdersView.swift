@@ -28,26 +28,36 @@ enum OrderStatus: String, Hashable {
     case pending = "Pending"
     case paid = "Paid"
     case processing = "Processing"
+    case outForDelivery = "OutForDelivery"
     case delivered = "Delivered"
     case cancelled = "Cancelled"
 
     var color: Color {
         switch self {
-        case .pending: .orange
-        case .paid: .blue
-        case .processing: .orange
-        case .delivered: GroceryTheme.primary
-        case .cancelled: GroceryTheme.badge
+        case .pending:        .orange
+        case .paid:           .blue
+        case .processing:     .orange
+        case .outForDelivery: .purple
+        case .delivered:      GroceryTheme.primary
+        case .cancelled:      GroceryTheme.badge
         }
     }
 
     var icon: String {
         switch self {
-        case .pending: "clock.fill"
-        case .paid: "creditcard.fill"
-        case .processing: "shippingbox.fill"
-        case .delivered: "checkmark.circle.fill"
-        case .cancelled: "xmark.circle.fill"
+        case .pending:        "clock.fill"
+        case .paid:           "creditcard.fill"
+        case .processing:     "shippingbox.fill"
+        case .outForDelivery: "truck.box.fill"
+        case .delivered:      "checkmark.circle.fill"
+        case .cancelled:      "xmark.circle.fill"
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .outForDelivery: "Out for Delivery"
+        default: rawValue
         }
     }
 
@@ -63,7 +73,7 @@ struct OrdersView: View {
     @State private var isLoading = false
 
     private var currentOrders: [OrderItem] {
-        orders.filter { $0.status == .pending || $0.status == .paid || $0.status == .processing }
+        orders.filter { $0.status == .pending || $0.status == .paid || $0.status == .processing || $0.status == .outForDelivery }
     }
 
     private var orderHistory: [OrderItem] {
@@ -136,7 +146,7 @@ struct OrdersView: View {
                 HStack(spacing: 4) {
                     Image(systemName: order.status.icon)
                         .font(.caption2)
-                    Text(order.status.rawValue)
+                    Text(order.status.displayName)
                         .font(.system(.caption, design: .rounded, weight: .semibold))
                 }
                 .foregroundStyle(order.status.color)

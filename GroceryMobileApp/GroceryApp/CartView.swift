@@ -2,9 +2,19 @@ import SwiftUI
 
 struct CartView: View {
     @Environment(CartStore.self) private var cartStore
+    @Environment(AuthStore.self) private var authStore
     @State private var editingRemarkItem: CartItem?
     @State private var remarkText = ""
     @State private var navigationPath: [CartRoute] = []
+    @State private var isValidatingCheckout = false
+    @State private var verificationAlert: VerificationAlert? = nil
+
+    // MARK: - Verification Alert Model
+    struct VerificationAlert: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+    }
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -40,15 +50,25 @@ struct CartView: View {
                                         .foregroundStyle(GroceryTheme.primary)
                                 }
                                 Spacer()
-                                NavigationLink(value: CartRoute.checkout) {
-                                    Text("Checkout (\(cartStore.totalItems))")
-                                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                                        .padding(.horizontal, 28)
-                                        .padding(.vertical, 14)
-                                        .background(GroceryTheme.primary)
-                                        .foregroundStyle(.white)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                Button {
+                                    Task { await validateAndCheckout() }
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        if isValidatingCheckout {
+                                            ProgressView()
+                                                .tint(.white)
+                                                .scaleEffect(0.8)
+                                        }
+                                        Text("Checkout (\(cartStore.totalItems))")
+                                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                    }
+                                    .padding(.horizontal, 28)
+                                    .padding(.vertical, 14)
+                                    .background(GroceryTheme.primary)
+                                    .foregroundStyle(.white)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                                 }
+                                .disabled(isValidatingCheckout)
                             }
                             .padding(.horizontal, 16)
                             .padding(.bottom, 8)
@@ -93,6 +113,84 @@ struct CartView: View {
             } message: {
                 Text("Add a note for \(editingRemarkItem?.product.name ?? "this item")")
             }
+            .alert(item: $verificationAlert) { alert in
+                Alert(
+                    title: Text(alert.title),
+                    message: Text(alert.message),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
+        }
+    }
+
+    // MARK: - Checkout Validation
+
+    private func validateAndCheckout() async {
+        isValidatingCheckout = true
+        defer { isValidatingCheckout = false }
+
+        // Fetch fresh user profile from API to get latest verification status
+        do {
+            let user: UserDTO = try await APIClient.shared.get("/api/auth/me")
+
+            let emailVerified  = user.isEmailVerified  ?? false
+            let phoneVerified  = user.isPhoneVerified  ?? false
+
+            if !emailVerified && !phoneVerified {
+                verificationAlert = VerificationAlert(
+                    title: "Verification Required",
+                    message: "Your email address and mobile number are not yet verified. Please verify both before placing an order."
+                )
+                return
+            }
+
+            if !emailVerified {
+                verificationAlert = VerificationAlert(
+                    title: "Email Not Verified",
+                    message: "Your email address is not yet verified. Please verify your email before placing an order."
+                )
+                return
+            }
+
+            if !phoneVerified {
+                verificationAlert = VerificationAlert(
+                    title: "Mobile Not Verified",
+                    message: "Your mobile number is not yet verified. Please verify your mobile number before placing an order."
+                )
+                return
+            }
+
+            // All verified — proceed to checkout
+            navigationPath.append(.checkout)
+
+        } catch {
+            // If we can't reach the API, fall back to cached user data
+            let emailVerified = authStore.currentUser?.isEmailVerified ?? false
+            let phoneVerified = authStore.currentUser?.isPhoneVerified ?? false
+
+            if !emailVerified && !phoneVerified {
+                verificationAlert = VerificationAlert(
+                    title: "Verification Required",
+                    message: "Your email address and mobile number are not yet verified. Please verify both before placing an order."
+                )
+                return
+            }
+            if !emailVerified {
+                verificationAlert = VerificationAlert(
+                    title: "Email Not Verified",
+                    message: "Your email address is not yet verified. Please verify your email before placing an order."
+                )
+                return
+            }
+            if !phoneVerified {
+                verificationAlert = VerificationAlert(
+                    title: "Mobile Not Verified",
+                    message: "Your mobile number is not yet verified. Please verify your mobile number before placing an order."
+                )
+                return
+            }
+
+            navigationPath.append(.checkout)
         }
     }
 

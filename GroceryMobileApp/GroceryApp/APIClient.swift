@@ -107,6 +107,7 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
             // Try common .NET format
             let df = DateFormatter()
             df.locale = Locale(identifier: "en_US_POSIX")
+            df.timeZone = TimeZone(identifier: "UTC")
             for fmt in ["yyyy-MM-dd'T'HH:mm:ss.SSSSSSS", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd"] {
                 df.dateFormat = fmt
                 if let date = df.date(from: str) { return date }

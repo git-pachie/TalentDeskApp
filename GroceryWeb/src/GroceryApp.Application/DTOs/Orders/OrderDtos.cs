@@ -68,7 +68,11 @@ public class CreateOrderRequest
     public Guid? AddressId { get; set; }
     public string? VoucherCode { get; set; }
     public string? Notes { get; set; }
-    public DateTime? DeliveryDate { get; set; }
+    /// <summary>
+    /// Date-only string in "yyyy-MM-dd" format sent by the mobile client.
+    /// Using a plain string avoids UTC timezone shifts that occur with DateTime serialization.
+    /// </summary>
+    public string? DeliveryDate { get; set; }
     public string? DeliveryTimeSlot { get; set; }
     public decimal PlatformFee { get; set; } = 2m;
     public decimal OtherCharges { get; set; } = 1m;

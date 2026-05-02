@@ -88,6 +88,9 @@ struct OrderDetailView: View {
                 // Delivery address
                 addressSection
 
+                // Delivery schedule
+                deliveryScheduleSection
+
                 // Payment method
                 paymentSection
 
@@ -221,7 +224,7 @@ struct OrderDetailView: View {
             HStack(spacing: 4) {
                 Image(systemName: order.status.icon)
                     .font(.caption)
-                Text(order.status.rawValue)
+                Text(order.status.displayName)
                     .font(.system(.caption, design: .rounded, weight: .semibold))
             }
             .foregroundStyle(order.status.color)
@@ -241,7 +244,7 @@ struct OrderDetailView: View {
                 .foregroundStyle(GroceryTheme.primary)
 
             HStack(spacing: 0) {
-                ForEach(["Pending", "Paid", "Processing", "Delivered"], id: \.self) { step in
+                ForEach(["Pending", "Paid", "Processing", "Out for Delivery", "Delivered"], id: \.self) { step in
                     let isActive = stepIsActive(step)
                     VStack(spacing: 4) {
                         Circle()
@@ -250,6 +253,7 @@ struct OrderDetailView: View {
                         Text(step)
                             .font(.system(.caption2, design: .rounded))
                             .foregroundStyle(isActive ? GroceryTheme.title : GroceryTheme.muted)
+                            .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -300,14 +304,15 @@ struct OrderDetailView: View {
     }
 
     private func stepIsActive(_ step: String) -> Bool {
-        let steps = ["Pending", "Paid", "Processing", "Delivered"]
+        let steps = ["Pending", "Paid", "Processing", "Out for Delivery", "Delivered"]
         let currentIndex: Int
         switch order.status {
-        case .pending: currentIndex = 0
-        case .paid: currentIndex = 1
-        case .processing: currentIndex = 2
-        case .delivered: currentIndex = 3
-        case .cancelled: currentIndex = -1
+        case .pending:        currentIndex = 0
+        case .paid:           currentIndex = 1
+        case .processing:     currentIndex = 2
+        case .outForDelivery: currentIndex = 3
+        case .delivered:      currentIndex = 4
+        case .cancelled:      currentIndex = -1
         }
         guard let stepIndex = steps.firstIndex(of: step) else { return false }
         return stepIndex <= currentIndex
@@ -413,6 +418,49 @@ struct OrderDetailView: View {
             }
         }
     }
+
+    // MARK: - Delivery Schedule Section
+
+    private var deliveryScheduleSection: some View {
+        infoCard(title: "Delivery Schedule", icon: "calendar.badge.clock") {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Date")
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(GroceryTheme.muted)
+                    Spacer()
+                    if let deliveryDate = orderDetail?.deliveryDate {
+                        Text(Self.utcDateFormatter.string(from: deliveryDate))
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                            .foregroundStyle(GroceryTheme.title)
+                    } else {
+                        Text("—")
+                            .font(.system(.subheadline, design: .rounded))
+                            .foregroundStyle(GroceryTheme.muted)
+                    }
+                }
+                HStack {
+                    Text("Time Slot")
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(GroceryTheme.muted)
+                    Spacer()
+                    Text(orderDetail?.deliveryTimeSlot ?? "Anytime")
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                        .foregroundStyle(GroceryTheme.title)
+                }
+            }
+        }
+    }
+
+    /// DateFormatter fixed to UTC so the stored UTC-midnight date displays
+    /// the same calendar date the user originally picked (no local-time shift).
+    private static let utcDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMM dd, yyyy"
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
 
     // MARK: - Payment Section
 

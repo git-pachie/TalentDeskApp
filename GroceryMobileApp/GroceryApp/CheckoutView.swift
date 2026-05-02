@@ -525,13 +525,21 @@ struct CheckoutView: View {
             return
         }
 
+        // Format deliveryDate as a plain "yyyy-MM-dd" string using the user's local calendar.
+        // Sending a Date via iso8601 always converts to UTC, which shifts the day for UTC+8 users
+        // (e.g. PHT midnight May 4 → UTC May 3). A plain string bypasses all timezone conversion.
+        let dateOnlyFormatter = DateFormatter()
+        dateOnlyFormatter.dateFormat = "yyyy-MM-dd"
+        dateOnlyFormatter.locale = Locale(identifier: "en_US_POSIX")
+        let deliveryDateString = dateOnlyFormatter.string(from: deliveryDate)
+
         let request = CreateOrderRequest(
             addressId: selectedAddressId,
             voucherCode: appliedVoucher?.code,
             notes: orderRemarks.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? nil
                 : orderRemarks.trimmingCharacters(in: .whitespacesAndNewlines),
-            deliveryDate: deliveryDate,
+            deliveryDate: deliveryDateString,
             deliveryTimeSlot: selectedDeliveryTimeSlot == "Anytime" ? nil : selectedDeliveryTimeSlot,
             platformFee: Decimal(platformFee),
             otherCharges: Decimal(otherCharges)

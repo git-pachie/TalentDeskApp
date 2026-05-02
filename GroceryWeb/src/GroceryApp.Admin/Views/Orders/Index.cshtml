@@ -214,7 +214,7 @@
                 <label class="orders-filter-label">Status</label>
                 <select name="status" class="form-select">
                     <option value="">All Statuses</option>
-                    @foreach (var s in new[] { "Pending","Paid","Processing","Delivered","Cancelled" })
+                    @foreach (var s in new[] { "Pending","Paid","Processing","OutForDelivery","Delivered","Cancelled" })
                     {
                         <option value="@s" selected="@(status == s)">@s</option>
                     }
@@ -308,7 +308,7 @@
                                           class="orders-actions">
                                         <input type="hidden" name="returnUrl" value="index" />
                                         <select name="status" class="form-select">
-                                            @foreach (var s in new[] { "Pending","Paid","Processing","Delivered","Cancelled" })
+                                            @foreach (var s in new[] { "Pending","Paid","Processing","OutForDelivery","Delivered","Cancelled" })
                                             {
                                                 <option value="@s" selected="@(order.Status == s)">@s</option>
                                             }
@@ -430,11 +430,12 @@
 @functions {
     string GetStatusBadge(string status) => status switch
     {
-        "Pending"    => "bg-warning text-dark",
-        "Paid"       => "bg-info text-white",
-        "Processing" => "bg-primary",
-        "Delivered"  => "bg-success",
-        "Cancelled"  => "bg-danger",
-        _            => "bg-secondary"
+        "Pending"        => "bg-warning text-dark",
+        "Paid"           => "bg-info text-white",
+        "Processing"     => "bg-primary",
+        "OutForDelivery" => "bg-purple text-white",
+        "Delivered"      => "bg-success",
+        "Cancelled"      => "bg-danger",
+        _                => "bg-secondary"
     };
 }

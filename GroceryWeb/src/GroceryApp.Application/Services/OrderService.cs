@@ -2,6 +2,7 @@ using GroceryApp.Application.DTOs.Orders;
 using GroceryApp.Application.Interfaces;
 using GroceryApp.Application.Utilities;
 using GroceryApp.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -15,6 +16,8 @@ public class OrderService : IOrderService
     private readonly IRepository<OrderStatusHistory> _statusHistoryRepo;
     private readonly IRepository<Review> _reviewRepo;
     private readonly INotificationService _notificationService;
+    private readonly IEmailService _emailService;
+    private readonly UserManager<User> _userManager;
     private readonly IUnitOfWork _unitOfWork;
     private readonly string _appBaseUrl;
 
@@ -25,6 +28,8 @@ public class OrderService : IOrderService
         IRepository<OrderStatusHistory> statusHistoryRepo,
         IRepository<Review> reviewRepo,
         INotificationService notificationService,
+        IEmailService emailService,
+        UserManager<User> userManager,
         IUnitOfWork unitOfWork,
         IConfiguration configuration)
     {
@@ -34,6 +39,8 @@ public class OrderService : IOrderService
         _statusHistoryRepo = statusHistoryRepo;
         _reviewRepo = reviewRepo;
         _notificationService = notificationService;
+        _emailService = emailService;
+        _userManager = userManager;
         _unitOfWork = unitOfWork;
         _appBaseUrl = (configuration["App:BaseUrl"] ?? "").TrimEnd('/');
     }
@@ -86,7 +93,12 @@ public class OrderService : IOrderService
             AddressId = request.AddressId,
             VoucherId = voucherId,
             Notes = request.Notes,
-            DeliveryDate = request.DeliveryDate?.Date ?? DateTime.UtcNow.Date.AddDays(1),
+            // Parse the "yyyy-MM-dd" date string sent by the mobile client directly —
+            // no DateTime involved so no UTC timezone shift can occur.
+            DeliveryDate = !string.IsNullOrWhiteSpace(request.DeliveryDate) &&
+                           DateOnly.TryParseExact(request.DeliveryDate, "yyyy-MM-dd", out var parsedDate)
+                ? parsedDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
+                : DateTime.UtcNow.Date.AddDays(1),
             DeliveryTimeSlot = string.IsNullOrWhiteSpace(request.DeliveryTimeSlot) ? null : request.DeliveryTimeSlot.Trim(),
             Items = cartItems.Select(c => new OrderItem
             {
@@ -116,6 +128,27 @@ public class OrderService : IOrderService
 
         await _notificationService.CreateNotificationAsync(
             userId, "Order Placed", $"Your order {order.OrderNumber} has been placed.", "order", order.Id.ToString());
+
+        // Resolve user data before leaving the request scope, then send email in background.
+        var userForEmail = await _userManager.FindByIdAsync(userId.ToString());
+        if (userForEmail?.Email is not null)
+        {
+            var emailAddress    = userForEmail.Email;
+            var fullName        = $"{userForEmail.FirstName} {userForEmail.LastName}".Trim();
+            var orderNumber     = order.OrderNumber;
+            var totalAmount     = order.TotalAmount;
+            var deliveryDate    = order.DeliveryDate ?? DateTime.UtcNow.Date.AddDays(1);
+            var timeSlot        = order.DeliveryTimeSlot;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _emailService.SendOrderPlacedAsync(emailAddress, fullName, orderNumber, totalAmount, deliveryDate, timeSlot);
+                }
+                catch { /* Email failure must never affect order placement */ }
+            });
+        }
 
         return MapToDto(order);
     }
@@ -219,6 +252,39 @@ public class OrderService : IOrderService
 
             await _notificationService.CreateNotificationAsync(
                 order.UserId, "Order Updated", $"Your order {order.OrderNumber} is now {newStatus}.", "order", order.Id.ToString());
+
+            // Resolve user data synchronously before leaving the request scope,
+            // then send the email in a background task (scoped services are disposed after the request).
+            var userForEmail = await _userManager.FindByIdAsync(order.UserId.ToString());
+            if (userForEmail?.Email is not null)
+            {
+                var emailAddress = userForEmail.Email;
+                var fullName     = $"{userForEmail.FirstName} {userForEmail.LastName}".Trim();
+                var orderNumber  = order.OrderNumber;
+                var totalAmount  = order.TotalAmount;
+                var deliveryDate = order.DeliveryDate;
+                var timeSlot     = order.DeliveryTimeSlot;
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        switch (newStatus)
+                        {
+                            case OrderStatus.Cancelled:
+                                await _emailService.SendOrderCancelledAsync(emailAddress, fullName, orderNumber, totalAmount);
+                                break;
+                            case OrderStatus.OutForDelivery:
+                                await _emailService.SendOrderOutForDeliveryAsync(emailAddress, fullName, orderNumber, deliveryDate, timeSlot);
+                                break;
+                            case OrderStatus.Delivered:
+                                await _emailService.SendOrderDeliveredAsync(emailAddress, fullName, orderNumber, totalAmount);
+                                break;
+                        }
+                    }
+                    catch { /* Email failure must never affect status update */ }
+                });
+            }
         }
 
         var reviews = await _reviewRepo.Query()

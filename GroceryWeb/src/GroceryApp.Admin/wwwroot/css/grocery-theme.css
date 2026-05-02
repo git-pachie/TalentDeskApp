@@ -212,6 +212,17 @@ a:hover {
   color: #059669 !important;
 }
 
+/* Out for Delivery — purple badge (not in Bootstrap by default) */
+.bg-purple {
+  background-color: #7c3aed !important;
+  color: #fff !important;
+}
+
+.badge.bg-purple {
+  background-color: #7c3aed !important;
+  color: #fff !important;
+}
+
 /*--------------------------------------------------------------
 # Back to Top Button
 --------------------------------------------------------------*/

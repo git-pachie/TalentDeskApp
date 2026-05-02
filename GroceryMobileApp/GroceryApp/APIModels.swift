@@ -302,12 +302,13 @@ struct CreateOrderRequest: Encodable {
     let addressId: UUID?
     let voucherCode: String?
     let notes: String?
-    let deliveryDate: Date?
+    /// Sent as a plain "yyyy-MM-dd" string so no UTC conversion can shift the day.
+    let deliveryDate: String?
     let deliveryTimeSlot: String?
     let platformFee: Decimal
     let otherCharges: Decimal
 
-    init(addressId: UUID?, voucherCode: String?, notes: String?, deliveryDate: Date?, deliveryTimeSlot: String?,
+    init(addressId: UUID?, voucherCode: String?, notes: String?, deliveryDate: String?, deliveryTimeSlot: String?,
          platformFee: Decimal = 2, otherCharges: Decimal = 1) {
         self.addressId = addressId
         self.voucherCode = voucherCode
