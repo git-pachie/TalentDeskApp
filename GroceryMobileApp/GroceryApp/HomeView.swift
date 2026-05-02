@@ -26,10 +26,7 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            RefreshableScrollContainer(onRefresh: {
-                print("🔄 Home pull-to-refresh triggered")
-                await refreshHomeContent()
-            }) {
+            ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     // Delivery header
                     deliveryHeader
@@ -48,6 +45,10 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 20)
+            }
+            .refreshable {
+                print("🔄 Home pull-to-refresh triggered")
+                await refreshHomeContent()
             }
             .task {
                 await refreshHomeContent(initialLoadOnlyIfNeeded: true)
@@ -202,23 +203,29 @@ struct HomeView: View {
             return [
                 HomeSpecialOffer(
                     id: UUID(uuidString: "11111111-1111-1111-1111-111111111111") ?? UUID(),
+                    categoryId: nil,
                     title: "Up To 50 % Discount",
                     subtitle: "Shop fresh products,\ngrab exclusive deals.",
                     emoji: "🥕🍅🥦",
+                    imageUrl: nil,
                     color: GroceryTheme.primaryBanner
                 ),
                 HomeSpecialOffer(
                     id: UUID(uuidString: "22222222-2222-2222-2222-222222222222") ?? UUID(),
+                    categoryId: nil,
                     title: "Free Delivery",
                     subtitle: "On orders above ₱30.\nFresh to your door.",
                     emoji: "🚚📦✨",
+                    imageUrl: nil,
                     color: Color(red: 0.90, green: 0.92, blue: 1.0)
                 ),
                 HomeSpecialOffer(
                     id: UUID(uuidString: "33333333-3333-3333-3333-333333333333") ?? UUID(),
+                    categoryId: nil,
                     title: "Buy 1 Get 1 Free",
                     subtitle: "Selected fruits & veggies\nthis weekend only.",
                     emoji: "🍎🥑🍇",
+                    imageUrl: nil,
                     color: Color(red: 1.0, green: 0.93, blue: 0.85)
                 ),
             ]
@@ -250,7 +257,13 @@ struct HomeView: View {
                                 Text(banner.subtitle)
                                     .font(.caption)
                                     .foregroundStyle(GroceryTheme.subtitle)
-                                Button("Shop Now") { }
+                                Button("Shop Now") {
+                                    if let categoryId = banner.categoryId,
+                                       let category = productStore.categories.first(where: { $0.id == categoryId }) {
+                                        navigationStore.pendingCategorySelection = category
+                                        navigationStore.selectedTab = 1
+                                    }
+                                }
                                     .font(.caption.weight(.semibold))
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 8)
@@ -262,9 +275,16 @@ struct HomeView: View {
 
                             Spacer()
 
-                            Text(banner.emoji)
-                                .font(.system(size: 44))
-                                .padding(.trailing, 16)
+                            if let imageUrl = banner.imageUrl, let url = URL(string: imageUrl) {
+                                CachedAsyncImage(url: url, emoji: banner.emoji)
+                                    .frame(width: 88, height: 88)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                    .padding(.trailing, 16)
+                            } else {
+                                Text(banner.emoji)
+                                    .font(.system(size: 44))
+                                    .padding(.trailing, 16)
+                            }
                         }
                     }
                     .padding(.horizontal, 2)
@@ -388,9 +408,11 @@ extension HomeView {
                 .map { offer in
                     HomeSpecialOffer(
                         id: offer.id,
+                        categoryId: offer.categoryId,
                         title: offer.title,
                         subtitle: offer.subtitle,
                         emoji: offer.emoji,
+                        imageUrl: offer.imageUrl,
                         color: Color(hex: offer.backgroundColorHex) ?? GroceryTheme.primaryBanner
                     )
                 }
@@ -424,9 +446,11 @@ extension HomeView {
 
 private struct HomeSpecialOffer: Identifiable {
     let id: UUID
+    let categoryId: UUID?
     let title: String
     let subtitle: String
     let emoji: String
+    let imageUrl: String?
     let color: Color
 }
 
@@ -442,88 +466,6 @@ private extension Color {
         let green = Double((value >> 8) & 0xFF) / 255.0
         let blue = Double(value & 0xFF) / 255.0
         self = Color(red: red, green: green, blue: blue)
-    }
-}
-
-private struct RefreshableScrollContainer<Content: View>: UIViewControllerRepresentable {
-    let onRefresh: () async -> Void
-    let content: Content
-
-    init(onRefresh: @escaping () async -> Void, @ViewBuilder content: () -> Content) {
-        self.onRefresh = onRefresh
-        self.content = content()
-    }
-
-    func makeUIViewController(context: Context) -> RefreshableScrollViewController<Content> {
-        let controller = RefreshableScrollViewController(rootView: content)
-        controller.onRefresh = onRefresh
-        return controller
-    }
-
-    func updateUIViewController(_ uiViewController: RefreshableScrollViewController<Content>, context: Context) {
-        uiViewController.update(rootView: content)
-        uiViewController.onRefresh = onRefresh
-    }
-}
-
-private final class RefreshableScrollViewController<Content: View>: UIViewController {
-    private let scrollView = UIScrollView()
-    private let refreshControl = UIRefreshControl()
-    private let hostingController: UIHostingController<Content>
-
-    var onRefresh: (() async -> Void)?
-
-    init(rootView: Content) {
-        hostingController = UIHostingController(rootView: rootView)
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        view.backgroundColor = UIColor.clear
-        scrollView.alwaysBounceVertical = true
-        scrollView.refreshControl = refreshControl
-        refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
-
-        view.addSubview(scrollView)
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-        ])
-
-        addChild(hostingController)
-        scrollView.addSubview(hostingController.view)
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-        hostingController.view.backgroundColor = UIColor.clear
-        NSLayoutConstraint.activate([
-            hostingController.view.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-            hostingController.view.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
-            hostingController.view.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
-            hostingController.view.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
-        ])
-        hostingController.didMove(toParent: self)
-    }
-
-    func update(rootView: Content) {
-        hostingController.rootView = rootView
-    }
-
-    @objc
-    private func handleRefresh() {
-        Task { @MainActor in
-            await onRefresh?()
-            refreshControl.endRefreshing()
-        }
     }
 }
 

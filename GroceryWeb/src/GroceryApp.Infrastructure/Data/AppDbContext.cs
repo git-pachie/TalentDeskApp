@@ -29,6 +29,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<UserVoucher> UserVouchers => Set<UserVoucher>();
     public DbSet<UserDevice> UserDevices => Set<UserDevice>();
     public DbSet<SpecialOffer> SpecialOffers => Set<SpecialOffer>();
+    public DbSet<TodayDeal> TodayDeals => Set<TodayDeal>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -65,9 +66,11 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         {
             e.HasIndex(p => p.Name);
             e.HasIndex(p => p.CategoryId);
+            e.HasIndex(p => p.OwnerUserId);
             e.Property(p => p.Price).HasPrecision(18, 2);
             e.Property(p => p.DiscountPrice).HasPrecision(18, 2);
             e.HasOne(p => p.Category).WithMany(c => c.Products).HasForeignKey(p => p.CategoryId);
+            e.HasOne(p => p.OwnerUser).WithMany().HasForeignKey(p => p.OwnerUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         // ProductImage
@@ -210,8 +213,21 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             e.Property(o => o.Title).HasMaxLength(200);
             e.Property(o => o.Subtitle).HasMaxLength(500);
             e.Property(o => o.Emoji).HasMaxLength(50);
+            e.Property(o => o.ImageUrl).HasMaxLength(500);
             e.Property(o => o.BackgroundColorHex).HasMaxLength(20);
             e.HasIndex(o => new { o.IsActive, o.SortOrder });
+            e.HasIndex(o => o.OwnerUserId);
+            e.HasOne(o => o.OwnerUser).WithMany().HasForeignKey(o => o.OwnerUserId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(o => o.Category).WithMany().HasForeignKey(o => o.CategoryId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<TodayDeal>(e =>
+        {
+            e.HasIndex(d => new { d.IsActive, d.SortOrder });
+            e.HasIndex(d => d.ProductId).IsUnique();
+            e.HasIndex(d => d.OwnerUserId);
+            e.HasOne(d => d.Product).WithMany().HasForeignKey(d => d.ProductId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(d => d.OwnerUser).WithMany().HasForeignKey(d => d.OwnerUserId).OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

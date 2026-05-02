@@ -1,7 +1,9 @@
 using GroceryApp.Application.DTOs.SpecialOffers;
 using GroceryApp.Application.Interfaces;
+using GroceryApp.Application.Utilities;
 using GroceryApp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace GroceryApp.Application.Services;
 
@@ -9,16 +11,18 @@ public class SpecialOfferService : ISpecialOfferService
 {
     private readonly IRepository<SpecialOffer> _specialOfferRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly string _appBaseUrl;
 
-    public SpecialOfferService(IRepository<SpecialOffer> specialOfferRepo, IUnitOfWork unitOfWork)
+    public SpecialOfferService(IRepository<SpecialOffer> specialOfferRepo, IUnitOfWork unitOfWork, IConfiguration configuration)
     {
         _specialOfferRepo = specialOfferRepo;
         _unitOfWork = unitOfWork;
+        _appBaseUrl = (configuration["App:BaseUrl"] ?? "").TrimEnd('/');
     }
 
-    public async Task<IEnumerable<SpecialOfferDto>> GetAllAsync(bool includeInactive = false)
+    public async Task<IEnumerable<SpecialOfferDto>> GetAllAsync(bool includeInactive = false, Guid? ownerUserId = null)
     {
-        var query = _specialOfferRepo.Query();
+        var query = BuildScopedQuery(ownerUserId);
         if (!includeInactive)
             query = query.Where(o => o.IsActive);
 
@@ -30,19 +34,22 @@ public class SpecialOfferService : ISpecialOfferService
         return offers.Select(MapToDto);
     }
 
-    public async Task<SpecialOfferDto?> GetByIdAsync(Guid id)
+    public async Task<SpecialOfferDto?> GetByIdAsync(Guid id, Guid? ownerUserId = null)
     {
-        var offer = await _specialOfferRepo.GetByIdAsync(id);
+        var offer = await BuildScopedQuery(ownerUserId).FirstOrDefaultAsync(o => o.Id == id);
         return offer is null ? null : MapToDto(offer);
     }
 
-    public async Task<SpecialOfferDto> CreateAsync(CreateSpecialOfferRequest request)
+    public async Task<SpecialOfferDto> CreateAsync(CreateSpecialOfferRequest request, Guid? ownerUserId = null)
     {
         var offer = new SpecialOffer
         {
+            OwnerUserId = ownerUserId,
+            CategoryId = request.CategoryId,
             Title = request.Title,
             Subtitle = request.Subtitle,
             Emoji = request.Emoji,
+            ImageUrl = request.ImageUrl,
             BackgroundColorHex = request.BackgroundColorHex,
             SortOrder = request.SortOrder,
             IsActive = request.IsActive,
@@ -53,17 +60,19 @@ public class SpecialOfferService : ISpecialOfferService
         await _specialOfferRepo.AddAsync(offer);
         await _unitOfWork.SaveChangesAsync();
 
-        return MapToDto(offer);
+        return (await GetByIdAsync(offer.Id, ownerUserId))!;
     }
 
-    public async Task<SpecialOfferDto?> UpdateAsync(Guid id, UpdateSpecialOfferRequest request)
+    public async Task<SpecialOfferDto?> UpdateAsync(Guid id, UpdateSpecialOfferRequest request, Guid? ownerUserId = null)
     {
-        var offer = await _specialOfferRepo.GetByIdAsync(id);
+        var offer = await BuildScopedQuery(ownerUserId).FirstOrDefaultAsync(o => o.Id == id);
         if (offer is null) return null;
 
+        if (request.CategoryId.HasValue) offer.CategoryId = request.CategoryId.Value;
         if (request.Title is not null) offer.Title = request.Title;
         if (request.Subtitle is not null) offer.Subtitle = request.Subtitle;
         if (request.Emoji is not null) offer.Emoji = request.Emoji;
+        if (request.ImageUrl is not null) offer.ImageUrl = request.ImageUrl;
         if (request.BackgroundColorHex is not null) offer.BackgroundColorHex = request.BackgroundColorHex;
         if (request.SortOrder.HasValue) offer.SortOrder = request.SortOrder.Value;
         if (request.IsActive.HasValue) offer.IsActive = request.IsActive.Value;
@@ -72,12 +81,12 @@ public class SpecialOfferService : ISpecialOfferService
         _specialOfferRepo.Update(offer);
         await _unitOfWork.SaveChangesAsync();
 
-        return MapToDto(offer);
+        return (await GetByIdAsync(offer.Id, ownerUserId))!;
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(Guid id, Guid? ownerUserId = null)
     {
-        var offer = await _specialOfferRepo.GetByIdAsync(id);
+        var offer = await BuildScopedQuery(ownerUserId).FirstOrDefaultAsync(o => o.Id == id);
         if (offer is null) return false;
 
         _specialOfferRepo.Remove(offer);
@@ -85,12 +94,22 @@ public class SpecialOfferService : ISpecialOfferService
         return true;
     }
 
-    private static SpecialOfferDto MapToDto(SpecialOffer offer) => new()
+    private IQueryable<SpecialOffer> BuildScopedQuery(Guid? ownerUserId)
+    {
+        var query = _specialOfferRepo.Query().Include(o => o.Category).AsQueryable();
+        if (ownerUserId.HasValue)
+            query = query.Where(o => o.OwnerUserId == ownerUserId.Value);
+        return query;
+    }
+
+    private SpecialOfferDto MapToDto(SpecialOffer offer) => new()
     {
         Id = offer.Id,
+        CategoryId = offer.CategoryId,
         Title = offer.Title,
         Subtitle = offer.Subtitle,
         Emoji = offer.Emoji,
+        ImageUrl = AppUrlBuilder.BuildUploadUrl(_appBaseUrl, "special-offers", offer.ImageUrl ?? string.Empty) ?? offer.ImageUrl,
         BackgroundColorHex = offer.BackgroundColorHex,
         SortOrder = offer.SortOrder,
         IsActive = offer.IsActive,

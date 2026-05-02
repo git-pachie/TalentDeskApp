@@ -11,6 +11,183 @@
                     || !string.IsNullOrEmpty(dateFrom) || !string.IsNullOrEmpty(dateTo);
 }
 
+<style>
+    .orders-filters .card-body {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .orders-filter-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2.2fr) minmax(180px, 1fr) minmax(160px, 0.9fr) minmax(160px, 0.9fr) auto;
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .orders-filter-field {
+        min-width: 0;
+    }
+
+    .orders-filter-label {
+        display: inline-block;
+        margin-bottom: 0.45rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .orders-filters .form-control,
+    .orders-filters .form-select,
+    .orders-filters .input-group-text,
+    .orders-filters .btn {
+        height: 44px;
+        border-radius: 10px;
+    }
+
+    .orders-filters .input-group {
+        flex-wrap: nowrap;
+    }
+
+    .orders-filters .input-group-text {
+        padding-inline: 0.9rem 0.25rem;
+        border-right: 0;
+    }
+
+    .orders-filters .form-control.border-start-0 {
+        border-left: 0;
+        padding-left: 0.35rem !important;
+    }
+
+    .orders-filter-actions {
+        display: flex;
+        gap: 0.625rem;
+        align-items: end;
+    }
+
+    .orders-filter-actions .btn-primary {
+        min-width: 142px;
+        font-weight: 600;
+    }
+
+    .orders-filter-actions .btn-outline-secondary {
+        width: 44px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .orders-table-wrap {
+        overflow-x: auto;
+    }
+
+    .orders-table {
+        margin-bottom: 0;
+        vertical-align: middle;
+    }
+
+    .orders-table thead th {
+        white-space: nowrap;
+    }
+
+    .orders-order-link {
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .orders-customer-name {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+
+    .orders-customer-meta {
+        font-size: 0.8rem;
+        line-height: 1.45;
+    }
+
+    .orders-money,
+    .orders-date {
+        white-space: nowrap;
+    }
+
+    .orders-total {
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .orders-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.625rem;
+        min-width: 250px;
+    }
+
+    .orders-actions .btn,
+    .orders-actions .form-select {
+        height: 44px;
+        border-radius: 10px;
+    }
+
+    .orders-actions .btn-outline-primary {
+        width: 44px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .orders-actions .form-select {
+        min-width: 152px;
+        font-size: 0.85rem;
+    }
+
+    .orders-actions .btn-primary {
+        width: 44px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    @@media (max-width: 1399.98px) {
+        .orders-filter-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .orders-filter-actions {
+            grid-column: 1 / -1;
+            justify-content: flex-start;
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .orders-filters .card-body {
+            padding: 1rem;
+        }
+
+        .orders-filter-grid {
+            grid-template-columns: 1fr;
+            gap: 0.875rem;
+        }
+
+        .orders-filter-actions {
+            flex-wrap: wrap;
+        }
+
+        .orders-filter-actions .btn-primary {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .orders-actions {
+            min-width: 0;
+        }
+    }
+</style>
+
 <div class="page-header">
     <div>
         <h2><i class="bi bi-receipt me-2 text-primary"></i>Orders</h2>
@@ -22,21 +199,20 @@
 </div>
 
 <!-- ===== Filter Bar ===== -->
-<div class="card form-card mb-3">
-    <div class="card-body py-3">
-        <form method="get" asp-action="Index" class="row g-2 align-items-end">
-            <div class="col-lg-4 col-md-6">
-                <label class="form-label fw-semibold mb-1" style="font-size:0.8rem;">Search</label>
-                <div class="input-group input-group-sm">
+<div class="card form-card orders-filters mb-3">
+    <div class="card-body">
+        <form method="get" asp-action="Index" class="orders-filter-grid">
+            <div class="orders-filter-field">
+                <label class="orders-filter-label">Search</label>
+                <div class="input-group">
                     <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
                     <input type="text" name="search" class="form-control border-start-0 ps-0"
-                           placeholder="Order #, customer name or email..."
-                           value="@search" style="font-size:0.85rem;" />
+                           placeholder="Order #, customer name or email..." value="@search" />
                 </div>
             </div>
-            <div class="col-lg-2 col-md-3">
-                <label class="form-label fw-semibold mb-1" style="font-size:0.8rem;">Status</label>
-                <select name="status" class="form-select form-select-sm">
+            <div class="orders-filter-field">
+                <label class="orders-filter-label">Status</label>
+                <select name="status" class="form-select">
                     <option value="">All Statuses</option>
                     @foreach (var s in new[] { "Pending","Paid","Processing","Delivered","Cancelled" })
                     {
@@ -44,21 +220,21 @@
                     }
                 </select>
             </div>
-            <div class="col-lg-2 col-md-3">
-                <label class="form-label fw-semibold mb-1" style="font-size:0.8rem;">Date From</label>
-                <input type="date" name="dateFrom" class="form-control form-control-sm" value="@dateFrom" />
+            <div class="orders-filter-field">
+                <label class="orders-filter-label">Date From</label>
+                <input type="date" name="dateFrom" class="form-control" value="@dateFrom" />
             </div>
-            <div class="col-lg-2 col-md-3">
-                <label class="form-label fw-semibold mb-1" style="font-size:0.8rem;">Date To</label>
-                <input type="date" name="dateTo" class="form-control form-control-sm" value="@dateTo" />
+            <div class="orders-filter-field">
+                <label class="orders-filter-label">Date To</label>
+                <input type="date" name="dateTo" class="form-control" value="@dateTo" />
             </div>
-            <div class="col-lg-2 col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-primary btn-sm flex-fill">
+            <div class="orders-filter-actions">
+                <button type="submit" class="btn btn-primary">
                     <i class="bi bi-funnel me-1"></i>Filter
                 </button>
                 @if (hasFilters)
                 {
-                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm" title="Clear filters">
+                    <a asp-action="Index" class="btn btn-outline-secondary" title="Clear filters" aria-label="Clear filters">
                         <i class="bi bi-x-lg"></i>
                     </a>
                 }
@@ -70,95 +246,100 @@
 
 <!-- ===== Table ===== -->
 <div class="card data-card">
-    <table class="table data-table">
-        <thead>
-            <tr>
-                <th>Order</th>
-                <th>Customer</th>
-                <th>Subtotal</th>
-                <th>Discount</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th class="text-end">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Model.Items.Count > 0)
-            {
-                @foreach (var order in Model.Items)
+    <div class="orders-table-wrap">
+        <table class="table data-table orders-table">
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Customer</th>
+                    <th>Subtotal</th>
+                    <th>Discount</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Items.Count > 0)
+                {
+                    @foreach (var order in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-action="Detail" asp-route-id="@order.Id" class="orders-order-link">
+                                    @order.OrderNumber
+                                </a>
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(order.CustomerName))
+                                {
+                                    <div class="orders-customer-name">@order.CustomerName</div>
+                                }
+                                <div class="orders-customer-meta text-muted">
+                                    @if (!string.IsNullOrEmpty(order.CustomerEmail))
+                                    {
+                                        <div>@order.CustomerEmail</div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(order.CustomerPhone))
+                                    {
+                                        <div>@order.CustomerPhone</div>
+                                    }
+                                </div>
+                            </td>
+                            <td class="orders-money">₱@order.SubTotal.ToString("N2")</td>
+                            <td class="orders-money">
+                                @if (order.DiscountAmount > 0)
+                                {
+                                    <span class="text-success fw-medium">-₱@order.DiscountAmount.ToString("N2")</span>
+                                }
+                                else { <span class="text-muted">—</span> }
+                            </td>
+                            <td class="orders-money orders-total">₱@order.TotalAmount.ToString("N2")</td>
+                            <td><span class="badge badge-status @GetStatusBadge(order.Status)">@order.Status</span></td>
+                            <td class="orders-date text-muted">@order.CreatedAt.ToString("MMM dd, yyyy")</td>
+                            <td class="text-end">
+                                <div class="orders-actions">
+                                    <a asp-action="Detail" asp-route-id="@order.Id"
+                                       class="btn btn-outline-primary" title="View Details" aria-label="View order details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <form asp-action="UpdateStatus" asp-route-id="@order.Id" method="post"
+                                          class="orders-actions">
+                                        <input type="hidden" name="returnUrl" value="index" />
+                                        <select name="status" class="form-select">
+                                            @foreach (var s in new[] { "Pending","Paid","Processing","Delivered","Cancelled" })
+                                            {
+                                                <option value="@s" selected="@(order.Status == s)">@s</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-primary" title="Update Status" aria-label="Update order status">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
                 {
                     <tr>
-                        <td>
-                            <a asp-action="Detail" asp-route-id="@order.Id" class="fw-semibold text-decoration-none">
-                                @order.OrderNumber
-                            </a>
-                        </td>
-                        <td>
-                            @if (!string.IsNullOrEmpty(order.CustomerName))
-                            {
-                                <div class="fw-medium" style="font-size:0.85rem;">@order.CustomerName</div>
-                            }
-                            @if (!string.IsNullOrEmpty(order.CustomerEmail))
-                            {
-                                <div class="text-muted" style="font-size:0.78rem;">@order.CustomerEmail</div>
-                            }
-                            @if (!string.IsNullOrEmpty(order.CustomerPhone))
-                            {
-                                <div class="text-muted" style="font-size:0.78rem;">@order.CustomerPhone</div>
-                            }
-                        </td>
-                        <td style="font-size:0.85rem;">₱@order.SubTotal.ToString("N2")</td>
-                        <td>
-                            @if (order.DiscountAmount > 0)
-                            {
-                                <span class="text-success fw-medium" style="font-size:0.85rem;">-₱@order.DiscountAmount.ToString("N2")</span>
-                            }
-                            else { <span class="text-muted">—</span> }
-                        </td>
-                        <td class="fw-bold">₱@order.TotalAmount.ToString("N2")</td>
-                        <td><span class="badge badge-status @GetStatusBadge(order.Status)">@order.Status</span></td>
-                        <td class="text-muted" style="font-size:0.82rem;">@order.CreatedAt.ToString("MMM dd, yyyy")</td>
-                        <td class="text-end">
-                            <a asp-action="Detail" asp-route-id="@order.Id"
-                               class="btn btn-xs btn-outline-primary me-1" title="View Details">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <form asp-action="UpdateStatus" asp-route-id="@order.Id" method="post"
-                                  class="d-inline-flex align-items-center gap-1">
-                                <input type="hidden" name="returnUrl" value="index" />
-                                <select name="status" class="form-select form-select-sm"
-                                        style="width:auto;font-size:0.78rem;border-radius:6px;">
-                                    @foreach (var s in new[] { "Pending","Paid","Processing","Delivered","Cancelled" })
-                                    {
-                                        <option value="@s" selected="@(order.Status == s)">@s</option>
-                                    }
-                                </select>
-                                <button type="submit" class="btn btn-sm btn-primary" title="Update Status">
-                                    <i class="bi bi-check-lg"></i>
-                                </button>
-                            </form>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <i class="bi bi-receipt"></i>
+                                <p>No orders found@(hasFilters ? " matching your filters" : "").</p>
+                                @if (hasFilters)
+                                {
+                                    <a asp-action="Index" class="btn btn-sm btn-outline-secondary mt-2">Clear Filters</a>
+                                }
+                            </div>
                         </td>
                     </tr>
                 }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="8">
-                        <div class="empty-state">
-                            <i class="bi bi-receipt"></i>
-                            <p>No orders found@(hasFilters ? " matching your filters" : "").</p>
-                            @if (hasFilters)
-                            {
-                                <a asp-action="Index" class="btn btn-sm btn-outline-secondary mt-2">Clear Filters</a>
-                            }
-                        </div>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- ===== Pagination ===== -->

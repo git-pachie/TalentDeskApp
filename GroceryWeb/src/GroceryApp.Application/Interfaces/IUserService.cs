@@ -11,6 +11,9 @@ public interface IUserService
     Task<PagedResult<UserDto>> GetAllUsersAsync(int page, int pageSize, string? search = null);
     Task<UserDto?> GetByIdAsync(Guid id);
     Task<bool> ToggleActiveAsync(Guid id);
+    Task<IEnumerable<string>> GetAvailableRolesAsync();
+    Task<UserDto> CreateUserAsync(CreateUserRequest request);
+    Task<UserDto?> UpdateUserRolesAsync(Guid userId, UpdateUserRolesRequest request);
 
     // Profile modules
     Task<IEnumerable<AddressDto>> GetUserAddressesAsync(Guid userId);
@@ -51,6 +54,21 @@ public class UserDto
     public DateTime CreatedAt { get; set; }
     public List<string> Roles { get; set; } = [];
     public int OrderCount { get; set; }
+}
+
+public class CreateUserRequest
+{
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public List<string> Roles { get; set; } = [];
+}
+
+public class UpdateUserRolesRequest
+{
+    public List<string> Roles { get; set; } = [];
 }
 
 public class UserDeviceDto

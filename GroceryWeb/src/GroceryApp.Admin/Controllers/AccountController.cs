@@ -39,14 +39,17 @@ public class AccountController : Controller
         var responseJson = await response.Content.ReadAsStringAsync();
         var authResponse = JsonSerializer.Deserialize<AuthResponseModel>(responseJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        if (authResponse?.Token is null || authResponse.User?.Roles?.Contains("Admin") != true)
+        var allowedRoles = new[] { "Admin", "Staff", "StoreOwner" };
+        var userRoles = authResponse?.User?.Roles ?? [];
+        if (authResponse?.Token is null || !userRoles.Any(r => allowedRoles.Contains(r)))
         {
-            ModelState.AddModelError("", "Access denied. Admin role required.");
+            ModelState.AddModelError("", "Access denied. Admin, Staff, or Store Owner role required.");
             return View(model);
         }
 
         HttpContext.Session.SetString("JwtToken", authResponse.Token);
         HttpContext.Session.SetString("UserName", $"{authResponse.User.FirstName} {authResponse.User.LastName}");
+        HttpContext.Session.SetString("UserRoles", string.Join(",", userRoles));
 
         return RedirectToAction("Index", "Dashboard");
     }

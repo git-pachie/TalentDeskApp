@@ -45,17 +45,11 @@ final class ProductStore {
 
     func loadProducts() async {
         do {
-            // Load deals (discounted products)
-            let dealsResult: PagedResult<ProductDTO> = try await APIClient.shared.get(
-                "/api/products",
-                query: [
-                    URLQueryItem(name: "page", value: "1"),
-                    URLQueryItem(name: "pageSize", value: "8"),
-                    URLQueryItem(name: "sortBy", value: "newest"),
-                    URLQueryItem(name: "sortDescending", value: "true"),
-                ]
-            )
-            deals = dealsResult.items.filter(\.isActive).map(\.asGroceryProduct)
+            let todayDeals: [TodayDealDTO] = try await APIClient.shared.get("/api/today-deals")
+            deals = todayDeals
+                .filter(\.isActive)
+                .sorted { $0.sortOrder < $1.sortOrder }
+                .map { $0.product.asGroceryProduct }
 
             // Load fresh products
             let freshResult: PagedResult<ProductDTO> = try await APIClient.shared.get(

@@ -29,6 +29,16 @@ public class UserModel
     public int OrderCount { get; set; }
 }
 
+public class CreateUserModel
+{
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public List<string> Roles { get; set; } = [];
+}
+
 public class UserAddressModel
 {
     public Guid Id { get; set; }
@@ -190,9 +200,11 @@ public class CategoryModel
 public class SpecialOfferModel
 {
     public Guid Id { get; set; }
+    public Guid? CategoryId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Subtitle { get; set; } = string.Empty;
     public string Emoji { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
     public string BackgroundColorHex { get; set; } = string.Empty;
     public int SortOrder { get; set; }
     public bool IsActive { get; set; }
@@ -202,9 +214,11 @@ public class SpecialOfferModel
 
 public class CreateSpecialOfferModel
 {
+    public Guid? CategoryId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Subtitle { get; set; } = string.Empty;
     public string Emoji { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
     public string BackgroundColorHex { get; set; } = "#E8F3FF";
     public int SortOrder { get; set; }
     public bool IsActive { get; set; } = true;
@@ -212,10 +226,37 @@ public class CreateSpecialOfferModel
 
 public class UpdateSpecialOfferModel
 {
+    public Guid? CategoryId { get; set; }
     public string? Title { get; set; }
     public string? Subtitle { get; set; }
     public string? Emoji { get; set; }
+    public string? ImageUrl { get; set; }
     public string? BackgroundColorHex { get; set; }
+    public int? SortOrder { get; set; }
+    public bool? IsActive { get; set; }
+}
+
+public class TodayDealModel
+{
+    public Guid Id { get; set; }
+    public Guid ProductId { get; set; }
+    public int SortOrder { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public ProductModel Product { get; set; } = new();
+}
+
+public class CreateTodayDealModel
+{
+    public Guid ProductId { get; set; }
+    public int SortOrder { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public class UpdateTodayDealModel
+{
+    public Guid? ProductId { get; set; }
     public int? SortOrder { get; set; }
     public bool? IsActive { get; set; }
 }

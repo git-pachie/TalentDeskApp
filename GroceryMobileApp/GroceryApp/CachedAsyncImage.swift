@@ -2,17 +2,24 @@ import CryptoKit
 import SwiftUI
 
 struct CachedAsyncImage: View {
+    enum DisplayMode {
+        case fill
+        case fit
+    }
+
     let url: URL?
     let emoji: String
     let lastModified: Date?
+    let displayMode: DisplayMode
 
     @State private var image: UIImage?
     @State private var isLoading = false
 
-    init(url: URL?, emoji: String, lastModified: Date? = nil) {
+    init(url: URL?, emoji: String, lastModified: Date? = nil, displayMode: DisplayMode = .fill) {
         self.url = url
         self.emoji = emoji
         self.lastModified = lastModified
+        self.displayMode = displayMode
     }
 
     var body: some View {
@@ -20,7 +27,7 @@ struct CachedAsyncImage: View {
             if let image {
                 Image(uiImage: image)
                     .resizable()
-                    .scaledToFill()
+                    .modifier(ImageDisplayModeModifier(displayMode: displayMode))
             } else if isLoading {
                 ProgressView()
             } else {
@@ -55,6 +62,19 @@ struct CachedAsyncImage: View {
             image = uiImage
         } catch {
             print("⚠️ [Image] Failed to load \(url): \(error.localizedDescription)")
+        }
+    }
+}
+
+private struct ImageDisplayModeModifier: ViewModifier {
+    let displayMode: CachedAsyncImage.DisplayMode
+
+    func body(content: Content) -> some View {
+        switch displayMode {
+        case .fill:
+            content.scaledToFill()
+        case .fit:
+            content.scaledToFit()
         }
     }
 }

@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace GroceryApp.Admin.Controllers;
 
-[AdminAuth]
+[AdminAuth("Admin")]
 public class UsersController : Controller
 {
     private readonly ApiClient _apiClient;
@@ -29,6 +29,26 @@ public class UsersController : Controller
         ViewBag.Search = search;
         ViewBag.CurrentPage = page;
         return View(result);
+    }
+
+    public async Task<IActionResult> Create()
+    {
+        ViewBag.AvailableRoles = await _apiClient.GetAsync<List<string>>("/api/users/roles") ?? [];
+        return View(new CreateUserModel());
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create(CreateUserModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            ViewBag.AvailableRoles = await _apiClient.GetAsync<List<string>>("/api/users/roles") ?? [];
+            return View(model);
+        }
+
+        await _apiClient.PostAsync<CreateUserModel, UserModel>("/api/users", model);
+        TempData["SuccessMessage"] = "User created.";
+        return RedirectToAction(nameof(Index));
     }
 
     // ── Detail (profile hub) ───────────────────────────────────────────────────
@@ -60,6 +80,7 @@ public class UsersController : Controller
             .Where(v => v.IsActive && v.ExpiryDate > DateTime.UtcNow).ToList();
         ViewBag.ActiveTab    = NormalizeTab(tab);
         ViewBag.LoadErrors   = loadErrors;
+        ViewBag.AvailableRoles = await LoadOptionalAsync<List<string>>("/api/users/roles", "available roles", loadErrors) ?? [];
 
         return View(user);
     }
@@ -263,6 +284,14 @@ public class UsersController : Controller
         }
 
         return RedirectToAction(nameof(Detail), new { id, tab = "notifications" });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateRoles(Guid id, List<string> roles)
+    {
+        await _apiClient.PutAsync<object, UserModel>($"/api/users/{id}/roles", new { roles });
+        TempData["SuccessMessage"] = "User roles updated.";
+        return RedirectToAction(nameof(Detail), new { id });
     }
 
     private static string NormalizeTab(string? tab) => tab switch

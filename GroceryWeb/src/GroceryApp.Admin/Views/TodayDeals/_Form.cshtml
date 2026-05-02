@@ -1,0 +1,46 @@
+@model dynamic
+@{
+    var products = (ViewBag.Products as PagedResultModel<ProductModel>)?.Items ?? [];
+}
+
+<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <label class="form-label">Product</label>
+        <select name="ProductId" class="form-select" required>
+            <option value="">Select product</option>
+            @foreach (var product in products)
+            {
+                var isSelected = Model.ProductId != null && product.Id == Model.ProductId;
+                if (isSelected)
+                {
+                    <option value="@product.Id" selected>@product.Name</option>
+                }
+                else
+                {
+                    <option value="@product.Id">@product.Name</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Sort Order</label>
+        <input name="SortOrder" type="number" class="form-control" value="@Model.SortOrder" required />
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Active</label>
+        <select name="IsActive" class="form-select">
+            @if (Model.IsActive == true)
+            {
+                <option value="true" selected>Yes</option>
+                <option value="false">No</option>
+            }
+            else
+            {
+                <option value="true">Yes</option>
+                <option value="false" selected>No</option>
+            }
+        </select>
+    </div>
+</div>

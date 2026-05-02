@@ -3,6 +3,7 @@ namespace GroceryApp.Application.DTOs.Products;
 public class ProductDto
 {
     public Guid Id { get; set; }
+    public Guid? OwnerUserId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public decimal Price { get; set; }
@@ -81,4 +82,5 @@ public class ProductQueryParams
     public string? SortBy { get; set; } // name, price, newest
     public bool SortDescending { get; set; }
     public bool IncludeInactive { get; set; }
+    public Guid? OwnerUserId { get; set; }
 }

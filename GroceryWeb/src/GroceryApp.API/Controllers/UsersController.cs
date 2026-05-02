@@ -48,6 +48,26 @@ public class UsersController : ControllerBase
         return result ? Ok() : NotFound();
     }
 
+    [HttpGet("roles")]
+    public async Task<IActionResult> GetRoles()
+    {
+        return Ok(await _userService.GetAvailableRolesAsync());
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
+    {
+        var user = await _userService.CreateUserAsync(request);
+        return Ok(user);
+    }
+
+    [HttpPut("{id:guid}/roles")]
+    public async Task<IActionResult> UpdateRoles(Guid id, [FromBody] UpdateUserRolesRequest request)
+    {
+        var user = await _userService.UpdateUserRolesAsync(id, request);
+        return user is null ? NotFound() : Ok(user);
+    }
+
     // ── Verification ───────────────────────────────────────────────────────────
 
     [HttpPost("{id:guid}/set-email-verified")]

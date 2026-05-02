@@ -2,6 +2,7 @@ using GroceryApp.Application.DTOs.Products;
 using GroceryApp.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace GroceryApp.API.Controllers;
 
@@ -21,6 +22,10 @@ public class ProductsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] ProductQueryParams queryParams)
     {
+        if (User.IsInRole("StoreOwner"))
+        {
+            queryParams.OwnerUserId = GetCurrentUserId();
+        }
         var result = await _productService.GetAllAsync(queryParams);
         return Ok(result);
     }
@@ -28,7 +33,7 @@ public class ProductsController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var product = await _productService.GetByIdAsync(id);
+        var product = await _productService.GetByIdAsync(id, User.IsInRole("StoreOwner") ? GetCurrentUserId() : null);
         return product is null ? NotFound() : Ok(product);
     }
 
@@ -48,26 +53,26 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff,StoreOwner")]
     public async Task<IActionResult> Create([FromBody] CreateProductRequest request)
     {
-        var product = await _productService.CreateAsync(request);
+        var product = await _productService.CreateAsync(request, User.IsInRole("StoreOwner") ? GetCurrentUserId() : null);
         return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff,StoreOwner")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateProductRequest request)
     {
-        var product = await _productService.UpdateAsync(id, request);
+        var product = await _productService.UpdateAsync(id, request, User.IsInRole("StoreOwner") ? GetCurrentUserId() : null);
         return product is null ? NotFound() : Ok(product);
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff,StoreOwner")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var result = await _productService.DeleteAsync(id);
+        var result = await _productService.DeleteAsync(id, User.IsInRole("StoreOwner") ? GetCurrentUserId() : null);
         return result ? NoContent() : NotFound();
     }
 
@@ -75,7 +80,7 @@ public class ProductsController : ControllerBase
     /// Upload multiple product images. Returns the generated URLs.
     /// </summary>
     [HttpPost("images/upload")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff,StoreOwner")]
     [RequestSizeLimit(50 * 1024 * 1024)] // 50 MB
     public async Task<IActionResult> UploadImages([FromForm] List<IFormFile> files)
     {
@@ -114,5 +119,11 @@ public class ProductsController : ControllerBase
         }
 
         return Ok(new { urls = uploadedUrls });
+    }
+
+    private Guid? GetCurrentUserId()
+    {
+        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(claim, out var userId) ? userId : null;
     }
 }

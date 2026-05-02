@@ -30,14 +30,19 @@ public class ProductService : IProductService
         _appBaseUrl = (configuration["App:BaseUrl"] ?? "").TrimEnd('/');
     }
 
-    public async Task<ProductDto?> GetByIdAsync(Guid id)
+    public async Task<ProductDto?> GetByIdAsync(Guid id, Guid? ownerUserId = null)
     {
-        var product = await _productRepo.Query()
+        var query = _productRepo.Query()
             .Include(p => p.Category)
             .Include(p => p.ProductCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.Images)
             .Include(p => p.Reviews)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .AsQueryable();
+
+        if (ownerUserId.HasValue)
+            query = query.Where(p => p.OwnerUserId == ownerUserId.Value);
+
+        var product = await query.FirstOrDefaultAsync(p => p.Id == id);
 
         return product is null ? null : MapToDto(product);
     }
@@ -64,6 +69,9 @@ public class ProductService : IProductService
         if (queryParams.CategoryId.HasValue)
             query = query.Where(p => p.CategoryId == queryParams.CategoryId.Value
                 || p.ProductCategories.Any(pc => pc.CategoryId == queryParams.CategoryId.Value));
+
+        if (queryParams.OwnerUserId.HasValue)
+            query = query.Where(p => p.OwnerUserId == queryParams.OwnerUserId.Value);
 
         if (queryParams.MinPrice.HasValue)
             query = query.Where(p => p.Price >= queryParams.MinPrice.Value);
@@ -120,10 +128,11 @@ public class ProductService : IProductService
         };
     }
 
-    public async Task<ProductDto> CreateAsync(CreateProductRequest request)
+    public async Task<ProductDto> CreateAsync(CreateProductRequest request, Guid? ownerUserId = null)
     {
         var product = new Product
         {
+            OwnerUserId = ownerUserId,
             Name = request.Name,
             Description = request.Description,
             Price = request.Price,
@@ -153,15 +162,20 @@ public class ProductService : IProductService
         await _productRepo.AddAsync(product);
         await _unitOfWork.SaveChangesAsync();
 
-        return (await GetByIdAsync(product.Id))!;
+        return (await GetByIdAsync(product.Id, ownerUserId))!;
     }
 
-    public async Task<ProductDto?> UpdateAsync(Guid id, UpdateProductRequest request)
+    public async Task<ProductDto?> UpdateAsync(Guid id, UpdateProductRequest request, Guid? ownerUserId = null)
     {
-        var product = await _productRepo.Query()
+        var query = _productRepo.Query()
             .Include(p => p.Images)
             .Include(p => p.ProductCategories)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .AsQueryable();
+
+        if (ownerUserId.HasValue)
+            query = query.Where(p => p.OwnerUserId == ownerUserId.Value);
+
+        var product = await query.FirstOrDefaultAsync(p => p.Id == id);
 
         if (product is null) return null;
 
@@ -225,12 +239,15 @@ public class ProductService : IProductService
 
         await _unitOfWork.SaveChangesAsync();
 
-        return (await GetByIdAsync(product.Id))!;
+        return (await GetByIdAsync(product.Id, ownerUserId))!;
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(Guid id, Guid? ownerUserId = null)
     {
-        var product = await _productRepo.GetByIdAsync(id);
+        var query = _productRepo.Query().AsQueryable();
+        if (ownerUserId.HasValue)
+            query = query.Where(p => p.OwnerUserId == ownerUserId.Value);
+        var product = await query.FirstOrDefaultAsync(p => p.Id == id);
         if (product is null) return false;
 
         product.IsActive = false;
@@ -245,6 +262,7 @@ public class ProductService : IProductService
         return new ProductDto
         {
             Id = product.Id,
+            OwnerUserId = product.OwnerUserId,
             Name = product.Name,
             Description = product.Description,
             Price = product.Price,

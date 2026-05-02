@@ -17,7 +17,7 @@ public static class SeedData
         await context.Database.MigrateAsync();
 
         // Seed roles
-        string[] roles = ["Admin", "User"];
+        string[] roles = ["Admin", "Staff", "StoreOwner", "Rider", "Customer"];
         foreach (var role in roles)
         {
             if (!await roleManager.RoleExistsAsync(role))

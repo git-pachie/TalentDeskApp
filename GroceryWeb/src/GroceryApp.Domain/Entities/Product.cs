@@ -3,6 +3,7 @@ namespace GroceryApp.Domain.Entities;
 public class Product
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? OwnerUserId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public decimal Price { get; set; }
@@ -15,6 +16,7 @@ public class Product
     public DateTime? UpdatedAt { get; set; }
 
     // Navigation
+    public User? OwnerUser { get; set; }
     public Category Category { get; set; } = null!;
     public ICollection<ProductCategory> ProductCategories { get; set; } = [];
     public ICollection<ProductImage> Images { get; set; } = [];

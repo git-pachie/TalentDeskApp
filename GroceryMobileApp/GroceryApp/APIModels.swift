@@ -522,12 +522,22 @@ struct PaymentResultDTO: Decodable {
 
 struct SpecialOfferDTO: Decodable, Identifiable {
     let id: UUID
+    let categoryId: UUID?
     let title: String
     let subtitle: String
     let emoji: String
+    let imageUrl: String?
     let backgroundColorHex: String
     let sortOrder: Int
     let isActive: Bool
+}
+
+struct TodayDealDTO: Decodable, Identifiable {
+    let id: UUID
+    let productId: UUID
+    let sortOrder: Int
+    let isActive: Bool
+    let product: ProductDTO
 }
 
 // MARK: - Notifications

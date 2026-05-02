@@ -1,6 +1,7 @@
 @model dynamic
 
 @{
+    var categories = ViewBag.Categories as List<CategoryModel> ?? [];
     var emojiChoices = new[]
     {
         "🥕🍅🥦", "🌽🥬🥒", "🍆🫑🥔", "🥗🌿🥒", "🧄🧅🥕",
@@ -65,6 +66,39 @@
         </select>
     </div>
     <div class="col-md-4">
+        <label class="form-label">Promo Category</label>
+        <select name="CategoryId" class="form-select">
+            <option value="">None</option>
+            @foreach (var category in categories)
+            {
+                var isSelected = Model.CategoryId != null && category.Id == Model.CategoryId;
+                if (isSelected)
+                {
+                    <option value="@category.Id" selected>@category.Name</option>
+                }
+                else
+                {
+                    <option value="@category.Id">@category.Name</option>
+                }
+            }
+        </select>
+        <div class="form-text">Choosing a category makes the mobile promo jump into that category.</div>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Promo Image</label>
+        <input type="hidden" id="imageUrlInput" name="ImageUrl" value="@Model.ImageUrl" />
+        <div class="d-flex align-items-center gap-2">
+            <input id="imageUploadInput" type="file" class="form-control" accept="image/*" />
+            <button id="uploadImageButton" type="button" class="btn btn-outline-secondary">
+                <i class="bi bi-upload"></i>
+            </button>
+        </div>
+        <div class="form-text">Upload a banner image for the promo card.</div>
+        <div class="mt-2">
+            <img id="imagePreview" src="@Model.ImageUrl" alt="Promo image preview" class="rounded border @(string.IsNullOrWhiteSpace((string?)Model.ImageUrl) ? "d-none" : "")" style="width:120px;height:80px;object-fit:cover;" />
+        </div>
+    </div>
+    <div class="col-md-4">
         <label class="form-label">Background Color</label>
         <input type="hidden" id="backgroundColorHex" name="BackgroundColorHex" value="@selectedColor" />
         <div class="input-group">
@@ -126,6 +160,10 @@
         const backgroundColorInput = document.getElementById('backgroundColorHex');
         const backgroundColorSelect = document.getElementById('backgroundColorSelect');
         const backgroundColorPreview = document.getElementById('backgroundColorPreview');
+        const imageInput = document.getElementById('imageUploadInput');
+        const uploadButton = document.getElementById('uploadImageButton');
+        const imageUrlInput = document.getElementById('imageUrlInput');
+        const imagePreview = document.getElementById('imagePreview');
         if (!emojiInput || !emojiPreview || !emojiModalElement || !backgroundColorInput || !backgroundColorSelect || !backgroundColorPreview) {
             return;
         }
@@ -153,6 +191,35 @@
 
         backgroundColorSelect.addEventListener('change', (event) => {
             setBackgroundColor(event.target.value);
+        });
+
+        uploadButton?.addEventListener('click', async () => {
+            const file = imageInput?.files?.[0];
+            if (!file) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('files', file);
+            uploadButton.disabled = true;
+
+            try {
+                const response = await fetch('@Url.Action("UploadImages", "SpecialOffers")', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                const uploaded = result.urls?.[0];
+                if (!uploaded) {
+                    return;
+                }
+
+                imageUrlInput.value = uploaded;
+                imagePreview.src = uploaded.startsWith('http') ? uploaded : `/image-proxy?url=${encodeURIComponent(uploaded)}`;
+                imagePreview.classList.remove('d-none');
+            } finally {
+                uploadButton.disabled = false;
+            }
         });
 
         setEmoji(emojiInput.value);

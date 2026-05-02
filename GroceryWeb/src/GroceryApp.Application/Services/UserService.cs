@@ -107,6 +107,58 @@ public class UserService : IUserService
         return true;
     }
 
+    public Task<IEnumerable<string>> GetAvailableRolesAsync()
+    {
+        IEnumerable<string> roles = ["Admin", "Staff", "StoreOwner", "Rider", "Customer"];
+        return Task.FromResult(roles);
+    }
+
+    public async Task<UserDto> CreateUserAsync(CreateUserRequest request)
+    {
+        var user = new User
+        {
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Email = request.Email,
+            UserName = request.Email,
+            PhoneNumber = request.PhoneNumber,
+            IsEmailVerified = request.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase)
+        };
+
+        var result = await _userManager.CreateAsync(user, request.Password);
+        if (!result.Succeeded)
+            throw new InvalidOperationException(string.Join(" ", result.Errors.Select(e => e.Description)));
+
+        var roles = request.Roles.Count > 0 ? request.Roles.Distinct(StringComparer.OrdinalIgnoreCase).ToArray() : ["Customer"];
+        var addRoleResult = await _userManager.AddToRolesAsync(user, roles);
+        if (!addRoleResult.Succeeded)
+            throw new InvalidOperationException(string.Join(" ", addRoleResult.Errors.Select(e => e.Description)));
+
+        return MapToDto(user, roles, 0);
+    }
+
+    public async Task<UserDto?> UpdateUserRolesAsync(Guid userId, UpdateUserRolesRequest request)
+    {
+        var user = await _userManager.Users.Include(u => u.Orders).FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return null;
+
+        var currentRoles = await _userManager.GetRolesAsync(user);
+        var desiredRoles = request.Roles.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+
+        var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+        if (!removeResult.Succeeded)
+            throw new InvalidOperationException(string.Join(" ", removeResult.Errors.Select(e => e.Description)));
+
+        if (desiredRoles.Length > 0)
+        {
+            var addResult = await _userManager.AddToRolesAsync(user, desiredRoles);
+            if (!addResult.Succeeded)
+                throw new InvalidOperationException(string.Join(" ", addResult.Errors.Select(e => e.Description)));
+        }
+
+        return MapToDto(user, desiredRoles, user.Orders.Count);
+    }
+
     // ── Addresses ──────────────────────────────────────────────────────────────
 
     public async Task<IEnumerable<AddressDto>> GetUserAddressesAsync(Guid userId)

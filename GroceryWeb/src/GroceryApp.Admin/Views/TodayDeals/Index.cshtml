@@ -1,0 +1,43 @@
+@model List<TodayDealModel>
+@{
+    ViewData["Title"] = "Today's Deals";
+}
+
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-lightning-charge-fill me-2 text-primary"></i>Today's Deals</h2>
+        <p class="text-muted mb-0" style="font-size:0.85rem;">Manage the products shown in the Home deals section</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Add Deal</a>
+</div>
+
+<div class="card data-card">
+    <table class="table data-table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Sort</th>
+                <th>Status</th>
+                <th>Updated</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var deal in Model.OrderBy(d => d.SortOrder))
+        {
+            <tr>
+                <td class="fw-semibold">@deal.Product.Name</td>
+                <td>@deal.SortOrder</td>
+                <td>@(deal.IsActive ? "Active" : "Inactive")</td>
+                <td>@deal.UpdatedAt.ToString("MMM dd, yyyy HH:mm")</td>
+                <td class="text-end">
+                    <a asp-action="Edit" asp-route-id="@deal.Id" class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></a>
+                    <form asp-action="Delete" asp-route-id="@deal.Id" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this deal?')"><i class="bi bi-trash"></i></button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

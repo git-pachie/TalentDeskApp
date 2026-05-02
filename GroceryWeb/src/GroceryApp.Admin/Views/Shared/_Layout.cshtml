@@ -22,6 +22,11 @@
     <link href="~/css/grocery-theme.css?v=@DateTime.Now.Ticks" rel="stylesheet">
 </head>
 <body>
+    @{
+        var sessionRoles = (Context.Session.GetString("UserRoles") ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var canManageUsers = sessionRoles.Contains("Admin");
+    }
     @if (Context.Session.GetString("JwtToken") != null)
     {
         <!-- Header -->
@@ -72,7 +77,7 @@
                                 <img src="https://ui-avatars.com/api/?name=@(Context.Session.GetString("UserName")?.Replace(" ", "+") ?? "Admin")&background=059669&color=fff" alt="User" class="user-avatar">
                                 <div class="user-info">
                                     <h6>@Context.Session.GetString("UserName")</h6>
-                                    <span>Administrator</span>
+                                    <span>@(sessionRoles.FirstOrDefault() ?? "User")</span>
                                 </div>
                             </li>
                             <li><hr class="dropdown-divider"></li>
@@ -149,6 +154,13 @@
                     </li>
 
                     <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "TodayDeals" ? "active" : "")" asp-controller="TodayDeals" asp-action="Index" data-tooltip="Today's Deals">
+                            <i class="ph-duotone ph-lightning"></i>
+                            <span>Today's Deals</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "SpecialOffers" ? "active" : "")" asp-controller="SpecialOffers" asp-action="Index" data-tooltip="Special Offers">
                             <i class="ph-duotone ph-megaphone"></i>
                             <span>Special Offers</span>
@@ -158,12 +170,15 @@
                     <!-- Users -->
                     <li class="nav-heading"><span>Users</span></li>
 
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Users" ? "active" : "")" asp-controller="Users" asp-action="Index" data-tooltip="Users">
-                            <i class="ph-duotone ph-users"></i>
-                            <span>Users</span>
-                        </a>
-                    </li>
+                    @if (canManageUsers)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Users" ? "active" : "")" asp-controller="Users" asp-action="Index" data-tooltip="Users">
+                                <i class="ph-duotone ph-users"></i>
+                                <span>Users</span>
+                            </a>
+                        </li>
+                    }
                 </ul>
             </nav>
         </aside>

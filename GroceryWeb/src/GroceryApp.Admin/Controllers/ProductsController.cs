@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace GroceryApp.Admin.Controllers;
 
-[AdminAuth]
+[AdminAuth("Admin", "Staff", "StoreOwner")]
 public class ProductsController : Controller
 {
     private readonly ApiClient _apiClient;

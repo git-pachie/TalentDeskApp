@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GroceryApp.Admin.Controllers;
 
-[AdminAuth]
+[AdminAuth("Admin", "StoreOwner")]
 public class SpecialOffersController : Controller
 {
     private readonly ApiClient _apiClient;
@@ -30,12 +30,38 @@ public class SpecialOffersController : Controller
         }
     }
 
-    public IActionResult Create() => View(new CreateSpecialOfferModel());
+    public async Task<IActionResult> Create()
+    {
+        ViewBag.Categories = await _apiClient.GetAsync<List<CategoryModel>>("/api/categories") ?? [];
+        return View(new CreateSpecialOfferModel());
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UploadImages(List<IFormFile> files)
+    {
+        if (files is null || files.Count == 0)
+            return Json(new { urls = Array.Empty<string>() });
+
+        using var content = new MultipartFormDataContent();
+        foreach (var file in files)
+        {
+            var streamContent = new StreamContent(file.OpenReadStream());
+            streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+            content.Add(streamContent, "files", file.FileName);
+        }
+
+        var result = await _apiClient.PostMultipartAsync<UploadResultModel>("/api/special-offers/images/upload", content);
+        return Json(result ?? new UploadResultModel());
+    }
 
     [HttpPost]
     public async Task<IActionResult> Create(CreateSpecialOfferModel model)
     {
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Categories = await _apiClient.GetAsync<List<CategoryModel>>("/api/categories") ?? [];
+            return View(model);
+        }
         try
         {
             await _apiClient.PostAsync<CreateSpecialOfferModel, SpecialOfferModel>("/api/special-offers", model);
@@ -54,11 +80,14 @@ public class SpecialOffersController : Controller
         try
         {
             var offer = await _apiClient.GetAsync<SpecialOfferModel>($"/api/special-offers/{id}");
+            ViewBag.Categories = await _apiClient.GetAsync<List<CategoryModel>>("/api/categories") ?? [];
             return offer is null ? NotFound() : View(new UpdateSpecialOfferModel
             {
+                CategoryId = offer.CategoryId,
                 Title = offer.Title,
                 Subtitle = offer.Subtitle,
                 Emoji = offer.Emoji,
+                ImageUrl = offer.ImageUrl,
                 BackgroundColorHex = offer.BackgroundColorHex,
                 SortOrder = offer.SortOrder,
                 IsActive = offer.IsActive
@@ -74,7 +103,11 @@ public class SpecialOffersController : Controller
     [HttpPost]
     public async Task<IActionResult> Edit(Guid id, UpdateSpecialOfferModel model)
     {
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Categories = await _apiClient.GetAsync<List<CategoryModel>>("/api/categories") ?? [];
+            return View(model);
+        }
         try
         {
             await _apiClient.PutAsync<UpdateSpecialOfferModel, SpecialOfferModel>($"/api/special-offers/{id}", model);
