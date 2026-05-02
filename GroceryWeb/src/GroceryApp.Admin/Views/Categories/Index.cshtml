@@ -6,17 +6,26 @@
 <div class="page-header">
     <div>
         <h2><i class="bi bi-tags-fill me-2 text-primary"></i>Categories</h2>
-        <p class="text-muted mb-0" style="font-size: 0.85rem;">Organize your product catalog</p>
+        <p class="text-muted mb-0" style="font-size:0.85rem;">Organize your product catalog</p>
     </div>
     <a asp-action="Create" class="btn btn-primary">
         <i class="bi bi-plus-lg me-1"></i> Add Category
     </a>
 </div>
 
+@if (TempData["Success"] is string msg)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@msg
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
 <div class="card data-card">
     <table class="table data-table">
         <thead>
             <tr>
+                <th style="width:60px;">Emoji</th>
                 <th>Category</th>
                 <th>Description</th>
                 <th>Products</th>
@@ -27,16 +36,26 @@
         <tbody>
             @if (Model != null && Model.Count > 0)
             {
-                @foreach (var category in Model)
+                @foreach (var cat in Model)
                 {
                     <tr>
-                        <td class="fw-semibold">@category.Name</td>
-                        <td class="text-muted">@(category.Description ?? "—")</td>
                         <td>
-                            <span class="badge bg-primary-subtle text-primary rounded-pill">@category.ProductCount</span>
+                            <button class="btn btn-sm btn-outline-secondary emoji-pick-btn"
+                                    style="font-size:1.4rem;width:44px;height:44px;padding:0;border-radius:10px;"
+                                    data-id="@cat.Id"
+                                    data-current="@(cat.Emoji ?? "")"
+                                    title="Change emoji"
+                                    onclick="openEmojiPicker(this)">
+                                @(string.IsNullOrEmpty(cat.Emoji) ? "➕" : cat.Emoji)
+                            </button>
                         </td>
-                        <td>
-                            @if (category.IsActive)
+                        <td class="fw-semibold align-middle">@cat.Name</td>
+                        <td class="text-muted align-middle">@(cat.Description ?? "—")</td>
+                        <td class="align-middle">
+                            <span class="badge bg-primary-subtle text-primary rounded-pill">@cat.ProductCount</span>
+                        </td>
+                        <td class="align-middle">
+                            @if (cat.IsActive)
                             {
                                 <span class="badge badge-status bg-success-subtle text-success">Active</span>
                             }
@@ -45,10 +64,13 @@
                                 <span class="badge badge-status bg-secondary-subtle text-secondary">Inactive</span>
                             }
                         </td>
-                        <td class="text-end">
-                            <form asp-action="Delete" asp-route-id="@category.Id" method="post" class="d-inline">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"
-                                        onclick="return confirm('Delete this category?')">
+                        <td class="text-end align-middle">
+                            <a asp-action="Edit" asp-route-id="@cat.Id" class="btn btn-xs btn-outline-primary me-1" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form asp-action="Delete" asp-route-id="@cat.Id" method="post" class="d-inline"
+                                  onsubmit="return confirm('Delete category &quot;@cat.Name&quot;?')">
+                                <button type="submit" class="btn btn-xs btn-outline-danger" title="Delete">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </form>
@@ -59,7 +81,7 @@
             else
             {
                 <tr>
-                    <td colspan="5">
+                    <td colspan="6">
                         <div class="empty-state">
                             <i class="bi bi-tags"></i>
                             <p>No categories found.</p>
@@ -70,3 +92,44 @@
         </tbody>
     </table>
 </div>
+
+<!-- ===== Emoji Picker Modal ===== -->
+@await Html.PartialAsync("_EmojiPickerModal")
+
+@section Scripts {
+<script>
+let _activeCategoryId = null;
+let _activeBtn = null;
+
+function openEmojiPicker(btn) {
+    _activeCategoryId = btn.dataset.id;
+    _activeBtn = btn;
+    document.getElementById('emojiSearchInput').value = '';
+    document.getElementById('emojiCustomInput').value = '';
+    renderEmojiGrid(EMOJIS);
+    new bootstrap.Modal(document.getElementById('emojiPickerModal')).show();
+}
+
+// Called by the shared partial when an emoji is selected
+function onEmojiSelected(emoji) {
+    if (!_activeCategoryId || !_activeBtn) return;
+
+    _activeBtn.textContent = emoji;
+
+    fetch(`/Categories/SetEmoji/${_activeCategoryId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emoji: emoji })
+    }).then(r => {
+        if (!r.ok) {
+            console.error('Failed to save emoji', r.status);
+            _activeBtn.textContent = _activeBtn.dataset.current || '➕';
+        } else {
+            _activeBtn.dataset.current = emoji;
+        }
+    }).catch(() => {
+        _activeBtn.textContent = _activeBtn.dataset.current || '➕';
+    });
+}
+</script>
+}

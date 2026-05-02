@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AppNavigationStore.self) private var navigationStore
     @Environment(ProductStore.self) private var productStore
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showingAddressPicker = false
     @State private var selectedAddressIndex = 0
     @State private var specialOffersRenderID = UUID()
@@ -12,9 +13,6 @@ struct HomeView: View {
     ]
     private let adaptiveProductColumns = [
         GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 12)
-    ]
-    private let adaptiveCategoryColumns = [
-        GridItem(.adaptive(minimum: 76, maximum: 110), spacing: 12)
     ]
 
     private var currentAddress: (label: String, address: String, contact: String, instructions: String) {
@@ -249,14 +247,18 @@ struct HomeView: View {
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .fill(banner.color)
 
+                        // Dark mode overlay — darkens light pastel backgrounds for contrast
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color.black.opacity(colorScheme == .dark ? 0.45 : 0))
+
                         HStack {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(banner.title)
                                     .font(.title3.weight(.bold))
-                                    .foregroundStyle(GroceryTheme.title)
+                                    .foregroundStyle(colorScheme == .dark ? Color.white : GroceryTheme.title)
                                 Text(banner.subtitle)
                                     .font(.caption)
-                                    .foregroundStyle(GroceryTheme.subtitle)
+                                    .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.85) : GroceryTheme.subtitle)
                                 Button("Shop Now") {
                                     if let categoryId = banner.categoryId,
                                        let category = productStore.categories.first(where: { $0.id == categoryId }) {
@@ -323,30 +325,34 @@ struct HomeView: View {
                     .foregroundStyle(GroceryTheme.primary)
             }
 
-            LazyVGrid(columns: adaptiveCategoryColumns, spacing: 14) {
-                ForEach(productStore.categories.isEmpty ? SampleData.categories : productStore.categories) { cat in
-                    Button {
-                        navigationStore.pendingCategorySelection = cat
-                        navigationStore.selectedTab = 1
-                    } label: {
-                        VStack(spacing: 6) {
-                            ZStack {
-                                Circle()
-                                    .fill(GroceryTheme.primaryLight)
-                                    .frame(width: 52, height: 52)
-                                Text(cat.emoji)
-                                    .font(.title2)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    ForEach(productStore.categories.isEmpty ? SampleData.categories : productStore.categories) { cat in
+                        Button {
+                            navigationStore.pendingCategorySelection = cat
+                            navigationStore.selectedTab = 1
+                        } label: {
+                            VStack(spacing: 6) {
+                                ZStack {
+                                    Circle()
+                                        .fill(GroceryTheme.primaryLight)
+                                        .frame(width: 56, height: 56)
+                                    Text(cat.emoji)
+                                        .font(.title2)
+                                }
+                                Text(cat.name)
+                                    .font(.caption2)
+                                    .foregroundStyle(GroceryTheme.subtitle)
+                                    .lineLimit(1)
+                                    .frame(width: 64)
+                                    .multilineTextAlignment(.center)
                             }
-                            Text(cat.name)
-                                .font(.caption2)
-                                .foregroundStyle(GroceryTheme.subtitle)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.center)
                         }
-                        .frame(maxWidth: .infinity)
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal, 2)
+                .padding(.vertical, 4)
             }
         }
     }

@@ -1,0 +1,85 @@
+<!-- Emoji Picker Modal — shared partial -->
+<div class="modal fade" id="emojiPickerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content">
+            <div class="modal-header border-bottom-0 pb-1">
+                <h6 class="modal-title fw-bold"><i class="bi bi-emoji-smile me-2 text-primary"></i>Pick an Emoji</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <input type="text" id="emojiSearchInput" class="form-control form-control-sm mb-3"
+                       placeholder="Search emoji…" oninput="filterEmojis(this.value)" />
+
+                <div id="emojiGrid"
+                     style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;max-height:280px;overflow-y:auto;">
+                </div>
+
+                <div class="mt-3 d-flex gap-2 align-items-center">
+                    <input type="text" id="emojiCustomInput" class="form-control form-control-sm"
+                           placeholder="Or paste any emoji…" maxlength="8" style="font-size:1.2rem;" />
+                    <button class="btn btn-sm btn-primary" onclick="applyCustomEmoji()">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const EMOJIS = [
+    { e:"🍎", k:"apple fruit" }, { e:"🍊", k:"orange citrus" }, { e:"🍋", k:"lemon citrus" },
+    { e:"🍇", k:"grapes fruit" }, { e:"🍓", k:"strawberry fruit" }, { e:"🍒", k:"cherry fruit" },
+    { e:"🍑", k:"peach fruit" }, { e:"🍍", k:"pineapple tropical" }, { e:"🥭", k:"mango tropical" },
+    { e:"🍌", k:"banana fruit" }, { e:"🍉", k:"watermelon fruit" }, { e:"🍈", k:"melon fruit" },
+    { e:"🥝", k:"kiwi fruit" }, { e:"🫐", k:"blueberry fruit" }, { e:"🍐", k:"pear fruit" },
+    { e:"🥕", k:"carrot vegetable" }, { e:"🥦", k:"broccoli vegetable" }, { e:"🥬", k:"lettuce vegetable" },
+    { e:"🌽", k:"corn vegetable" }, { e:"🍅", k:"tomato vegetable" }, { e:"🥑", k:"avocado vegetable" },
+    { e:"🫑", k:"pepper vegetable" }, { e:"🧅", k:"onion vegetable" }, { e:"🧄", k:"garlic vegetable" },
+    { e:"🥔", k:"potato vegetable" }, { e:"🍆", k:"eggplant vegetable" }, { e:"🥒", k:"cucumber vegetable" },
+    { e:"🌶️", k:"chili pepper spicy" }, { e:"🫛", k:"peas vegetable" }, { e:"🥜", k:"peanut nut" },
+    { e:"🥩", k:"meat beef steak" }, { e:"🍗", k:"chicken poultry" }, { e:"🍖", k:"pork ribs meat" },
+    { e:"🥚", k:"egg dairy" }, { e:"🦐", k:"shrimp seafood" }, { e:"🦞", k:"lobster seafood" },
+    { e:"🦀", k:"crab seafood" }, { e:"🐟", k:"fish seafood" }, { e:"🦑", k:"squid seafood" },
+    { e:"🦪", k:"oyster seafood" }, { e:"🍣", k:"sushi seafood" },
+    { e:"🧀", k:"cheese dairy" }, { e:"🥛", k:"milk dairy" }, { e:"🧈", k:"butter dairy" },
+    { e:"🍞", k:"bread bakery" }, { e:"🥐", k:"croissant bakery" }, { e:"🥖", k:"baguette bakery" },
+    { e:"🧁", k:"cupcake bakery sweets" }, { e:"🍰", k:"cake bakery sweets" }, { e:"🍩", k:"donut bakery sweets" },
+    { e:"🍪", k:"cookie bakery sweets" }, { e:"🥞", k:"pancake bakery" },
+    { e:"🥤", k:"drink beverage soda" }, { e:"☕", k:"coffee drink" }, { e:"🧃", k:"juice drink" },
+    { e:"🍵", k:"tea drink" }, { e:"🧋", k:"bubble tea drink" }, { e:"🍺", k:"beer drink" },
+    { e:"🍷", k:"wine drink" }, { e:"🥂", k:"champagne drink" }, { e:"🧊", k:"ice frozen" },
+    { e:"🍿", k:"popcorn snack" }, { e:"🍫", k:"chocolate snack sweets" }, { e:"🍬", k:"candy sweets" },
+    { e:"🍭", k:"lollipop sweets" }, { e:"🥫", k:"canned food" }, { e:"🧂", k:"salt condiment" },
+    { e:"🫙", k:"jar condiment" }, { e:"🍯", k:"honey condiment" },
+    { e:"🧴", k:"lotion household" }, { e:"🧻", k:"tissue household" }, { e:"🧼", k:"soap household" },
+    { e:"🪥", k:"toothbrush household" }, { e:"🧹", k:"broom household" }, { e:"🧺", k:"basket household" },
+    { e:"🛒", k:"cart shopping" }, { e:"📦", k:"box package" }, { e:"🌿", k:"herb organic" },
+];
+
+function renderEmojiGrid(list) {
+    document.getElementById('emojiGrid').innerHTML = list.map(item =>
+        `<button type="button" class="btn btn-light p-1"
+                 style="font-size:1.4rem;border-radius:8px;aspect-ratio:1;"
+                 onclick="selectEmoji('${item.e}')">${item.e}</button>`
+    ).join('');
+}
+
+function filterEmojis(q) {
+    const term = q.toLowerCase().trim();
+    renderEmojiGrid(term ? EMOJIS.filter(e => e.k.includes(term) || e.e.includes(term)) : EMOJIS);
+}
+
+function selectEmoji(emoji) {
+    bootstrap.Modal.getInstance(document.getElementById('emojiPickerModal'))?.hide();
+    if (typeof onEmojiSelected === 'function') onEmojiSelected(emoji);
+}
+
+function applyCustomEmoji() {
+    const val = document.getElementById('emojiCustomInput').value.trim();
+    if (val) selectEmoji(val);
+}
+
+// Render on first open
+document.getElementById('emojiPickerModal').addEventListener('show.bs.modal', () => {
+    renderEmojiGrid(EMOJIS);
+});
+</script>

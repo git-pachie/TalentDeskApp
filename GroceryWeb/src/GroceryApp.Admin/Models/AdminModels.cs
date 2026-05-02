@@ -193,6 +193,7 @@ public class CategoryModel
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? ImageUrl { get; set; }
+    public string? Emoji { get; set; }
     public bool IsActive { get; set; }
     public int ProductCount { get; set; }
 }
@@ -266,6 +267,16 @@ public class CreateCategoryModel
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? ImageUrl { get; set; }
+    public string? Emoji { get; set; }
+}
+
+public class UpdateCategoryModel
+{
+    public string? Name { get; set; }
+    public string? Description { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? Emoji { get; set; }
+    public bool? IsActive { get; set; }
 }
 
 public class OrderModel

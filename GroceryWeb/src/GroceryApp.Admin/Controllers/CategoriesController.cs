@@ -21,14 +21,35 @@ public class CategoriesController : Controller
         return View(categories ?? []);
     }
 
-    public IActionResult Create() => View();
+    public IActionResult Create() => View(new CreateCategoryModel());
 
     [HttpPost]
     public async Task<IActionResult> Create(CreateCategoryModel model)
     {
         if (!ModelState.IsValid) return View(model);
-
         await _apiClient.PostAsync<CreateCategoryModel, CategoryModel>("/api/categories", model);
+        TempData["Success"] = "Category created.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    public async Task<IActionResult> Edit(Guid id)
+    {
+        var category = await _apiClient.GetAsync<CategoryModel>($"/api/categories/{id}");
+        if (category is null) return NotFound();
+        return View(category);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Edit(Guid id, UpdateCategoryModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            var category = await _apiClient.GetAsync<CategoryModel>($"/api/categories/{id}");
+            if (category is null) return NotFound();
+            return View(category);
+        }
+        await _apiClient.PutAsync<UpdateCategoryModel, CategoryModel>($"/api/categories/{id}", model);
+        TempData["Success"] = "Category updated.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -38,4 +59,19 @@ public class CategoriesController : Controller
         await _apiClient.DeleteAsync($"/api/categories/{id}");
         return RedirectToAction(nameof(Index));
     }
+
+    // ── Emoji quick-save (called by JS emoji picker) ───────────────────────────
+    [HttpPost]
+    public async Task<IActionResult> SetEmoji(Guid id, [FromBody] SetEmojiRequest request)
+    {
+        var result = await _apiClient.PutAsync<UpdateCategoryModel, CategoryModel>(
+            $"/api/categories/{id}",
+            new UpdateCategoryModel { Emoji = request.Emoji });
+        return result is null ? NotFound() : Ok(new { emoji = result.Emoji });
+    }
+}
+
+public class SetEmojiRequest
+{
+    public string Emoji { get; set; } = string.Empty;
 }

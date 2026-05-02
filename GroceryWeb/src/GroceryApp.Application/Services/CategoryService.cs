@@ -41,7 +41,8 @@ public class CategoryService : ICategoryService
         {
             Name = request.Name,
             Description = request.Description,
-            ImageUrl = request.ImageUrl
+            ImageUrl = request.ImageUrl,
+            Emoji = string.IsNullOrWhiteSpace(request.Emoji) ? null : request.Emoji.Trim()
         };
 
         await _categoryRepo.AddAsync(category);
@@ -58,6 +59,7 @@ public class CategoryService : ICategoryService
         if (request.Name is not null) category.Name = request.Name;
         if (request.Description is not null) category.Description = request.Description;
         if (request.ImageUrl is not null) category.ImageUrl = request.ImageUrl;
+        if (request.Emoji is not null) category.Emoji = string.IsNullOrWhiteSpace(request.Emoji) ? null : request.Emoji.Trim();
         if (request.IsActive.HasValue) category.IsActive = request.IsActive.Value;
 
         _categoryRepo.Update(category);
@@ -84,6 +86,7 @@ public class CategoryService : ICategoryService
             Name = category.Name,
             Description = category.Description,
             ImageUrl = category.ImageUrl,
+            Emoji = category.Emoji,
             IsActive = category.IsActive,
             ProductCount = category.Products?.Count(p => p.IsActive) ?? 0
         };

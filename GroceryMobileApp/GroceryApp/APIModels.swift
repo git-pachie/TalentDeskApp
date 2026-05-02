@@ -75,12 +75,13 @@ struct CategoryDTO: Decodable, Identifiable {
     let name: String
     let description: String?
     let imageUrl: String?
+    let emoji: String?
     let isActive: Bool
     let productCount: Int
 
     /// Map to the app's GroceryCategory
     var asGroceryCategory: GroceryCategory {
-        GroceryCategory(id: id, name: name, emoji: emojiForCategory(name))
+        GroceryCategory(id: id, name: name, emoji: emoji ?? emojiForCategory(name))
     }
 }
 
