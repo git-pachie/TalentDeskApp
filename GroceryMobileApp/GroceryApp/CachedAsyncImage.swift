@@ -1,19 +1,19 @@
+import CryptoKit
 import SwiftUI
 
 struct CachedAsyncImage: View {
     let url: URL?
     let emoji: String
+    let lastModified: Date?
 
     @State private var image: UIImage?
     @State private var isLoading = false
 
-    /// Shared session that trusts self-signed dev certificates (same as APIClient)
-    private static let imageSession: URLSession = {
-        let config = URLSessionConfiguration.default
-        config.urlCache = URLCache.shared
-        config.requestCachePolicy = .returnCacheDataElseLoad
-        return URLSession(configuration: config, delegate: ImageSessionDelegate.shared, delegateQueue: nil)
-    }()
+    init(url: URL?, emoji: String, lastModified: Date? = nil) {
+        self.url = url
+        self.emoji = emoji
+        self.lastModified = lastModified
+    }
 
     var body: some View {
         Group {
@@ -28,49 +28,122 @@ struct CachedAsyncImage: View {
                     .font(.system(size: 72))
             }
         }
-        .task(id: url) {
+        .task(id: cacheTaskKey) {
             guard let url else { return }
-            // Reset when URL changes so the new image loads
-            if image != nil { image = nil }
+            image = nil
             await loadImage(from: url)
         }
+    }
+
+    private var cacheTaskKey: String {
+        "\(url?.absoluteString ?? "nil")|\(lastModified?.timeIntervalSince1970 ?? 0)"
     }
 
     private func loadImage(from url: URL) async {
         isLoading = true
         defer { isLoading = false }
 
-        // Check URLCache first
-        let request = URLRequest(url: url)
-        if let cached = URLCache.shared.cachedResponse(for: request),
-           let uiImage = UIImage(data: cached.data) {
-            self.image = uiImage
+        if let cachedImage = await ProductImageDiskCache.shared.loadImage(for: url, lastModified: lastModified) {
+            image = cachedImage
             return
         }
 
         do {
-            let (data, response) = try await Self.imageSession.data(for: request)
-            if let uiImage = UIImage(data: data) {
-                let cachedResponse = CachedURLResponse(response: response, data: data)
-                URLCache.shared.storeCachedResponse(cachedResponse, for: request)
-                self.image = uiImage
-            }
+            let (data, _) = try await APIClient.shared.trustedSession.data(for: URLRequest(url: url))
+            guard let uiImage = UIImage(data: data) else { return }
+            await ProductImageDiskCache.shared.store(data: data, for: url, lastModified: lastModified)
+            image = uiImage
         } catch {
             print("⚠️ [Image] Failed to load \(url): \(error.localizedDescription)")
         }
     }
 }
 
-/// Delegate that accepts self-signed certificates for image loading in development
-private final class ImageSessionDelegate: NSObject, URLSessionDelegate {
-    static let shared = ImageSessionDelegate()
+actor ProductImageDiskCache {
+    static let shared = ProductImageDiskCache()
 
-    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async
-        -> (URLSession.AuthChallengeDisposition, URLCredential?) {
-        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-           let trust = challenge.protectionSpace.serverTrust {
-            return (.useCredential, URLCredential(trust: trust))
+    private struct CacheEntry: Codable {
+        let fileName: String
+        let lastModified: Date?
+    }
+
+    private let fileManager = FileManager.default
+    private let cacheDirectory: URL
+    private let metadataURL: URL
+    private var metadata: [String: CacheEntry] = [:]
+    private var didLoadMetadata = false
+
+    init() {
+        let baseDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
+            ?? fileManager.temporaryDirectory
+        cacheDirectory = baseDirectory.appendingPathComponent("ProductImageCache", isDirectory: true)
+        metadataURL = cacheDirectory.appendingPathComponent("metadata.json")
+    }
+
+    func loadImage(for url: URL, lastModified: Date?) async -> UIImage? {
+        await ensureLoaded()
+        let key = url.absoluteString
+
+        guard let entry = metadata[key] else { return nil }
+        if let lastModified, entry.lastModified != lastModified {
+            removeEntry(for: key, entry: entry)
+            return nil
         }
-        return (.performDefaultHandling, nil)
+
+        let fileURL = cacheDirectory.appendingPathComponent(entry.fileName)
+        guard let data = try? Data(contentsOf: fileURL),
+              let image = UIImage(data: data) else {
+            removeEntry(for: key, entry: entry)
+            return nil
+        }
+
+        return image
+    }
+
+    func store(data: Data, for url: URL, lastModified: Date?) async {
+        await ensureLoaded()
+        let key = url.absoluteString
+        let fileName = hashedFileName(for: key)
+        let fileURL = cacheDirectory.appendingPathComponent(fileName)
+
+        do {
+            try fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true, attributes: nil)
+            try data.write(to: fileURL, options: .atomic)
+            metadata[key] = CacheEntry(fileName: fileName, lastModified: lastModified)
+            try persistMetadata()
+        } catch {
+            print("⚠️ [ImageCache] Failed to store \(url): \(error.localizedDescription)")
+        }
+    }
+
+    private func ensureLoaded() async {
+        guard !didLoadMetadata else { return }
+        didLoadMetadata = true
+
+        do {
+            try fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true, attributes: nil)
+            guard fileManager.fileExists(atPath: metadataURL.path) else { return }
+            let data = try Data(contentsOf: metadataURL)
+            metadata = try JSONDecoder().decode([String: CacheEntry].self, from: data)
+        } catch {
+            metadata = [:]
+        }
+    }
+
+    private func persistMetadata() throws {
+        let data = try JSONEncoder().encode(metadata)
+        try data.write(to: metadataURL, options: .atomic)
+    }
+
+    private func removeEntry(for key: String, entry: CacheEntry) {
+        let fileURL = cacheDirectory.appendingPathComponent(entry.fileName)
+        try? fileManager.removeItem(at: fileURL)
+        metadata.removeValue(forKey: key)
+        try? persistMetadata()
+    }
+
+    private func hashedFileName(for key: String) -> String {
+        let digest = SHA256.hash(data: Data(key.utf8))
+        return digest.map { String(format: "%02x", $0) }.joined()
     }
 }

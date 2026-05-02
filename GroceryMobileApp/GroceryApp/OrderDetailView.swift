@@ -329,7 +329,7 @@ struct OrderDetailView: View {
                             .frame(width: 44, height: 44)
                             .overlay {
                                 if let urlString = item.productImageUrl, let url = URL(string: urlString) {
-                                    CachedAsyncImage(url: url, emoji: "🛒")
+                                    CachedAsyncImage(url: url, emoji: "🛒", lastModified: item.productImageDateModified)
                                 } else {
                                     Text("🛒").font(.title3)
                                 }

@@ -1,0 +1,28 @@
+@model CreateSpecialOfferModel
+@{
+    ViewData["Title"] = "Add Special Offer";
+}
+
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-plus-circle me-2 text-primary"></i>Add Special Offer</h2>
+        <p class="text-muted mb-0" style="font-size: 0.85rem;">Create a new mobile Home carousel card</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back
+    </a>
+</div>
+
+<form asp-action="Create" method="post">
+    <div class="card form-card">
+        <div class="card-body">
+            @await Html.PartialAsync("_Form", Model)
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-1"></i> Save Offer
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </div>
+    </div>
+</form>

@@ -297,7 +297,7 @@ struct CheckoutView: View {
                             HStack {
                                 Text("G")
                                     .font(.system(.title3, design: .rounded, weight: .bold))
-                                Text("Pay with GCash — $\(Int(total))")
+                                Text("Pay with GCash — \(CurrencyFormatter.peso(Int(total)))")
                                     .font(.system(.subheadline, design: .rounded, weight: .semibold))
                             }
                             .frame(maxWidth: .infinity)
@@ -316,7 +316,7 @@ struct CheckoutView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "creditcard.fill")
-                                Text("Pay with \(paymentMethod) — $\(Int(total))")
+                                Text("Pay with \(paymentMethod) — \(CurrencyFormatter.peso(Int(total)))")
                                     .font(.system(.subheadline, design: .rounded, weight: .semibold))
                             }
                             .frame(maxWidth: .infinity)
@@ -337,7 +337,7 @@ struct CheckoutView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "banknote.fill")
-                                Text("Place Order (COD) — $\(Int(total))")
+                                Text("Place Order (COD) — \(CurrencyFormatter.peso(Int(total)))")
                                     .font(.system(.subheadline, design: .rounded, weight: .semibold))
                             }
                             .frame(maxWidth: .infinity)
@@ -639,7 +639,7 @@ struct CheckoutView: View {
                         .font(.system(.subheadline, design: .rounded))
                         .foregroundStyle(.white.opacity(0.8))
 
-                    Text("$\(Int(order.total)) • \(order.items) item(s)")
+                    Text("\(CurrencyFormatter.peso(Int(order.total))) • \(order.items) item(s)")
                         .font(.system(.caption, design: .rounded))
                         .foregroundStyle(.white.opacity(0.6))
                 }
@@ -701,7 +701,7 @@ struct CheckoutView: View {
                         .frame(width: 44, height: 44)
                         .overlay {
                             if let urlString = item.product.imageURL, let url = URL(string: urlString) {
-                                CachedAsyncImage(url: url, emoji: item.product.emoji)
+                                CachedAsyncImage(url: url, emoji: item.product.emoji, lastModified: item.product.imageDateModified)
                             } else {
                                 Text(item.product.emoji).font(.title3)
                             }
@@ -720,7 +720,7 @@ struct CheckoutView: View {
 
                     Spacer()
 
-                    Text("$\(Int(item.product.price) * item.quantity)")
+                    Text(CurrencyFormatter.peso(Int(item.product.price) * item.quantity))
                         .font(.system(.subheadline, design: .rounded, weight: .semibold))
                         .foregroundStyle(GroceryTheme.title)
                 }
@@ -753,10 +753,10 @@ struct CheckoutView: View {
                 .foregroundStyle(GroceryTheme.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            priceRow("Subtotal", value: "$\(Int(subtotal))")
-            priceRow("Delivery Fee", value: "$\(Int(deliveryFee))")
-            priceRow("Platform Fee", value: "$\(Int(platformFee))")
-            priceRow("Other Charges", value: "$\(Int(otherCharges))")
+            priceRow("Subtotal", value: CurrencyFormatter.peso(Int(subtotal)))
+            priceRow("Delivery Fee", value: CurrencyFormatter.peso(Int(deliveryFee)))
+            priceRow("Platform Fee", value: CurrencyFormatter.peso(Int(platformFee)))
+            priceRow("Other Charges", value: CurrencyFormatter.peso(Int(otherCharges)))
 
             if let voucher = appliedVoucher {
                 HStack {
@@ -768,7 +768,7 @@ struct CheckoutView: View {
                     }
                     .foregroundStyle(GroceryTheme.primary)
                     Spacer()
-                    Text("-$\(Int(voucherDiscount))")
+                    Text("-\(CurrencyFormatter.peso(Int(voucherDiscount)))")
                         .font(.system(.caption, design: .rounded, weight: .medium))
                         .foregroundStyle(GroceryTheme.primary)
                 }
@@ -781,7 +781,7 @@ struct CheckoutView: View {
                     .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(GroceryTheme.title)
                 Spacer()
-                Text("$\(Int(total))")
+                Text(CurrencyFormatter.peso(Int(total)))
                     .font(.system(.title3, design: .rounded, weight: .bold))
                     .foregroundStyle(GroceryTheme.primary)
             }

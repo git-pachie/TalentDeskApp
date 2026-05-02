@@ -22,7 +22,7 @@ struct GCashPaymentView: View {
                         Text("GCash Payment")
                             .font(.system(.subheadline, design: .rounded, weight: .bold))
                             .foregroundStyle(.white)
-                        Text("$\(Int(amount)) • \(orderDescription)")
+                        Text("\(CurrencyFormatter.peso(Int(amount))) • \(orderDescription)")
                             .font(.system(.caption, design: .rounded))
                             .foregroundStyle(.white.opacity(0.8))
                     }
@@ -54,7 +54,7 @@ struct GCashPaymentView: View {
                             Text("Amount to Pay")
                                 .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(.secondary)
-                            Text("$\(Int(amount))")
+                            Text(CurrencyFormatter.peso(Int(amount)))
                                 .font(.system(.largeTitle, design: .rounded, weight: .bold))
                                 .foregroundStyle(Color(red: 0.0, green: 0.44, blue: 0.87))
                             Text(orderDescription)
@@ -107,7 +107,7 @@ struct GCashPaymentView: View {
                             HStack {
                                 Image(systemName: "lock.fill")
                                     .font(.caption)
-                                Text("Pay $\(Int(amount))")
+                                Text("Pay \(CurrencyFormatter.peso(Int(amount)))")
                                     .font(.system(.subheadline, design: .rounded, weight: .semibold))
                             }
                             .frame(maxWidth: .infinity)
@@ -142,7 +142,7 @@ struct GCashPaymentView: View {
                 }
                 Button("Cancel", role: .cancel) { }
             } message: {
-                Text("Pay $\(Int(amount)) via GCash for \(orderDescription)?")
+                Text("Pay \(CurrencyFormatter.peso(Int(amount))) via GCash for \(orderDescription)?")
             }
         }
     }

@@ -135,7 +135,9 @@ public class ProductService : IProductService
             {
                 ImageUrl = i.ImageUrl,
                 IsPrimary = i.IsPrimary,
-                SortOrder = i.SortOrder
+                SortOrder = i.SortOrder,
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow
             }).ToList()
         };
 
@@ -214,7 +216,9 @@ public class ProductService : IProductService
                     ProductId = product.Id,
                     ImageUrl = img.ImageUrl,
                     IsPrimary = img.IsPrimary,
-                    SortOrder = img.SortOrder
+                    SortOrder = img.SortOrder,
+                    DateCreated = DateTime.UtcNow,
+                    DateModified = DateTime.UtcNow
                 });
             }
         }
@@ -260,7 +264,9 @@ public class ProductService : IProductService
                 ImageUrl = i.ImageUrl,
                 FullUrl = BuildFullImageUrl(i.ImageUrl),
                 IsPrimary = i.IsPrimary,
-                SortOrder = i.SortOrder
+                SortOrder = i.SortOrder,
+                DateCreated = i.DateCreated,
+                DateModified = i.DateModified
             }),
             AverageRating = product.Reviews.Count != 0 ? product.Reviews.Average(r => r.Rating) : 0,
             ReviewCount = product.Reviews.Count,

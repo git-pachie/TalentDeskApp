@@ -9,13 +9,24 @@ struct ItemDetailView: View {
     @State private var selectedImageIndex = 0
     @State private var productDetail: ProductDTO?
 
+    private var galleryImages: [ProductImageDTO] {
+        if let detail = productDetail, !detail.images.isEmpty {
+            return detail.images.sorted(by: { $0.sortOrder < $1.sortOrder })
+        }
+        return []
+    }
+
     private var thumbnailURLs: [String] {
-        // Use API images if loaded, otherwise fall back to the product's single image
-        if let detail = productDetail, !detail.imageGalleryURLs.isEmpty {
-            return detail.imageGalleryURLs
+        if !galleryImages.isEmpty {
+            return galleryImages.map(\.displayUrl)
         }
         if let main = product.imageURL { return [main] }
         return []
+    }
+
+    private var selectedGalleryImage: ProductImageDTO? {
+        guard galleryImages.indices.contains(selectedImageIndex) else { return nil }
+        return galleryImages[selectedImageIndex]
     }
 
     @State private var relatedProducts: [GroceryProduct] = []
@@ -62,7 +73,7 @@ struct ItemDetailView: View {
             .frame(height: 260)
             .overlay {
                 if !thumbnailURLs.isEmpty, let url = URL(string: thumbnailURLs[selectedImageIndex]) {
-                    CachedAsyncImage(url: url, emoji: product.emoji)
+                    CachedAsyncImage(url: url, emoji: product.emoji, lastModified: selectedGalleryImage?.dateModified ?? product.imageDateModified)
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -109,7 +120,8 @@ struct ItemDetailView: View {
                         .frame(width: 60, height: 60)
                         .overlay {
                             if let url = URL(string: urlString) {
-                                CachedAsyncImage(url: url, emoji: product.emoji)
+                                let imageModified = galleryImages.indices.contains(index) ? galleryImages[index].dateModified : product.imageDateModified
+                                CachedAsyncImage(url: url, emoji: product.emoji, lastModified: imageModified)
                             }
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -148,11 +160,11 @@ struct ItemDetailView: View {
 
     private var priceSection: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text("$\(Int(product.price))")
+            Text(CurrencyFormatter.peso(Int(product.price)))
                 .font(.system(.title, design: .rounded, weight: .bold))
                 .foregroundStyle(GroceryTheme.primary)
             if let original = product.originalPrice {
-                Text("$\(Int(original))")
+                Text(CurrencyFormatter.peso(Int(original)))
                     .font(.system(.title3, design: .rounded))
                     .foregroundStyle(GroceryTheme.muted)
                     .strikethrough()
@@ -257,7 +269,7 @@ struct ItemDetailView: View {
                                             .font(.system(.caption2, design: .rounded))
                                             .foregroundStyle(GroceryTheme.subtitle)
                                             .lineLimit(1)
-                                        Text("$\(Int(item.price))")
+                                        Text(CurrencyFormatter.peso(Int(item.price)))
                                             .font(.system(.caption2, design: .rounded, weight: .bold))
                                             .foregroundStyle(GroceryTheme.primary)
                                     }
@@ -279,7 +291,7 @@ struct ItemDetailView: View {
         } label: {
             HStack {
                 Image(systemName: "cart.badge.plus")
-                Text("Add to Cart — $\(quantity * Int(product.price))")
+                Text("Add to Cart — \(CurrencyFormatter.peso(quantity * Int(product.price)))")
                     .font(.system(.subheadline, design: .rounded, weight: .semibold))
             }
             .frame(maxWidth: .infinity)

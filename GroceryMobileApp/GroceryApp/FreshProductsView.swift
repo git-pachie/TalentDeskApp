@@ -79,7 +79,7 @@ struct ProductCard: View {
                 .frame(height: 140)
                 .overlay {
                     if let urlString = product.imageURL, let url = URL(string: urlString) {
-                        CachedAsyncImage(url: url, emoji: product.emoji)
+                        CachedAsyncImage(url: url, emoji: product.emoji, lastModified: product.imageDateModified)
                     } else {
                         Text(product.emoji)
                             .font(.system(size: 72))
@@ -125,12 +125,12 @@ struct ProductCard: View {
                 .lineLimit(1)
 
             HStack {
-                Text("$\(Int(product.price))")
+                Text(CurrencyFormatter.peso(Int(product.price)))
                     .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(GroceryTheme.primary)
 
                 if let original = product.originalPrice {
-                    Text("$\(Int(original))")
+                    Text(CurrencyFormatter.peso(Int(original)))
                         .font(.system(.caption, design: .rounded))
                         .foregroundStyle(GroceryTheme.muted)
                         .strikethrough()

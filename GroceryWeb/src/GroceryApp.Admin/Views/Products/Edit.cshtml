@@ -160,6 +160,19 @@
 
     (function() {
         const existing = @Html.Raw(existingImagesJson);
-        existing.forEach(img => addImageCard(img.url, img.isPrimary));
+        if (!Array.isArray(existing) || existing.length === 0) {
+            return;
+        }
+
+        uploadedImages = existing.map(img => ({
+            url: img.url,
+            isPrimary: !!img.isPrimary
+        }));
+
+        if (!uploadedImages.some(img => img.isPrimary)) {
+            uploadedImages[0].isPrimary = true;
+        }
+
+        renderImages();
     })();
 </script>

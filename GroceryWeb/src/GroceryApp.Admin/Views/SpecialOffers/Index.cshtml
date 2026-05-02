@@ -1,0 +1,107 @@
+@model List<SpecialOfferModel>
+@{
+    ViewData["Title"] = "Special Offers";
+}
+
+<div class="page-header">
+    <div>
+        <h2><i class="bi bi-megaphone-fill me-2 text-primary"></i>Special Offers</h2>
+        <p class="text-muted mb-0" style="font-size: 0.85rem;">Manage the Home carousel shown in the mobile app</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Add Offer
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-3" role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>@TempData["SuccessMessage"]</span>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>@TempData["ErrorMessage"]</span>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" role="alert">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <span>@ViewBag.ErrorMessage</span>
+    </div>
+}
+
+<div class="card data-card">
+    <table class="table data-table">
+        <thead>
+            <tr>
+                <th>Preview</th>
+                <th>Title</th>
+                <th>Subtitle</th>
+                <th>Sort</th>
+                <th>Status</th>
+                <th>Updated</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        @if (Model.Count > 0)
+        {
+            @foreach (var offer in Model.OrderBy(o => o.SortOrder))
+            {
+                <tr>
+                    <td>
+                        <div class="rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2" style="background:@offer.BackgroundColorHex; min-width: 180px;">
+                            <span style="font-size:1.4rem;">@offer.Emoji</span>
+                            <span class="fw-semibold">@offer.Title</span>
+                        </div>
+                    </td>
+                    <td class="fw-semibold">@offer.Title</td>
+                    <td class="text-muted">@offer.Subtitle</td>
+                    <td>@offer.SortOrder</td>
+                    <td>
+                        @if (offer.IsActive)
+                        {
+                            <span class="badge badge-status bg-success-subtle text-success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-status bg-secondary-subtle text-secondary">Inactive</span>
+                        }
+                    </td>
+                    <td>@offer.UpdatedAt.ToString("MMM dd, yyyy HH:mm")</td>
+                    <td class="text-end">
+                        <a asp-action="Edit" asp-route-id="@offer.Id" class="btn btn-sm btn-outline-primary me-1">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form asp-action="Delete" asp-route-id="@offer.Id" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this offer?')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="7">
+                    <div class="empty-state">
+                        <i class="bi bi-megaphone"></i>
+                        <p>No special offers found.</p>
+                    </div>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

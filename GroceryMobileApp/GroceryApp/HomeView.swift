@@ -1,10 +1,12 @@
 import SwiftUI
 
 struct HomeView: View {
+    @Environment(AppNavigationStore.self) private var navigationStore
     @Environment(ProductStore.self) private var productStore
     @State private var showingAddressPicker = false
     @State private var selectedAddressIndex = 0
-    @State private var refreshID = UUID()
+    @State private var specialOffersRenderID = UUID()
+    @State private var specialOffers: [HomeSpecialOffer] = []
     @State private var addresses: [(label: String, address: String, contact: String, instructions: String)] = [
         ("Home", "123 Main St, New York, NY 10001", "+1 (555) 123-4567", ""),
     ]
@@ -24,7 +26,10 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            RefreshableScrollContainer(onRefresh: {
+                print("🔄 Home pull-to-refresh triggered")
+                await refreshHomeContent()
+            }) {
                 VStack(alignment: .leading, spacing: 20) {
                     // Delivery header
                     deliveryHeader
@@ -43,17 +48,9 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 20)
-                .id(refreshID)
-            }
-            .refreshable {
-                await productStore.loadHome()
-                refreshID = UUID()
             }
             .task {
-                if productStore.categories.isEmpty {
-                    await productStore.loadHome()
-                }
-                // Load addresses from API
+                await refreshHomeContent(initialLoadOnlyIfNeeded: true)
                 await loadAddresses()
             }
             .background(GroceryTheme.background)
@@ -198,13 +195,37 @@ struct HomeView: View {
 
     // MARK: - Special Offer Banner (Carousel)
 
-    private let banners: [(title: String, subtitle: String, emoji: String, color: Color)] = [
-        ("Up To 50 % Discount", "Shop fresh products,\ngrab exclusive deals.", "🥕🍅🥦", GroceryTheme.primaryBanner),
-        ("Free Delivery", "On orders above $30.\nFresh to your door.", "🚚📦✨", Color(red: 0.90, green: 0.92, blue: 1.0)),
-        ("Buy 1 Get 1 Free", "Selected fruits & veggies\nthis weekend only.", "🍎🥑🍇", Color(red: 1.0, green: 0.93, blue: 0.85)),
-    ]
+    @State private var currentBannerID: UUID?
 
-    @State private var currentBanner = 0
+    private var banners: [HomeSpecialOffer] {
+        if specialOffers.isEmpty {
+            return [
+                HomeSpecialOffer(
+                    id: UUID(uuidString: "11111111-1111-1111-1111-111111111111") ?? UUID(),
+                    title: "Up To 50 % Discount",
+                    subtitle: "Shop fresh products,\ngrab exclusive deals.",
+                    emoji: "🥕🍅🥦",
+                    color: GroceryTheme.primaryBanner
+                ),
+                HomeSpecialOffer(
+                    id: UUID(uuidString: "22222222-2222-2222-2222-222222222222") ?? UUID(),
+                    title: "Free Delivery",
+                    subtitle: "On orders above ₱30.\nFresh to your door.",
+                    emoji: "🚚📦✨",
+                    color: Color(red: 0.90, green: 0.92, blue: 1.0)
+                ),
+                HomeSpecialOffer(
+                    id: UUID(uuidString: "33333333-3333-3333-3333-333333333333") ?? UUID(),
+                    title: "Buy 1 Get 1 Free",
+                    subtitle: "Selected fruits & veggies\nthis weekend only.",
+                    emoji: "🍎🥑🍇",
+                    color: Color(red: 1.0, green: 0.93, blue: 0.85)
+                ),
+            ]
+        }
+
+        return specialOffers
+    }
 
     private var specialOfferBanner: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -212,8 +233,11 @@ struct HomeView: View {
                 .font(.headline)
                 .foregroundStyle(GroceryTheme.title)
 
-            TabView(selection: $currentBanner) {
-                ForEach(Array(banners.enumerated()), id: \.offset) { index, banner in
+            TabView(selection: Binding(
+                get: { currentBannerID ?? banners.first?.id },
+                set: { currentBannerID = $0 }
+            )) {
+                ForEach(banners) { banner in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .fill(banner.color)
@@ -244,23 +268,25 @@ struct HomeView: View {
                         }
                     }
                     .padding(.horizontal, 2)
-                    .tag(index)
+                    .tag(banner.id)
                 }
             }
+            .id(specialOffersRenderID)
             .tabViewStyle(.page(indexDisplayMode: .always))
             .frame(height: 160)
 
             // Page dots
             HStack(spacing: 6) {
                 Spacer()
-                ForEach(0..<banners.count, id: \.self) { index in
+                ForEach(Array(banners.enumerated()), id: \.element.id) { index, banner in
                     Circle()
-                        .fill(index == currentBanner ? GroceryTheme.primary : GroceryTheme.muted.opacity(0.4))
+                        .fill(banner.id == (currentBannerID ?? banners.first?.id) ? GroceryTheme.primary : GroceryTheme.muted.opacity(0.4))
                         .frame(width: 7, height: 7)
                 }
                 Spacer()
             }
         }
+        .id(specialOffersRenderID)
     }
 
     // MARK: - Categories
@@ -280,7 +306,8 @@ struct HomeView: View {
             LazyVGrid(columns: adaptiveCategoryColumns, spacing: 14) {
                 ForEach(productStore.categories.isEmpty ? SampleData.categories : productStore.categories) { cat in
                     Button {
-                        print("📂 Category tapped: \(cat.name)")
+                        navigationStore.pendingCategorySelection = cat
+                        navigationStore.selectedTab = 1
                     } label: {
                         VStack(spacing: 6) {
                             ZStack {
@@ -337,6 +364,48 @@ struct HomeView: View {
 // MARK: - Deal Card
 
 extension HomeView {
+    @MainActor
+    func refreshHomeContent(initialLoadOnlyIfNeeded: Bool = false) async {
+        if !initialLoadOnlyIfNeeded || productStore.categories.isEmpty {
+            await productStore.loadHome()
+        }
+        await loadSpecialOffers()
+    }
+
+    @MainActor
+    func loadSpecialOffers() async {
+        do {
+            let cacheBust = URLQueryItem(name: "_cb", value: UUID().uuidString)
+            let offers: [SpecialOfferDTO] = try await APIClient.shared.getUncached("/api/special-offers", query: [cacheBust])
+            specialOffers = offers
+                .filter(\.isActive)
+                .sorted { lhs, rhs in
+                    if lhs.sortOrder == rhs.sortOrder {
+                        return lhs.title < rhs.title
+                    }
+                    return lhs.sortOrder < rhs.sortOrder
+                }
+                .map { offer in
+                    HomeSpecialOffer(
+                        id: offer.id,
+                        title: offer.title,
+                        subtitle: offer.subtitle,
+                        emoji: offer.emoji,
+                        color: Color(hex: offer.backgroundColorHex) ?? GroceryTheme.primaryBanner
+                    )
+                }
+
+            currentBannerID = specialOffers.first?.id
+            specialOffersRenderID = UUID()
+            print("✅ Refreshed special offers: \(specialOffers.map(\.title))")
+        } catch {
+            if error is CancellationError || (error as? APIError)?.isCancellation == true {
+                return
+            }
+            print("⚠️ Failed to load special offers: \(error)")
+        }
+    }
+
     func loadAddresses() async {
         guard APIClient.shared.isAuthenticated else { return }
         do {
@@ -349,6 +418,111 @@ extension HomeView {
             }
         } catch {
             print("⚠️ Failed to load addresses: \(error)")
+        }
+    }
+}
+
+private struct HomeSpecialOffer: Identifiable {
+    let id: UUID
+    let title: String
+    let subtitle: String
+    let emoji: String
+    let color: Color
+}
+
+private extension Color {
+    init?(hex: String) {
+        let trimmed = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalized = trimmed.hasPrefix("#") ? String(trimmed.dropFirst()) : trimmed
+        guard normalized.count == 6, let value = UInt64(normalized, radix: 16) else {
+            return nil
+        }
+
+        let red = Double((value >> 16) & 0xFF) / 255.0
+        let green = Double((value >> 8) & 0xFF) / 255.0
+        let blue = Double(value & 0xFF) / 255.0
+        self = Color(red: red, green: green, blue: blue)
+    }
+}
+
+private struct RefreshableScrollContainer<Content: View>: UIViewControllerRepresentable {
+    let onRefresh: () async -> Void
+    let content: Content
+
+    init(onRefresh: @escaping () async -> Void, @ViewBuilder content: () -> Content) {
+        self.onRefresh = onRefresh
+        self.content = content()
+    }
+
+    func makeUIViewController(context: Context) -> RefreshableScrollViewController<Content> {
+        let controller = RefreshableScrollViewController(rootView: content)
+        controller.onRefresh = onRefresh
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: RefreshableScrollViewController<Content>, context: Context) {
+        uiViewController.update(rootView: content)
+        uiViewController.onRefresh = onRefresh
+    }
+}
+
+private final class RefreshableScrollViewController<Content: View>: UIViewController {
+    private let scrollView = UIScrollView()
+    private let refreshControl = UIRefreshControl()
+    private let hostingController: UIHostingController<Content>
+
+    var onRefresh: (() async -> Void)?
+
+    init(rootView: Content) {
+        hostingController = UIHostingController(rootView: rootView)
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        view.backgroundColor = UIColor.clear
+        scrollView.alwaysBounceVertical = true
+        scrollView.refreshControl = refreshControl
+        refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+
+        view.addSubview(scrollView)
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+
+        addChild(hostingController)
+        scrollView.addSubview(hostingController.view)
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        hostingController.view.backgroundColor = UIColor.clear
+        NSLayoutConstraint.activate([
+            hostingController.view.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            hostingController.view.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
+        ])
+        hostingController.didMove(toParent: self)
+    }
+
+    func update(rootView: Content) {
+        hostingController.rootView = rootView
+    }
+
+    @objc
+    private func handleRefresh() {
+        Task { @MainActor in
+            await onRefresh?()
+            refreshControl.endRefreshing()
         }
     }
 }

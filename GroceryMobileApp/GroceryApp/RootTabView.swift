@@ -1,11 +1,19 @@
 import SwiftUI
 
+@Observable
+final class AppNavigationStore {
+    var selectedTab = 0
+    var pendingCategorySelection: GroceryCategory?
+}
+
 struct RootTabView: View {
     @Environment(CartStore.self) private var cartStore
-    @State private var selectedTab = 0
+    @Environment(AppNavigationStore.self) private var navigationStore
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        @Bindable var navigationStore = navigationStore
+
+        TabView(selection: $navigationStore.selectedTab) {
             HomeView()
                 .tabItem {
                     Image(systemName: "house.fill")

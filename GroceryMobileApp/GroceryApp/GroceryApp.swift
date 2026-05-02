@@ -7,6 +7,7 @@ struct GroceryApp: App {
     @State private var cartStore = CartStore()
     @State private var authStore = AuthStore()
     @State private var productStore = ProductStore()
+    @State private var navigationStore = AppNavigationStore()
 
     var body: some Scene {
         WindowGroup {
@@ -15,7 +16,8 @@ struct GroceryApp: App {
                 favoritesStore: favoritesStore,
                 cartStore: cartStore,
                 authStore: authStore,
-                productStore: productStore
+                productStore: productStore,
+                navigationStore: navigationStore
             )
         }
     }
@@ -29,6 +31,7 @@ struct ThemeRoot: View {
     let cartStore: CartStore
     let authStore: AuthStore
     let productStore: ProductStore
+    let navigationStore: AppNavigationStore
 
     var body: some View {
         Group {
@@ -45,6 +48,7 @@ struct ThemeRoot: View {
         .environment(cartStore)
         .environment(authStore)
         .environment(productStore)
+        .environment(navigationStore)
         .task(id: settingsStore.appearance) {
             setWindowStyle(settingsStore.appearance.uiStyle)
         }

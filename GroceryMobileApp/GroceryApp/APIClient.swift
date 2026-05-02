@@ -6,8 +6,8 @@ enum APIConfig {
     // Change this to your server's IP/hostname
     // Use "https://192.168.7.136:5002" for iOS Simulator on the same machine
     // Use "https://<your-mac-ip>:5001" for a physical device
-    //static let baseURL = "https://127.0.0.1:5001"
-    static let baseURL = "https://sandboxapi.sansharecab.com"
+    static let baseURL = "https://127.0.0.1:5001"
+    //static let baseURL = "https://sandboxapi.sansharecab.com"
 
     static var base: URL {
         URL(string: baseURL)!
@@ -195,7 +195,13 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
 
     // MARK: - Request Building
 
-    private func buildRequest(path: String, method: String, body: (any Encodable)? = nil, queryItems: [URLQueryItem]? = nil) throws -> URLRequest {
+    private func buildRequest(
+        path: String,
+        method: String,
+        body: (any Encodable)? = nil,
+        queryItems: [URLQueryItem]? = nil,
+        cachePolicy: NSURLRequest.CachePolicy? = nil
+    ) throws -> URLRequest {
         var components = URLComponents(url: APIConfig.base.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
         if let queryItems, !queryItems.isEmpty {
             components.queryItems = queryItems
@@ -204,6 +210,9 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         guard let url = components.url else { throw APIError.invalidURL }
 
         var request = URLRequest(url: url)
+        if let cachePolicy {
+            request.cachePolicy = cachePolicy
+        }
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -216,6 +225,12 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
 
         if let token, !anonymousAuthEndpoints.contains(path) {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        if method == "GET" {
+            request.setValue("no-cache, no-store, must-revalidate", forHTTPHeaderField: "Cache-Control")
+            request.setValue("no-cache", forHTTPHeaderField: "Pragma")
+            request.setValue("0", forHTTPHeaderField: "Expires")
         }
 
         if let body {
@@ -323,6 +338,16 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
 
     func get<T: Decodable>(_ path: String, query: [URLQueryItem]? = nil) async throws -> T {
         let request = try buildRequest(path: path, method: "GET", queryItems: query)
+        return try await execute(request)
+    }
+
+    func getUncached<T: Decodable>(_ path: String, query: [URLQueryItem]? = nil) async throws -> T {
+        let request = try buildRequest(
+            path: path,
+            method: "GET",
+            queryItems: query,
+            cachePolicy: .reloadIgnoringLocalAndRemoteCacheData
+        )
         return try await execute(request)
     }
 

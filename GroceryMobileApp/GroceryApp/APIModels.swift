@@ -129,7 +129,8 @@ struct ProductDTO: Decodable, Identifiable {
             discount: discountText,
             emoji: emojiForCategory(categoryName),
             category: categoryName,
-            imageURL: imageURL
+            imageURL: imageURL,
+            imageDateModified: primaryImage?.dateModified
         )
     }
 
@@ -157,6 +158,8 @@ struct ProductImageDTO: Decodable, Identifiable {
     let fullUrl: String?
     let isPrimary: Bool
     let sortOrder: Int
+    let dateCreated: Date
+    let dateModified: Date
 
     /// Best URL to use for display — prefers fullUrl from API
     var displayUrl: String {
@@ -172,6 +175,7 @@ struct CartItemDTO: Decodable, Identifiable {
     let productName: String
     let productImageUrl: String?
     let productImageFullUrl: String?
+    let productImageDateModified: Date?
     let unitPrice: Decimal
     let quantity: Int
     let totalPrice: Decimal
@@ -231,6 +235,7 @@ struct OrderItemDTO: Decodable {
     let productId: UUID
     let productName: String
     let productImageUrl: String?
+    let productImageDateModified: Date?
     let unitPrice: Decimal
     let quantity: Int
     let totalPrice: Decimal
@@ -443,14 +448,14 @@ struct VoucherDTO: Decodable, Identifiable {
         let discountText: String = if type.lowercased() == "percentage" {
             "\(NSDecimalNumber(decimal: value).intValue)%"
         } else {
-            "$\(NSDecimalNumber(decimal: value).intValue)"
+            CurrencyFormatter.peso(NSDecimalNumber(decimal: value).intValue)
         }
         return VoucherItem(
             id: id,
             code: code,
             description: description ?? "",
             discount: discountText,
-            minOrder: minimumSpend > 0 ? "Min. $\(NSDecimalNumber(decimal: minimumSpend).intValue)" : "No minimum",
+            minOrder: minimumSpend > 0 ? "Min. \(CurrencyFormatter.peso(NSDecimalNumber(decimal: minimumSpend).intValue))" : "No minimum",
             validUntil: formatter.string(from: expiryDate),
             isActive: isActive && expiryDate > Date()
         )
@@ -511,6 +516,18 @@ struct PaymentResultDTO: Decodable {
     let status: String
     let redirectUrl: String?
     let failureReason: String?
+}
+
+// MARK: - Special Offers
+
+struct SpecialOfferDTO: Decodable, Identifiable {
+    let id: UUID
+    let title: String
+    let subtitle: String
+    let emoji: String
+    let backgroundColorHex: String
+    let sortOrder: Int
+    let isActive: Bool
 }
 
 // MARK: - Notifications

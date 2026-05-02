@@ -35,7 +35,7 @@ struct CartView: View {
                                     Text("Total")
                                         .font(.system(.caption, design: .rounded))
                                         .foregroundStyle(GroceryTheme.muted)
-                                    Text("$\(Int(cartStore.totalPrice))")
+                                    Text(CurrencyFormatter.peso(Int(cartStore.totalPrice)))
                                         .font(.system(.title2, design: .rounded, weight: .bold))
                                         .foregroundStyle(GroceryTheme.primary)
                                 }
@@ -105,7 +105,7 @@ struct CartView: View {
                     .frame(width: 70, height: 70)
                     .overlay {
                         if let urlString = item.product.imageURL, let url = URL(string: urlString) {
-                            CachedAsyncImage(url: url, emoji: item.product.emoji)
+                            CachedAsyncImage(url: url, emoji: item.product.emoji, lastModified: item.product.imageDateModified)
                         } else {
                             Text(item.product.emoji)
                                 .font(.system(size: 36))
@@ -119,7 +119,7 @@ struct CartView: View {
                         .foregroundStyle(GroceryTheme.title)
                         .lineLimit(1)
 
-                    Text("$\(Int(item.product.price)) each")
+                    Text("\(CurrencyFormatter.peso(Int(item.product.price))) each")
                         .font(.system(.caption, design: .rounded))
                         .foregroundStyle(GroceryTheme.muted)
 

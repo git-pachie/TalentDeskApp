@@ -148,6 +148,13 @@
                         </a>
                     </li>
 
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "SpecialOffers" ? "active" : "")" asp-controller="SpecialOffers" asp-action="Index" data-tooltip="Special Offers">
+                            <i class="ph-duotone ph-megaphone"></i>
+                            <span>Special Offers</span>
+                        </a>
+                    </li>
+
                     <!-- Users -->
                     <li class="nav-heading"><span>Users</span></li>
 

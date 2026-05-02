@@ -119,6 +119,7 @@ public class CartService : ICartService
             ProductName = item.Product.Name,
             ProductImageUrl = primaryImage?.ImageUrl,
             ProductImageFullUrl = BuildFullImageUrl(primaryImage?.ImageUrl),
+            ProductImageDateModified = primaryImage?.DateModified,
             UnitPrice = item.Product.DiscountPrice ?? item.Product.Price,
             Quantity = item.Quantity,
             TotalPrice = (item.Product.DiscountPrice ?? item.Product.Price) * item.Quantity,

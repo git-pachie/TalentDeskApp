@@ -28,6 +28,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<UserSetting> UserSettings => Set<UserSetting>();
     public DbSet<UserVoucher> UserVouchers => Set<UserVoucher>();
     public DbSet<UserDevice> UserDevices => Set<UserDevice>();
+    public DbSet<SpecialOffer> SpecialOffers => Set<SpecialOffer>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -72,6 +73,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
         // ProductImage
         builder.Entity<ProductImage>(e =>
         {
+            e.Property(pi => pi.DateCreated).HasDefaultValueSql("GETUTCDATE()");
+            e.Property(pi => pi.DateModified).HasDefaultValueSql("GETUTCDATE()");
             e.HasOne(pi => pi.Product).WithMany(p => p.Images).HasForeignKey(pi => pi.ProductId).OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -200,6 +203,15 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             e.HasIndex(uv => new { uv.UserId, uv.VoucherId }).IsUnique();
             e.HasOne(uv => uv.User).WithMany(u => u.UserVouchers).HasForeignKey(uv => uv.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(uv => uv.Voucher).WithMany(v => v.UserVouchers).HasForeignKey(uv => uv.VoucherId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<SpecialOffer>(e =>
+        {
+            e.Property(o => o.Title).HasMaxLength(200);
+            e.Property(o => o.Subtitle).HasMaxLength(500);
+            e.Property(o => o.Emoji).HasMaxLength(50);
+            e.Property(o => o.BackgroundColorHex).HasMaxLength(20);
+            e.HasIndex(o => new { o.IsActive, o.SortOrder });
         });
     }
 }

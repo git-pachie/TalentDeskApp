@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ProductsTabView: View {
+    @Environment(AppNavigationStore.self) private var navigationStore
     @Environment(ProductStore.self) private var productStore
     @State private var searchText = ""
     @State private var selectedCategory: GroceryCategory?
@@ -73,10 +74,15 @@ struct ProductsTabView: View {
                 if productStore.categories.isEmpty {
                     await productStore.loadCategories()
                 }
+                applyPendingCategorySelection()
                 await loadProducts(reset: true)
             }
             .refreshable {
                 await loadProducts(reset: true)
+            }
+            .onChange(of: navigationStore.pendingCategorySelection?.id) { _, _ in
+                applyPendingCategorySelection()
+                Task { await loadProducts(reset: true) }
             }
             .onChange(of: searchText) { _, _ in
                 searchTask?.cancel()
@@ -166,6 +172,18 @@ struct ProductsTabView: View {
     }
 
     // MARK: - Data Loading
+
+    private func applyPendingCategorySelection() {
+        guard let pendingCategory = navigationStore.pendingCategorySelection else { return }
+
+        if let matchingCategory = categories.first(where: { $0.id == pendingCategory.id }) {
+            selectedCategory = matchingCategory
+        } else {
+            selectedCategory = pendingCategory
+        }
+
+        navigationStore.pendingCategorySelection = nil
+    }
 
     private func loadProducts(reset: Bool) async {
         if reset {

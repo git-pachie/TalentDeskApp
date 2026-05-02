@@ -8,5 +8,6 @@ extension View {
             .environment(GrocerySettingsStore())
             .environment(AuthStore())
             .environment(ProductStore())
+            .environment(AppNavigationStore())
     }
 }

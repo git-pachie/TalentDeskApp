@@ -139,6 +139,8 @@ public class ProductImageModel
     public string FullUrl { get; set; } = string.Empty;
     public bool IsPrimary { get; set; }
     public int SortOrder { get; set; }
+    public DateTime DateCreated { get; set; }
+    public DateTime DateModified { get; set; }
 }
 
 public class CreateProductModel
@@ -183,6 +185,39 @@ public class CategoryModel
     public string? ImageUrl { get; set; }
     public bool IsActive { get; set; }
     public int ProductCount { get; set; }
+}
+
+public class SpecialOfferModel
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Subtitle { get; set; } = string.Empty;
+    public string Emoji { get; set; } = string.Empty;
+    public string BackgroundColorHex { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+
+public class CreateSpecialOfferModel
+{
+    public string Title { get; set; } = string.Empty;
+    public string Subtitle { get; set; } = string.Empty;
+    public string Emoji { get; set; } = string.Empty;
+    public string BackgroundColorHex { get; set; } = "#E8F3FF";
+    public int SortOrder { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public class UpdateSpecialOfferModel
+{
+    public string? Title { get; set; }
+    public string? Subtitle { get; set; }
+    public string? Emoji { get; set; }
+    public string? BackgroundColorHex { get; set; }
+    public int? SortOrder { get; set; }
+    public bool? IsActive { get; set; }
 }
 
 public class CreateCategoryModel

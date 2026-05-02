@@ -32,6 +32,8 @@ public class ProductImageDto
     public string FullUrl { get; set; } = string.Empty;
     public bool IsPrimary { get; set; }
     public int SortOrder { get; set; }
+    public DateTime DateCreated { get; set; }
+    public DateTime DateModified { get; set; }
 }
 
 public class CreateProductRequest

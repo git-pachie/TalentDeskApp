@@ -117,7 +117,8 @@ final class CartStore {
                     discount: nil,
                     emoji: "🛒",
                     category: "",
-                    imageURL: dto.productImageFullUrl ?? dto.productImageUrl
+                    imageURL: dto.productImageFullUrl ?? dto.productImageUrl,
+                    imageDateModified: dto.productImageDateModified
                 )
                 let serverRemarks = dto.remarks ?? ""
                 let localRemarks = items.first(where: { $0.product.id == dto.productId })?.remarks ?? ""

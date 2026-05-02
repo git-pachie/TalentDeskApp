@@ -338,6 +338,7 @@ public class OrderService : IOrderService
                     ProductId = i.ProductId,
                     ProductName = i.ProductName,
                     ProductImageUrl = BuildFullImageUrl(primaryImage?.ImageUrl),
+                    ProductImageDateModified = primaryImage?.DateModified,
                     UnitPrice = i.UnitPrice,
                     Quantity = i.Quantity,
                     TotalPrice = i.TotalPrice,

@@ -1,0 +1,161 @@
+@model dynamic
+
+@{
+    var emojiChoices = new[]
+    {
+        "🥕🍅🥦", "🌽🥬🥒", "🍆🫑🥔", "🥗🌿🥒", "🧄🧅🥕",
+        "🍎🍐🍊", "🍌🍍🥭", "🍇🍓🫐", "🍉🍈🥝", "🥑🍋🍏",
+        "🥩🍗🔥", "🍖🥓🍗", "🐟🦐🦀", "🦑🐠🍤", "🥚🍗🥩",
+        "🍞🥐🧈", "🥛🧀🍦", "🧁🍪🍰", "☕🧃🧊", "🥤🍋🧃",
+        "🍿🥜🍫", "🍜🍝🥫", "🧂🌶️🍯", "🛒💚", "🧺🍓🥬",
+        "🚚📦✨", "💸🛍️✨", "🎉🎁🛒", "⭐🛍️💚", "⚡🛒🔥",
+        "🔥🥬🍅", "💚🍎🥕", "🥳🍇🛒", "🛍️🍞🥛", "🌟🐟🦐"
+    };
+    var colorChoices = new[]
+    {
+        new { Name = "Fresh Blue", Hex = "#E8F3FF" },
+        new { Name = "Mint Green", Hex = "#E3F7EC" },
+        new { Name = "Peach", Hex = "#FFE8D9" },
+        new { Name = "Soft Yellow", Hex = "#FFF4CC" },
+        new { Name = "Lavender", Hex = "#EFE7FF" },
+        new { Name = "Rose", Hex = "#FFE1EA" },
+        new { Name = "Sky", Hex = "#DFF4FF" },
+        new { Name = "Lime", Hex = "#ECFBCF" },
+        new { Name = "Coral", Hex = "#FFDCD1" },
+        new { Name = "Cream", Hex = "#FFF1DE" }
+    };
+    var selectedColor = string.IsNullOrWhiteSpace((string?)Model.BackgroundColorHex)
+        ? "#E8F3FF"
+        : ((string)Model.BackgroundColorHex).ToUpperInvariant();
+}
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <label class="form-label">Title</label>
+        <input name="Title" class="form-control" value="@Model.Title" required />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Emoji</label>
+        <div class="input-group">
+            <input id="emojiInput" name="Emoji" class="form-control" value="@Model.Emoji" required readonly />
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#emojiPickerModal">
+                <i class="bi bi-emoji-smile"></i>
+            </button>
+        </div>
+        <div class="form-text">Pick from the preset emoji combinations.</div>
+        <div id="emojiPreview" class="mt-2 fs-3">@(string.IsNullOrWhiteSpace((string?)Model.Emoji) ? "🙂" : Model.Emoji)</div>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Sort Order</label>
+        <input name="SortOrder" type="number" class="form-control" value="@Model.SortOrder" required />
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Active</label>
+        <select name="IsActive" class="form-select">
+            @if (Model.IsActive == true)
+            {
+                <option value="true" selected>Yes</option>
+                <option value="false">No</option>
+            }
+            else
+            {
+                <option value="true">Yes</option>
+                <option value="false" selected>No</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Background Color</label>
+        <input type="hidden" id="backgroundColorHex" name="BackgroundColorHex" value="@selectedColor" />
+        <div class="input-group">
+            <select id="backgroundColorSelect" class="form-select">
+                @foreach (var color in colorChoices)
+                {
+                    if (color.Hex == selectedColor)
+                    {
+                        <option value="@color.Hex" selected>@color.Name (@color.Hex)</option>
+                    }
+                    else
+                    {
+                        <option value="@color.Hex">@color.Name (@color.Hex)</option>
+                    }
+                }
+            </select>
+            <span id="backgroundColorPreview" class="input-group-text" style="width: 52px; background:@selectedColor;"></span>
+        </div>
+        <div class="form-text">Choose a banner background color.</div>
+    </div>
+    <div class="col-12">
+        <label class="form-label">Subtitle</label>
+        <textarea name="Subtitle" class="form-control" rows="3" required>@Model.Subtitle</textarea>
+    </div>
+</div>
+
+<div class="modal fade" id="emojiPickerModal" tabindex="-1" aria-labelledby="emojiPickerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="emojiPickerModalLabel">Select Emoji</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-2">
+                    @foreach (var emoji in emojiChoices)
+                    {
+                        <div class="col-4">
+                            <button
+                                type="button"
+                                class="btn btn-outline-secondary w-100 py-3 emoji-option"
+                                data-emoji="@emoji"
+                                data-bs-dismiss="modal">
+                                <span class="fs-3">@emoji</span>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const emojiInput = document.getElementById('emojiInput');
+        const emojiPreview = document.getElementById('emojiPreview');
+        const emojiModalElement = document.getElementById('emojiPickerModal');
+        const backgroundColorInput = document.getElementById('backgroundColorHex');
+        const backgroundColorSelect = document.getElementById('backgroundColorSelect');
+        const backgroundColorPreview = document.getElementById('backgroundColorPreview');
+        if (!emojiInput || !emojiPreview || !emojiModalElement || !backgroundColorInput || !backgroundColorSelect || !backgroundColorPreview) {
+            return;
+        }
+
+        const setEmoji = (value) => {
+            emojiInput.value = value;
+            emojiPreview.textContent = value || '🙂';
+        };
+
+        emojiModalElement.addEventListener('click', (event) => {
+            const button = event.target.closest('.emoji-option');
+            if (!button) {
+                return;
+            }
+
+            const value = button.getAttribute('data-emoji') || '';
+            setEmoji(value);
+        });
+
+        const setBackgroundColor = (value) => {
+            backgroundColorInput.value = value;
+            backgroundColorSelect.value = value;
+            backgroundColorPreview.style.backgroundColor = value;
+        };
+
+        backgroundColorSelect.addEventListener('change', (event) => {
+            setBackgroundColor(event.target.value);
+        });
+
+        setEmoji(emojiInput.value);
+        setBackgroundColor(backgroundColorInput.value || backgroundColorSelect.value);
+    });
+</script>
