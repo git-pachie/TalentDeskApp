@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Hourly Git Sync",
+  "description": "After 1 hour, reads the codebase and pushes any changes to remote git",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Read the codebase by checking git status for any changed files, then stage all changed tracked files and new untracked source files (excluding .DS_Store, uploads, publish, windows-iis, .zip), commit with a descriptive message summarizing what changed, and push to remote. If nothing has changed, just report that the repo is clean."
+  }
+}
