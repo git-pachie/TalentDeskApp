@@ -28,6 +28,8 @@ struct CheckoutView: View {
     @State private var deliveryAddresses: [AddressDTO] = []
     @State private var selectedAddressId: UUID?
     @State private var isPlacingOrder = false
+    @State private var deliveryDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+    @State private var selectedDeliveryTimeSlot = "Anytime"
 
     init(onOrderPlaced: ((OrderItem) -> Void)? = nil) {
         self.onOrderPlaced = onOrderPlaced
@@ -55,6 +57,20 @@ struct CheckoutView: View {
     private let deliveryFee: Double = 5
     private let platformFee: Double = 2
     private let otherCharges: Double = 1
+    private let deliveryTimeSlots = [
+        "Anytime",
+        "08:00 AM",
+        "09:00 AM",
+        "10:00 AM",
+        "11:00 AM",
+        "12:00 PM",
+        "01:00 PM",
+        "02:00 PM",
+        "03:00 PM",
+        "04:00 PM",
+        "05:00 PM",
+        "06:00 PM"
+    ]
     private var subtotal: Double { cartStore.totalPrice }
     private var voucherDiscount: Double {
         guard let voucher = appliedVoucher else { return 0 }
@@ -271,6 +287,31 @@ struct CheckoutView: View {
                         .padding(10)
                         .background(Color(.systemGray6))
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+
+                sectionCard(title: "Delivery Schedule", icon: "calendar.badge.clock") {
+                    VStack(alignment: .leading, spacing: 14) {
+                        DatePicker(
+                            "Date of Delivery",
+                            selection: $deliveryDate,
+                            in: Date()...,
+                            displayedComponents: .date
+                        )
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
+
+                        Picker("Delivery Time", selection: $selectedDeliveryTimeSlot) {
+                            ForEach(deliveryTimeSlots, id: \.self) { slot in
+                                Text(slot).tag(slot)
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        Text(selectedDeliveryTimeSlot == "Anytime"
+                            ? "Time is optional. We will schedule delivery anytime during store hours."
+                            : "Requested delivery time: \(selectedDeliveryTimeSlot)")
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundStyle(GroceryTheme.muted)
+                    }
                 }
 
                 // Price breakdown
@@ -490,6 +531,8 @@ struct CheckoutView: View {
             notes: orderRemarks.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? nil
                 : orderRemarks.trimmingCharacters(in: .whitespacesAndNewlines),
+            deliveryDate: deliveryDate,
+            deliveryTimeSlot: selectedDeliveryTimeSlot == "Anytime" ? nil : selectedDeliveryTimeSlot,
             platformFee: Decimal(platformFee),
             otherCharges: Decimal(otherCharges)
         )

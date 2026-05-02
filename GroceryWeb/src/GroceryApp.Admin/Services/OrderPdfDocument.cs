@@ -52,6 +52,9 @@ public class OrderPdfDocument : IDocument
                 {
                     c.Item().AlignRight().Text(_order.OrderNumber).FontSize(14).Bold();
                     c.Item().AlignRight().Text(_order.CreatedAt.ToString("MMMM dd, yyyy")).FontSize(9).FontColor(Colors.Grey.Medium);
+                    if (_order.DeliveryDate.HasValue)
+                        c.Item().AlignRight().Text($"Delivery: {_order.DeliveryDate.Value:MMM dd, yyyy}{(string.IsNullOrWhiteSpace(_order.DeliveryTimeSlot) ? " (Anytime)" : $" · {_order.DeliveryTimeSlot}")}")
+                            .FontSize(8).FontColor(Colors.Grey.Darken1);
                     c.Item().AlignRight().Text($"Status: {_order.Status}").FontSize(9)
                         .FontColor(_order.Status == "Delivered" ? Colors.Green.Darken2 :
                                    _order.Status == "Cancelled" ? Colors.Red.Medium :
@@ -100,6 +103,22 @@ public class OrderPdfDocument : IDocument
                     else
                     {
                         c.Item().PaddingTop(4).Text("No address provided").FontSize(9).FontColor(Colors.Grey.Medium);
+                    }
+                });
+
+                row.ConstantItem(12);
+
+                row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(10).Column(c =>
+                {
+                    c.Item().Text("Delivery Schedule").FontSize(9).Bold().FontColor(Colors.Grey.Darken1);
+                    if (_order.DeliveryDate.HasValue)
+                    {
+                        c.Item().PaddingTop(4).Text(_order.DeliveryDate.Value.ToString("MMMM dd, yyyy")).Bold();
+                        c.Item().Text(string.IsNullOrWhiteSpace(_order.DeliveryTimeSlot) ? "Anytime" : _order.DeliveryTimeSlot).FontSize(9).FontColor(Colors.Grey.Darken1);
+                    }
+                    else
+                    {
+                        c.Item().PaddingTop(4).Text("Not specified").FontSize(9).FontColor(Colors.Grey.Medium);
                     }
                 });
 

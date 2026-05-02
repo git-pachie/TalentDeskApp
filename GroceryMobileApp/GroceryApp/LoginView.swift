@@ -32,12 +32,6 @@ struct LoginView: View {
                         }
 
                         VStack(spacing: 18) {
-                            HStack(spacing: 12) {
-                                loginFeatureBadge(icon: "leaf.fill", text: "Fresh daily")
-                                loginFeatureBadge(icon: "clock.fill", text: "Fast checkout")
-                                loginFeatureBadge(icon: "truck.box.fill", text: "Local delivery")
-                            }
-
                             VStack(spacing: 18) {
                                 loginInputField(
                                     label: "Email",
@@ -178,16 +172,6 @@ struct LoginView: View {
         }
     }
 
-    private func loginFeatureBadge(icon: String, text: String) -> some View {
-        Label(text, systemImage: icon)
-            .font(.system(.caption, design: .rounded, weight: .bold))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color.white.opacity(0.75))
-            .foregroundStyle(Color(red: 0.18, green: 0.35, blue: 0.18))
-            .clipShape(Capsule())
-    }
-
     @ViewBuilder
     private func loginInputField(
         label: String,
@@ -208,11 +192,11 @@ struct LoginView: View {
 
                 if isSecure {
                     SecureField(placeholder, text: text)
-                        .font(.system(.title3, design: .rounded, weight: .medium))
+                        .font(.system(.body, design: .rounded, weight: .medium))
                         .textContentType(.password)
                 } else {
                     TextField(placeholder, text: text)
-                        .font(.system(.title3, design: .rounded, weight: .medium))
+                        .font(.system(.body, design: .rounded, weight: .medium))
                         .textContentType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()

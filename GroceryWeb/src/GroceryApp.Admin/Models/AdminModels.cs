@@ -286,6 +286,8 @@ public class OrderModel
     public string? Notes { get; set; }
     public string? VoucherCode { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? DeliveryDate { get; set; }
+    public string? DeliveryTimeSlot { get; set; }
     public List<OrderItemModel> Items { get; set; } = [];
     public OrderPaymentModel? Payment { get; set; }
     public OrderAddressModel? Address { get; set; }

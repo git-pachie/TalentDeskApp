@@ -86,6 +86,8 @@ public class OrderService : IOrderService
             AddressId = request.AddressId,
             VoucherId = voucherId,
             Notes = request.Notes,
+            DeliveryDate = request.DeliveryDate?.Date ?? DateTime.UtcNow.Date.AddDays(1),
+            DeliveryTimeSlot = string.IsNullOrWhiteSpace(request.DeliveryTimeSlot) ? null : request.DeliveryTimeSlot.Trim(),
             Items = cartItems.Select(c => new OrderItem
             {
                 ProductId = c.ProductId,
@@ -329,6 +331,8 @@ public class OrderService : IOrderService
             Notes = order.Notes,
             VoucherCode = order.Voucher?.Code,
             CreatedAt = order.CreatedAt,
+            DeliveryDate = order.DeliveryDate,
+            DeliveryTimeSlot = order.DeliveryTimeSlot,
             Items = order.Items.Select(i =>
             {
                 var primaryImage = i.Product?.Images?.FirstOrDefault(img => img.IsPrimary)

@@ -3,8 +3,7 @@ import SwiftUI
 struct ProfileView: View {
     @Environment(GrocerySettingsStore.self) private var settingsStore
     @Environment(AuthStore.self) private var authStore
-    @State private var showEmailVerifySheet = false
-    @State private var showPhoneVerifySheet = false
+    @State private var activeVerificationSheet: VerificationSheet?
     @State private var sendingTarget: VerificationTarget?
 
     private var hasPhoneNumber: Bool {
@@ -116,7 +115,7 @@ struct ProfileView: View {
                             sendingTarget = .email
                             let sent = await authStore.sendEmailVerificationCode()
                             sendingTarget = nil
-                            if sent { showEmailVerifySheet = true }
+                            if sent { activeVerificationSheet = .email }
                         }
                     }
                     verificationRow(
@@ -130,19 +129,12 @@ struct ProfileView: View {
                             sendingTarget = .phone
                             let sent = await authStore.sendPhoneVerificationCode()
                             sendingTarget = nil
-                            if sent { showPhoneVerifySheet = true }
+                            if sent { activeVerificationSheet = .phone }
                         }
                     } : nil)
                 } header: {
                     Label("Verification", systemImage: "shield.checkered")
                 }
-                .sheet(isPresented: $showEmailVerifySheet) {
-                    ProfileEmailVerifySheet()
-                }
-                .sheet(isPresented: $showPhoneVerifySheet) {
-                    ProfilePhoneVerifySheet()
-                }
-
                 Section("Settings") {
                     NavigationLink {
                         NotificationSettingsView()
@@ -168,6 +160,14 @@ struct ProfileView: View {
             }
             .refreshable {
                 await authStore.refreshCurrentUser()
+            }
+            .sheet(item: $activeVerificationSheet) { sheet in
+                switch sheet {
+                case .email:
+                    ProfileEmailVerifySheet()
+                case .phone:
+                    ProfilePhoneVerifySheet()
+                }
             }
         }
     }
@@ -239,6 +239,20 @@ struct ProfileView: View {
 private enum VerificationTarget {
     case email
     case phone
+}
+
+private enum VerificationSheet: Identifiable {
+    case email
+    case phone
+
+    var id: String {
+        switch self {
+        case .email:
+            return "email"
+        case .phone:
+            return "phone"
+        }
+    }
 }
 
 #Preview {

@@ -24,6 +24,8 @@ public class Order
     public Guid? AddressId { get; set; }
     public Guid? VoucherId { get; set; }
     public string? Notes { get; set; }
+    public DateTime? DeliveryDate { get; set; }
+    public string? DeliveryTimeSlot { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 

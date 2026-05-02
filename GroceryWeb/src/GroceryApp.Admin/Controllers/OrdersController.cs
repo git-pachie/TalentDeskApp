@@ -182,6 +182,10 @@ public class OrdersController : Controller
           <div style="background:#fff;padding:24px 32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;">
             <h2 style="font-size:18px;margin:0 0 4px;">{order.OrderNumber}</h2>
             <p style="color:#6b7280;font-size:13px;margin:0 0 16px;">Placed on {order.CreatedAt:MMMM dd, yyyy 'at' hh:mm tt}</p>
+            {(order.DeliveryDate.HasValue
+                ? $"<p style='color:#6b7280;font-size:13px;margin:0 0 16px;'>Delivery schedule: {order.DeliveryDate.Value:MMMM dd, yyyy}" +
+                  $"{(string.IsNullOrWhiteSpace(order.DeliveryTimeSlot) ? " (Anytime)" : $" at {order.DeliveryTimeSlot}")}</p>"
+                : "")}
             {customNote}
             <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
               <thead>

@@ -18,6 +18,8 @@ public class OrderDto
     public string? Notes { get; set; }
     public string? VoucherCode { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? DeliveryDate { get; set; }
+    public string? DeliveryTimeSlot { get; set; }
     public IEnumerable<OrderItemDto> Items { get; set; } = [];
     public PaymentSummaryDto? Payment { get; set; }
     public OrderAddressDto? Address { get; set; }
@@ -66,6 +68,8 @@ public class CreateOrderRequest
     public Guid? AddressId { get; set; }
     public string? VoucherCode { get; set; }
     public string? Notes { get; set; }
+    public DateTime? DeliveryDate { get; set; }
+    public string? DeliveryTimeSlot { get; set; }
     public decimal PlatformFee { get; set; } = 2m;
     public decimal OtherCharges { get; set; } = 1m;
 }

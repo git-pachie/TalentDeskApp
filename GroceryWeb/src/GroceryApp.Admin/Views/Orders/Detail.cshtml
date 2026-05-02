@@ -346,6 +346,25 @@
             </div>
         }
 
+        @if (Model.DeliveryDate.HasValue)
+        {
+            <div class="card form-card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-calendar2-week me-2 text-primary"></i>Delivery Schedule</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted" style="font-size:0.85rem;">Date</span>
+                        <span class="fw-medium" style="font-size:0.85rem;">@Model.DeliveryDate.Value.ToString("MMM dd, yyyy")</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted" style="font-size:0.85rem;">Time</span>
+                        <span class="fw-medium" style="font-size:0.85rem;">@(string.IsNullOrWhiteSpace(Model.DeliveryTimeSlot) ? "Anytime" : Model.DeliveryTimeSlot)</span>
+                    </div>
+                </div>
+            </div>
+        }
+
         <!-- Delivery Address -->
         @if (Model.Address is not null)
         {

@@ -111,6 +111,19 @@
     </div>
 
     <div class="info-box">
+        <div class="info-label">Delivery Schedule</div>
+        @if (Model.DeliveryDate.HasValue)
+        {
+            <div class="info-value" style="font-weight:bold;">@Model.DeliveryDate.Value.ToString("MMMM dd, yyyy")</div>
+            <div class="info-value" style="color:#6b7280;">@(string.IsNullOrWhiteSpace(Model.DeliveryTimeSlot) ? "Anytime" : Model.DeliveryTimeSlot)</div>
+        }
+        else
+        {
+            <div class="info-value" style="color:#9ca3af;">Not specified</div>
+        }
+    </div>
+
+    <div class="info-box">
         <div class="info-label">Payment</div>
         @if (Model.Payment is not null)
         {

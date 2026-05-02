@@ -217,6 +217,8 @@ struct OrderDTO: Decodable, Identifiable {
     let notes: String?
     let voucherCode: String?
     let createdAt: Date
+    let deliveryDate: Date?
+    let deliveryTimeSlot: String?
     let items: [OrderItemDTO]?
     let payment: PaymentSummaryDTO?
     let address: OrderAddressDTO?
@@ -300,14 +302,18 @@ struct CreateOrderRequest: Encodable {
     let addressId: UUID?
     let voucherCode: String?
     let notes: String?
+    let deliveryDate: Date?
+    let deliveryTimeSlot: String?
     let platformFee: Decimal
     let otherCharges: Decimal
 
-    init(addressId: UUID?, voucherCode: String?, notes: String?,
+    init(addressId: UUID?, voucherCode: String?, notes: String?, deliveryDate: Date?, deliveryTimeSlot: String?,
          platformFee: Decimal = 2, otherCharges: Decimal = 1) {
         self.addressId = addressId
         self.voucherCode = voucherCode
         self.notes = notes
+        self.deliveryDate = deliveryDate
+        self.deliveryTimeSlot = deliveryTimeSlot
         self.platformFee = platformFee
         self.otherCharges = otherCharges
     }
