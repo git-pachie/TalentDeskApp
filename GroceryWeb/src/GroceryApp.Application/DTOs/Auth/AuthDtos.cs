@@ -57,3 +57,14 @@ public class VerifyEmailResponse
     public string? Token { get; set; }
     public string? Error { get; set; }
 }
+
+public class VerifyPhoneRequest
+{
+    public string Code { get; set; } = string.Empty;
+}
+
+public class VerifyPhoneResponse
+{
+    public bool Success { get; set; }
+    public string? Error { get; set; }
+}

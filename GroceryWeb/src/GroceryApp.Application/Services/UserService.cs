@@ -21,6 +21,7 @@ public class UserService : IUserService
     private readonly IRepository<UserDevice> _userDeviceRepo;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailService _emailService;
+    private readonly ISmsService _smsService;
 
     public UserService(
         UserManager<User> userManager,
@@ -31,7 +32,8 @@ public class UserService : IUserService
         IRepository<Voucher> voucherRepo,
         IRepository<UserDevice> userDeviceRepo,
         IUnitOfWork unitOfWork,
-        IEmailService emailService)
+        IEmailService emailService,
+        ISmsService smsService)
     {
         _userManager = userManager;
         _addressRepo = addressRepo;
@@ -42,6 +44,7 @@ public class UserService : IUserService
         _userDeviceRepo = userDeviceRepo;
         _unitOfWork = unitOfWork;
         _emailService = emailService;
+        _smsService = smsService;
     }
 
     // ── List / Detail ──────────────────────────────────────────────────────────
@@ -435,17 +438,23 @@ public class UserService : IUserService
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null) return false;
+        if (string.IsNullOrWhiteSpace(user.PhoneNumber)) return false;
 
-        // Generate a 6-digit code
-        var code = new Random().Next(100000, 999999).ToString();
+        var code = Security.VerificationCodeGenerator.CreateFourDigitCode();
         user.PhoneVerificationCode = code;
         user.PhoneVerificationSentAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
         await _userManager.UpdateAsync(user);
 
-        // TODO: Integrate with SMS provider (Twilio, Semaphore, etc.)
-        // For now, the code is stored and can be validated from the mobile app.
-        return true;
+        try
+        {
+            await _smsService.SendPhoneVerificationCodeAsync(user.PhoneNumber, code);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     // ── Mappers ────────────────────────────────────────────────────────────────

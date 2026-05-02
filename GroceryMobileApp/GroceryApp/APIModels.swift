@@ -41,6 +41,15 @@ struct VerifyEmailResponse: Decodable {
     let error: String?
 }
 
+struct VerifyPhoneRequest: Encodable {
+    let code: String
+}
+
+struct VerifyPhoneResponse: Decodable {
+    let success: Bool
+    let error: String?
+}
+
 struct UserDTO: Codable, Identifiable {
     let id: UUID
     let firstName: String

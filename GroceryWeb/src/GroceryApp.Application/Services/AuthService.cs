@@ -16,17 +16,20 @@ public class AuthService : IAuthService
     private readonly IConfiguration _configuration;
     private readonly IEmailService _emailService;
     private readonly IUserDeviceService _userDeviceService;
+    private readonly ISmsService _smsService;
 
     public AuthService(
         UserManager<User> userManager,
         IConfiguration configuration,
         IEmailService emailService,
-        IUserDeviceService userDeviceService)
+        IUserDeviceService userDeviceService,
+        ISmsService smsService)
     {
         _userManager = userManager;
         _configuration = configuration;
         _emailService = emailService;
         _userDeviceService = userDeviceService;
+        _smsService = smsService;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -166,6 +169,58 @@ public class AuthService : IAuthService
         if (user.IsEmailVerified) return false; // already verified
 
         return await TrySendVerificationCodeAsync(user);
+    }
+
+    public async Task<bool> SendPhoneVerificationCodeAsync(Guid userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return false;
+        if (user.IsPhoneVerified) return false;
+        if (string.IsNullOrWhiteSpace(user.PhoneNumber)) return false;
+
+        var code = VerificationCodeGenerator.CreateFourDigitCode();
+        user.PhoneVerificationCode = code;
+        user.PhoneVerificationSentAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _userManager.UpdateAsync(user);
+
+        try
+        {
+            await _smsService.SendPhoneVerificationCodeAsync(user.PhoneNumber, code);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<VerifyPhoneResponse> VerifyPhoneAsync(Guid userId, VerifyPhoneRequest request)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+            return new VerifyPhoneResponse { Success = false, Error = "User not found." };
+
+        if (user.IsPhoneVerified)
+            return new VerifyPhoneResponse { Success = true };
+
+        if (string.IsNullOrEmpty(user.PhoneVerificationCode))
+            return new VerifyPhoneResponse { Success = false, Error = "No verification code was sent. Please request a new code." };
+
+        if (user.PhoneVerificationSentAt.HasValue &&
+            DateTime.UtcNow > user.PhoneVerificationSentAt.Value.AddMinutes(10))
+            return new VerifyPhoneResponse { Success = false, Error = "Verification code has expired. Please request a new code." };
+
+        if (user.PhoneVerificationCode != request.Code.Trim())
+            return new VerifyPhoneResponse { Success = false, Error = "Incorrect code. Please try again." };
+
+        user.IsPhoneVerified = true;
+        user.PhoneVerificationCode = null;
+        user.PhoneVerificationSentAt = null;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _userManager.UpdateAsync(user);
+
+        return new VerifyPhoneResponse { Success = true };
     }
 
     private async Task<bool> TrySendVerificationCodeAsync(User user)

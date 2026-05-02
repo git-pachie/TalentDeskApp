@@ -196,6 +196,30 @@ final class AuthStore {
         }
     }
 
+    /// Sends a verification code to the current user's phone number (must be logged in).
+    func sendPhoneVerificationCode() async -> Bool {
+        guard APIClient.shared.isAuthenticated else { return false }
+        guard let phoneNumber = currentUser?.phoneNumber, !phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            errorMessage = "No mobile number found on your account."
+            return false
+        }
+
+        do {
+            struct Resp: Decodable { let message: String? }
+            let _: Resp = try await APIClient.shared.post("/api/auth/send-phone-code", body: EmptyBody())
+            print("📱 [Auth] Phone verification code sent")
+            return true
+        } catch let error as APIError {
+            errorMessage = error.localizedDescription
+            print("⚠️ [Auth] Failed to send phone code: \(error.localizedDescription)")
+            return false
+        } catch {
+            errorMessage = error.localizedDescription
+            print("⚠️ [Auth] Failed to send phone code: \(error)")
+            return false
+        }
+    }
+
     /// Verifies email using a code — used from Profile (user already logged in).
     func verifyEmailFromProfile(code: String) async -> Bool {
         guard let email = currentUser?.email else { return false }
@@ -212,6 +236,40 @@ final class AuthStore {
                 // Refresh user profile to get updated verification status
                 await refreshCurrentUser()
                 print("✅ [Auth] Email verified from profile")
+                return true
+            } else {
+                errorMessage = response.error ?? "Incorrect code. Please try again."
+                return false
+            }
+        } catch let error as APIError {
+            errorMessage = error.localizedDescription
+            return false
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Verifies phone using a code from Profile (user already logged in).
+    func verifyPhoneFromProfile(code: String) async -> Bool {
+        guard let phoneNumber = currentUser?.phoneNumber,
+              !phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            errorMessage = "No mobile number found on your account."
+            return false
+        }
+
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            let response: VerifyPhoneResponse = try await APIClient.shared.post(
+                "/api/auth/verify-phone",
+                body: VerifyPhoneRequest(code: code)
+            )
+            if response.success {
+                await refreshCurrentUser()
+                print("✅ [Auth] Phone verified from profile")
                 return true
             } else {
                 errorMessage = response.error ?? "Incorrect code. Please try again."

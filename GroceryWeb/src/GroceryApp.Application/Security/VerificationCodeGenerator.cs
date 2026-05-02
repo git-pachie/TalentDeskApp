@@ -8,4 +8,9 @@ public static class VerificationCodeGenerator
     {
         return RandomNumberGenerator.GetInt32(1000, 10000).ToString();
     }
+
+    public static string CreateSixDigitCode()
+    {
+        return RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+    }
 }

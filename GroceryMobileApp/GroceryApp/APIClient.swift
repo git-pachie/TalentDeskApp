@@ -375,6 +375,19 @@ final class APIClient: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         let request = try buildRequest(path: path, method: "DELETE")
         try await executeNoContent(request)
     }
+
+    func checkConnectivity() async -> Bool {
+        struct HealthResponse: Decodable {
+            let status: String
+        }
+
+        do {
+            let response: HealthResponse = try await get("/api/health")
+            return response.status.lowercased() == "ok"
+        } catch {
+            return false
+        }
+    }
 }
 
 // MARK: - Error Body
