@@ -25,3 +25,11 @@ obj/
 
 # Uploaded files
 **/wwwroot/uploads/
+
+# Android
+.gradle/
+**/GroceryAndroid/.gradle/
+**/GroceryAndroid/.idea/
+**/GroceryAndroid/local.properties
+**/GroceryAndroid/build/
+**/GroceryAndroid/app/build/
