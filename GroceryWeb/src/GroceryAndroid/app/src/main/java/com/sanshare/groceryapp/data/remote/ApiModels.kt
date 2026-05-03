@@ -2,6 +2,7 @@ package com.sanshare.groceryapp.data.remote
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.net.URI
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -129,10 +130,29 @@ data class ProductImageDto(
 
 private fun resolveApiUrl(url: String?): String? {
     if (url.isNullOrBlank()) return null
-    if (url.startsWith("http", ignoreCase = true)) return url
+    if (url.startsWith("http", ignoreCase = true)) return rebuildUsingBaseUrl(url)
     val normalizedBase = ApiConfig.BASE_URL.trimEnd('/')
     val normalizedPath = if (url.startsWith("/")) url else "/$url"
     return "$normalizedBase$normalizedPath"
+}
+
+private fun rebuildUsingBaseUrl(url: String): String {
+    return try {
+        val source = URI(url)
+        val path = source.path.orEmpty()
+        val normalizedPath = when {
+            path.contains("/uploads/products/", ignoreCase = true) ->
+                path.substringAfter("/uploads/products/").substringBefore("?")
+            path.contains("/products/", ignoreCase = true) ->
+                path.substringAfter("/products/").substringBefore("?")
+            else -> path.substringAfterLast('/').substringBefore("?")
+        }.trimStart('/')
+
+        if (normalizedPath.isBlank()) url
+        else "${ApiConfig.BASE_URL.trimEnd('/')}/uploads/products/$normalizedPath"
+    } catch (_: Exception) {
+        url
+    }
 }
 
 @Serializable

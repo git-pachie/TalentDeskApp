@@ -90,6 +90,7 @@ dependencies {
 
     // Coil
     implementation(libs.coil.compose)
+    implementation(libs.okhttp)
 
     // DataStore
     implementation(libs.datastore.preferences)

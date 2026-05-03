@@ -44,11 +44,11 @@ public static class AppUrlBuilder
             imageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             return NormalizeAbsoluteUrl(appBaseUrl, imageUrl);
 
+        var fileName = imageUrl.Contains('/') ? imageUrl.Split('/').Last() : imageUrl;
         var uploadsBase = GetUploadsBase(appBaseUrl, folder);
         if (string.IsNullOrEmpty(uploadsBase))
-            return imageUrl;
+            return $"/uploads/{folder.Trim('/')}/{fileName}";
 
-        var fileName = imageUrl.Contains('/') ? imageUrl.Split('/').Last() : imageUrl;
         return $"{uploadsBase}/{fileName}";
     }
 }

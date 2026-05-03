@@ -6,6 +6,7 @@ import com.sanshare.groceryapp.data.remote.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.net.URI
 import javax.inject.Inject
 
 data class FavoritesState(
@@ -29,6 +30,7 @@ class FavoritesViewModel @Inject constructor(
             if (result is ApiResult.Success) {
                 val products = result.data.mapNotNull { fav ->
                     fav.product ?: if (fav.productName != null) {
+                        val favoriteImageUrl = resolveFavoriteImageUrl(fav.imageUrl)
                         ProductDto(
                             id = fav.productId,
                             name = fav.productName,
@@ -36,11 +38,11 @@ class FavoritesViewModel @Inject constructor(
                             discountPrice = fav.discountPrice,
                             categoryId = "",
                             categoryName = "",
-                            images = if (fav.imageUrl != null) listOf(
+                            images = if (favoriteImageUrl != null) listOf(
                                 ProductImageDto(
                                     id = "",
-                                    imageUrl = fav.imageUrl,
-                                    fullUrl = fav.imageUrl,
+                                    imageUrl = favoriteImageUrl,
+                                    fullUrl = favoriteImageUrl,
                                     isPrimary = true
                                 )
                             ) else emptyList(),
@@ -86,4 +88,39 @@ class FavoritesViewModel @Inject constructor(
     }
 
     fun isFavorite(productId: String): Boolean = _state.value.favoriteIds.contains(productId)
+
+    private fun resolveFavoriteImageUrl(imageUrl: String?): String? {
+        if (imageUrl.isNullOrBlank()) return null
+        if (imageUrl.startsWith("http", ignoreCase = true)) {
+            return rebuildUsingBaseUrl(imageUrl)
+        }
+        if (imageUrl.startsWith("/")) return "${ApiConfig.BASE_URL.trimEnd('/')}$imageUrl"
+        if (imageUrl.startsWith("uploads/", ignoreCase = true)) {
+            return "${ApiConfig.BASE_URL.trimEnd('/')}/${imageUrl.trimStart('/')}"
+        }
+        if (imageUrl.startsWith("products/", ignoreCase = true)) {
+            return "${ApiConfig.BASE_URL.trimEnd('/')}/uploads/${imageUrl.trimStart('/')}"
+        }
+
+        return "${ApiConfig.BASE_URL.trimEnd('/')}/uploads/products/$imageUrl"
+    }
+
+    private fun rebuildUsingBaseUrl(imageUrl: String): String {
+        return try {
+            val source = URI(imageUrl)
+            val path = source.path.orEmpty()
+            val normalizedPath = when {
+                path.contains("/uploads/products/", ignoreCase = true) ->
+                    path.substringAfter("/uploads/products/").substringBefore("?")
+                path.contains("/products/", ignoreCase = true) ->
+                    path.substringAfter("/products/").substringBefore("?")
+                else -> path.substringAfterLast('/').substringBefore("?")
+            }.trimStart('/')
+
+            if (normalizedPath.isBlank()) imageUrl
+            else "${ApiConfig.BASE_URL.trimEnd('/')}/uploads/products/$normalizedPath"
+        } catch (_: Exception) {
+            imageUrl
+        }
+    }
 }
