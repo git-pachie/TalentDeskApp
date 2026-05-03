@@ -34,13 +34,12 @@ fun FavoritesScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            Row(
+            ScreenHeader(
+                title = "Favorites",
+                subtitle = "Saved items you can quickly come back to.",
                 modifier = Modifier
-                    .fillMaxWidth()
                     .padding(16.dp),
-            ) {
-                Text("Favorites", style = MaterialTheme.typography.headlineMedium, color = colors.title, fontWeight = FontWeight.Bold)
-            }
+            )
 
             if (state.isLoading) {
                 LoadingBox()

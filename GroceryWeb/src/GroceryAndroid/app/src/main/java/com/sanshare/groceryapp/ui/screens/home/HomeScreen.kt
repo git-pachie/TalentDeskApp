@@ -79,68 +79,72 @@ fun HomeScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-        // ── Header ────────────────────────────────────────────────────────────
-        Row(
+        val addr = state.addresses.getOrNull(state.selectedAddressIndex)
+        AppSurfaceCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            contentPadding = PaddingValues(16.dp),
         ) {
-            GroceryIconView(size = 38)
-            Spacer(Modifier.width(10.dp))
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { showAddressSheet = true }
-            ) {
-                Text("Delivery to", fontSize = 11.sp, color = colors.muted)
-                val addr = state.addresses.getOrNull(state.selectedAddressIndex)
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                GroceryIconView(size = 40)
+                Spacer(Modifier.width(12.dp))
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { showAddressSheet = true }
+                ) {
+                    Text("Delivered to", style = MaterialTheme.typography.labelMedium, color = colors.muted)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = addr?.label ?: "Set address",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = colors.title,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Icon(Icons.Default.KeyboardArrowDown, null, tint = colors.muted, modifier = Modifier.size(18.dp))
+                    }
                     Text(
-                        text = addr?.label ?: "Set address",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colors.title,
-                    )
-                    Icon(Icons.Default.KeyboardArrowDown, null, tint = colors.title, modifier = Modifier.size(16.dp))
-                }
-                Text(
-                    text = addr?.fullAddress ?: "Tap to set delivery address",
-                    fontSize = 11.sp,
-                    color = colors.muted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                addr?.contactNumber?.takeIf { it.isNotBlank() }?.let { contact ->
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = contact,
-                        fontSize = 11.sp,
-                        color = GreenPrimary,
+                        text = addr?.fullAddress ?: "Tap to set delivery address",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.muted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                    addr?.contactNumber?.takeIf { it.isNotBlank() }?.let { contact ->
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = contact,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = colors.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
-            }
-            IconButton(onClick = {}) {
-                Icon(Icons.Default.Notifications, null, tint = colors.title)
+                Surface(
+                    color = colors.primaryLight,
+                    shape = CircleShape,
+                ) {
+                    IconButton(onClick = {}) {
+                        Icon(Icons.Default.Notifications, null, tint = colors.primary)
+                    }
+                }
             }
         }
 
         // ── Search bar ────────────────────────────────────────────────────────
-        Box(
+        AppSurfaceCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(colors.card)
-                .clickable { onSearchClick() }
-                .padding(horizontal = 14.dp, vertical = 12.dp)
+                .clickable { onSearchClick() },
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Search, null, tint = colors.muted, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Search fresh groceries...", color = colors.muted, fontSize = 14.sp)
+                Text("Search fresh groceries...", color = colors.muted, style = MaterialTheme.typography.bodyMedium)
             }
         }
 
@@ -306,6 +310,7 @@ fun HomeScreen(
 @Composable
 private fun BannerCard(banner: SpecialOfferDto, onShopNow: () -> Unit) {
     val isDark = isSystemInDarkTheme()
+    val colors = MaterialTheme.grocery
     val bgColor = try {
         val hex = banner.backgroundColorHex.trimStart('#')
         val argb = android.graphics.Color.parseColor("#$hex")
@@ -321,15 +326,15 @@ private fun BannerCard(banner: SpecialOfferDto, onShopNow: () -> Unit) {
     } else bgColor
 
     val textColor = if (isDark) Color.White else Color(0xFF1C1C1C)
-    val subtitleColor = if (isDark) Color.White.copy(alpha = 0.85f) else Color(0xFF727272)
+    val subtitleColor = if (isDark) Color.White.copy(alpha = 0.85f) else Color(0xFF627067)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 2.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(20.dp))
             .background(finalBg)
-            .padding(20.dp)
+            .padding(22.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
@@ -339,9 +344,9 @@ private fun BannerCard(banner: SpecialOfferDto, onShopNow: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = onShopNow,
-                    colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = Color.White),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
-                    modifier = Modifier.height(32.dp),
+                    modifier = Modifier.height(34.dp),
                 ) {
                     Text("Shop Now", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
@@ -371,18 +376,21 @@ private fun CategoryChip(name: String, emoji: String, onClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.clickable { onClick() }
     ) {
-        Box(
+        Surface(
             modifier = Modifier
-                .size(56.dp)
-                .background(GreenPrimary.copy(alpha = 0.12f), CircleShape),
-            contentAlignment = Alignment.Center,
+                .size(60.dp),
+            shape = CircleShape,
+            color = colors.primaryLight,
+            tonalElevation = 0.dp,
         ) {
-            Text(emoji, fontSize = 24.sp)
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(emoji, fontSize = 24.sp)
+            }
         }
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
             text = name,
-            fontSize = 11.sp,
+            style = MaterialTheme.typography.labelMedium,
             color = colors.subtitle,
             maxLines = 1,
         )

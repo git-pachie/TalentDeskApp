@@ -39,18 +39,11 @@ fun CartScreen(
             .background(colors.background)
     ) {
         // Header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("Cart", style = MaterialTheme.typography.headlineMedium, color = colors.title)
-            Spacer(Modifier.weight(1f))
-            if (state.items.isNotEmpty()) {
-                Text("${cartViewModel.totalItems} items", fontSize = 13.sp, color = colors.muted)
-            }
-        }
+        ScreenHeader(
+            title = "Cart",
+            subtitle = if (state.items.isNotEmpty()) "${cartViewModel.totalItems} items ready for checkout" else "Review your items before placing the order.",
+            modifier = Modifier.padding(16.dp)
+        )
 
         if (state.items.isEmpty()) {
             Box(Modifier.weight(1f)) {
@@ -75,8 +68,9 @@ fun CartScreen(
 
             // Checkout bar
             Surface(
-                shadowElevation = 8.dp,
-                color = colors.card,
+                shadowElevation = if (colors.isDark) 0.dp else 10.dp,
+                color = colors.navBar,
+                border = androidx.compose.foundation.BorderStroke(1.dp, colors.cardBorder),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -97,7 +91,10 @@ fun CartScreen(
                             onClick = onCheckout,
                             modifier = Modifier.height(52.dp),
                             shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = GreenPrimary,
+                                contentColor = Color.White,
+                            ),
                         ) {
                             Text(
                                 "Checkout (${cartViewModel.totalItems})",
@@ -125,20 +122,26 @@ private fun CartItemRow(
     var remarksText by remember(item.productId) { mutableStateOf(item.remarks) }
 
     Card(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = colors.card),
-        elevation = CardDefaults.cardElevation(2.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.cardBorder),
+        elevation = CardDefaults.cardElevation(if (colors.isDark) 0.dp else 2.dp),
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column {
+            // IntrinsicSize.Min makes the Row measure its min intrinsic height
+            // so the image Box can use fillMaxHeight() to match the content height
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
                 verticalAlignment = Alignment.Top,
             ) {
-                // Image
+                // Image — flush to card left edge, fills full row height
                 Box(
                     modifier = Modifier
-                        .size(70.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .width(80.dp)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp))
                         .background(Color(0xFFF5F5F5)),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -154,15 +157,21 @@ private fun CartItemRow(
                     }
                 }
 
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(10.dp))
 
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .padding(end = 10.dp)
+                        .padding(top = 12.dp),
                 ) {
-                    Text(item.productName, fontWeight = FontWeight.Normal, fontSize = 13.sp, color = colors.title, maxLines = 2)
-                    Text("₱${item.unitPrice.toInt()} each", fontSize = 12.sp, color = colors.muted)
+                    Text(
+                        item.productName,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = colors.title,
+                        maxLines = 2
+                    )
+                    Text("₱${item.unitPrice.toInt()} each", style = MaterialTheme.typography.bodySmall, color = colors.muted)
 
                     // Add note button
                     TextButton(
@@ -183,11 +192,12 @@ private fun CartItemRow(
                 Column(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.padding(top = 10.dp, end = 12.dp, bottom = 10.dp),
                 ) {
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(999.dp))
-                            .background(Color(0xFFF6F7F8))
+                            .background(colors.inputBackground)
                             .padding(horizontal = 4.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -196,7 +206,7 @@ private fun CartItemRow(
                             onClick = { if (item.quantity == 1) onRemove() else onDecrement() },
                             modifier = Modifier.size(28.dp),
                             colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = if (item.quantity == 1) com.sanshare.groceryapp.ui.theme.RedBadge.copy(alpha = 0.14f)
+                                containerColor = if (item.quantity == 1) com.sanshare.groceryapp.ui.theme.RedBadge.copy(alpha = 0.12f)
                                 else GreenPrimary.copy(alpha = 0.12f),
                                 contentColor = if (item.quantity == 1) com.sanshare.groceryapp.ui.theme.RedBadge else GreenPrimary,
                             )
@@ -219,7 +229,10 @@ private fun CartItemRow(
                         FilledIconButton(
                             onClick = onIncrement,
                             modifier = Modifier.size(28.dp),
-                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = GreenPrimary)
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = GreenPrimary,
+                                contentColor = Color.White,
+                            )
                         ) {
                             Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(14.dp))
                         }
@@ -227,7 +240,7 @@ private fun CartItemRow(
 
                     Text(
                         formatPeso(item.unitPrice * item.quantity),
-                        fontWeight = FontWeight.Normal,
+                        fontWeight = FontWeight.SemiBold,
                         color = colors.title,
                         fontSize = 13.sp,
                     )
@@ -244,7 +257,10 @@ private fun CartItemRow(
                         onRemarksChange(it)
                     },
                     placeholder = { Text("e.g. ripe ones please", fontSize = 12.sp) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                        .padding(bottom = 10.dp),
                     shape = RoundedCornerShape(8.dp),
                     singleLine = true,
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp),

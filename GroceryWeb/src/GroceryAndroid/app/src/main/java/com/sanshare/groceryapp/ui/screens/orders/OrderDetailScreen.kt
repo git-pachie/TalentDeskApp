@@ -160,11 +160,18 @@ fun OrderDetailScreen(
                     Spacer(Modifier.height(10.dp))
                     o.items?.forEach { item ->
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(IntrinsicSize.Min)
+                                .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Box(
-                                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFF5F5F5)),
+                                modifier = Modifier
+                                    .width(52.dp)
+                                    .fillMaxHeight()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color(0xFFF5F5F5)),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 if (item.productImageUrl != null) {

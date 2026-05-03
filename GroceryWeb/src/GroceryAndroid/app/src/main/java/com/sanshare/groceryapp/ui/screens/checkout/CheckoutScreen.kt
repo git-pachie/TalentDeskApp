@@ -123,65 +123,193 @@ fun CheckoutScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // ── Order Summary ─────────────────────────────────────────────────
-            SectionCard(title = "Order Summary", icon = Icons.Default.ShoppingBag) {
-                if (cartState.isLoading) {
-                    CircularProgressIndicator(color = GreenPrimary, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                } else if (cartState.items.isEmpty()) {
-                    Text("No items in cart yet.", fontSize = 13.sp, color = colors.muted)
-                } else {
-                    cartState.items.forEach { item ->
-                        Row(
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = colors.card),
+                elevation = CardDefaults.cardElevation(if (colors.isDark) 0.dp else 3.dp),
+                border = if (colors.isDark) androidx.compose.foundation.BorderStroke(1.dp, colors.cardBorder) else null,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column {
+                    // Header
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                                .size(32.dp)
+                                .background(GreenPrimary.copy(alpha = 0.12f), RoundedCornerShape(8.dp)),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Box(
+                            Icon(Icons.Default.ShoppingBag, null, tint = GreenPrimary, modifier = Modifier.size(16.dp))
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            "Order Summary",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = colors.title,
+                        )
+                        Spacer(Modifier.weight(1f))
+                        if (!cartState.isLoading) {
+                            Text(
+                                "${cartState.items.size} item${if (cartState.items.size != 1) "s" else ""}",
+                                fontSize = 12.sp,
+                                color = colors.muted,
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = colors.divider)
+
+                    if (cartState.isLoading) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(color = GreenPrimary, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                        }
+                    } else if (cartState.items.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("No items in cart yet.", fontSize = 13.sp, color = colors.muted)
+                        }
+                    } else {
+                        val items = cartState.items
+                        items.forEachIndexed { index, item ->
+                            Row(
                                 modifier = Modifier
-                                    .size(54.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFFF5F5F5)),
-                                contentAlignment = Alignment.Center,
+                                    .fillMaxWidth()
+                                    .height(IntrinsicSize.Min),
+                                verticalAlignment = Alignment.Top,
                             ) {
-                                if (!item.productImageUrl.isNullOrBlank()) {
-                                    AsyncImage(
-                                        model = item.productImageUrl,
-                                        contentDescription = item.productName,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize(),
-                                    )
-                                } else {
+                                // Image — flush left, corners match card on first/last
+                                Box(
+                                    modifier = Modifier
+                                        .width(88.dp)
+                                        .fillMaxHeight()
+                                        .clip(
+                                            RoundedCornerShape(
+                                                topStart = if (index == 0) 0.dp else 0.dp,
+                                                bottomStart = if (index == items.size - 1) 16.dp else 0.dp,
+                                                topEnd = 0.dp,
+                                                bottomEnd = 0.dp,
+                                            )
+                                        )
+                                        .background(
+                                            if (colors.isDark) Color(0xFF1E1E1E) else Color(0xFFF5F5F5)
+                                        ),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    if (!item.productImageUrl.isNullOrBlank()) {
+                                        AsyncImage(
+                                            model = item.productImageUrl,
+                                            contentDescription = item.productName,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize(),
+                                        )
+                                    } else {
+                                        Text("🛒", fontSize = 26.sp)
+                                    }
+                                }
+
+                                // Content
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(horizontal = 12.dp, vertical = 12.dp),
+                                ) {
                                     Text(
-                                        text = "🛒",
-                                        fontSize = 24.sp,
+                                        item.productName,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = colors.title,
+                                        lineHeight = 18.sp,
+                                    )
+                                    Spacer(Modifier.height(5.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        Text(
+                                            formatPeso(item.unitPrice),
+                                            fontSize = 12.sp,
+                                            color = colors.subtitle,
+                                        )
+                                        Text("·", fontSize = 12.sp, color = colors.muted)
+                                        // Qty badge
+                                        Box(
+                                            modifier = Modifier
+                                                .background(GreenPrimary.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
+                                                .padding(horizontal = 7.dp, vertical = 2.dp),
+                                        ) {
+                                            Text(
+                                                "×${item.quantity}",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = GreenPrimary,
+                                            )
+                                        }
+                                    }
+                                    if (!item.remarks.isNullOrBlank()) {
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            item.remarks,
+                                            fontSize = 11.sp,
+                                            color = colors.muted,
+                                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                        )
+                                    }
+                                }
+
+                                // Line total
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .padding(end = 14.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        formatPeso(item.unitPrice * item.quantity),
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = colors.title,
                                     )
                                 }
                             }
 
-                            Spacer(Modifier.width(12.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    item.productName,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    color = colors.title,
-                                    maxLines = 2,
-                                )
-                                Text(
-                                    "Qty: ${item.quantity}",
-                                    fontSize = 12.sp,
-                                    color = colors.subtitle,
+                            if (index < items.size - 1) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(start = 88.dp),
+                                    color = colors.divider,
                                 )
                             }
+                        }
 
-                            Spacer(Modifier.width(8.dp))
-
+                        // Subtotal row at bottom of card
+                        HorizontalDivider(color = colors.divider)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
                             Text(
-                                formatPeso(item.unitPrice * item.quantity),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = colors.title,
+                                "${cartState.items.sumOf { it.quantity }} items",
+                                fontSize = 13.sp,
+                                color = colors.subtitle,
+                            )
+                            Text(
+                                formatPeso(subtotal),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = colors.primary,
                             )
                         }
                     }
@@ -409,7 +537,10 @@ fun CheckoutScreen(
                 enabled = !cs.isPlacingOrder && !cs.isValidatingCheckout,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GreenPrimary,
+                    contentColor = Color.White,
+                ),
             ) {
                 if (cs.isPlacingOrder || cs.isValidatingCheckout) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
@@ -652,6 +783,7 @@ private fun SectionCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     trailingIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     onClick: (() -> Unit)? = null,
+    flushContent: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = MaterialTheme.grocery
@@ -661,8 +793,12 @@ private fun SectionCard(
         elevation = CardDefaults.cardElevation(2.dp),
         modifier = if (onClick != null) Modifier.fillMaxWidth().clickable { onClick() } else Modifier.fillMaxWidth(),
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Column {
+            // Header always has padding
+            Row(
+                modifier = Modifier.padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Icon(icon, null, tint = GreenPrimary, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
                 Text(title, fontWeight = FontWeight.SemiBold, color = GreenPrimary, fontSize = 13.sp)
@@ -671,8 +807,12 @@ private fun SectionCard(
                     Icon(trailingIcon, null, tint = colors.muted, modifier = Modifier.size(18.dp))
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            content()
+            // Content — flush means no horizontal padding (image can reach edges)
+            Column(
+                modifier = if (flushContent) Modifier.padding(bottom = 8.dp)
+                           else Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp),
+                content = content,
+            )
         }
     }
 }

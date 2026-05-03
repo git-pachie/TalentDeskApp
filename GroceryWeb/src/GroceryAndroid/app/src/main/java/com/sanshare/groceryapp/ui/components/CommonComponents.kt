@@ -27,7 +27,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -64,6 +63,58 @@ fun GroceryIconView(size: Int = 44) {
     }
 }
 
+@Composable
+fun ScreenHeader(
+    title: String,
+    subtitle: String? = null,
+    modifier: Modifier = Modifier,
+    trailing: (@Composable RowScope.() -> Unit)? = null,
+) {
+    val colors = MaterialTheme.grocery
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineMedium,
+                color = colors.title,
+            )
+            if (!subtitle.isNullOrBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.muted,
+                )
+            }
+        }
+        if (trailing != null) {
+            Spacer(Modifier.width(12.dp))
+            Row(content = trailing)
+        }
+    }
+}
+
+@Composable
+fun AppSurfaceCard(
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(16.dp),
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val colors = MaterialTheme.grocery
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.card),
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.cardBorder.copy(alpha = if (colors.isDark) 1f else 0.82f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (colors.isDark) 0.dp else 2.dp),
+    ) {
+        Column(modifier = Modifier.padding(contentPadding), content = content)
+    }
+}
+
 // ── Product Card ──────────────────────────────────────────────────────────────
 
 @Composable
@@ -81,15 +132,15 @@ fun ProductCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(288.dp)
+            .height(292.dp)
             .shadow(
-                elevation = if (colors.isDark) 0.dp else 4.dp,
-                shape = RoundedCornerShape(16.dp),
+                elevation = if (colors.isDark) 0.dp else 6.dp,
+                shape = RoundedCornerShape(20.dp),
                 ambientColor = Color.Black.copy(alpha = 0.06f),
                 spotColor = Color.Black.copy(alpha = 0.08f),
             )
             .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = colors.card),
         border = androidx.compose.foundation.BorderStroke(
             width = if (colors.isDark) 1.dp else 0.5.dp,
@@ -101,7 +152,8 @@ fun ProductCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(148.dp)
+                    .height(152.dp)
+                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                     .background(if (colors.isDark) Color(0xFF1E1E1E) else Color.White),
                 contentAlignment = Alignment.Center,
             ) {
@@ -109,10 +161,8 @@ fun ProductCard(
                     AsyncImage(
                         model = imageUrl,
                         contentDescription = product.name,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(10.dp),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
                     )
                 } else {
                     Text(text = emojiForCategory(product.categoryName), fontSize = 42.sp)
@@ -122,7 +172,7 @@ fun ProductCard(
                 product.discountPercent?.let { pct ->
                     Box(
                         modifier = Modifier
-                            .padding(8.dp)
+                            .padding(10.dp)
                             .align(Alignment.TopStart)
                             .background(colors.badge, RoundedCornerShape(6.dp))
                             .padding(horizontal = 7.dp, vertical = 3.dp),
@@ -141,8 +191,8 @@ fun ProductCard(
                     onClick = onFavoriteClick,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(6.dp)
-                        .size(34.dp)
+                        .padding(8.dp)
+                        .size(36.dp)
                         .background(
                             color = if (colors.isDark)
                                 Color(0xFF000000).copy(alpha = 0.45f)
@@ -165,8 +215,8 @@ fun ProductCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 12.dp)
-                    .padding(top = 10.dp, bottom = 10.dp),
+                    .padding(horizontal = 14.dp)
+                    .padding(top = 12.dp, bottom = 12.dp),
             ) {
                 Text(
                     text = product.name,
@@ -175,9 +225,9 @@ fun ProductCard(
                     color = colors.title,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    lineHeight = 18.sp,
+                    lineHeight = 19.sp,
                 )
-                Spacer(Modifier.height(3.dp))
+                Spacer(Modifier.height(5.dp))
                 Text(
                     text = product.categoryName,
                     style = MaterialTheme.typography.labelMedium,
@@ -210,7 +260,7 @@ fun ProductCard(
                     // Add to cart button
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(38.dp)
                             .background(colors.primary, CircleShape)
                             .clickable { onAddToCart() },
                         contentAlignment = Alignment.Center,
@@ -260,14 +310,15 @@ fun SectionHeader(
 
 @Composable
 fun OrderStatusBadge(status: String) {
+    val colors = MaterialTheme.grocery
     val (bg, fg) = when (status.lowercase()) {
-        "pending"        -> Color(0xFFFFF3CD) to Color(0xFF856404)
-        "paid"           -> Color(0xFFCFF4FC) to Color(0xFF055160)
-        "processing"     -> Color(0xFFCFE2FF) to Color(0xFF084298)
-        "outfordelivery" -> Color(0xFFEDE9FE) to Color(0xFF5B21B6)
-        "delivered"      -> Color(0xFFD1FAE5) to Color(0xFF065F46)
-        "cancelled"      -> Color(0xFFFEE2E2) to Color(0xFF991B1B)
-        else             -> Color(0xFFE5E7EB) to Color(0xFF374151)
+        "pending"        -> colors.warning.copy(alpha = 0.16f) to colors.warning
+        "paid"           -> Color(0xFF1D8CA8).copy(alpha = 0.18f) to Color(0xFF7FD8F2)
+        "processing"     -> Color(0xFF4F7CFF).copy(alpha = 0.16f) to Color(0xFF7FA1FF)
+        "outfordelivery" -> Color(0xFF8B5CF6).copy(alpha = 0.16f) to Color(0xFFC3B0FF)
+        "delivered"      -> colors.success.copy(alpha = 0.16f) to colors.success
+        "cancelled"      -> colors.badge.copy(alpha = 0.16f) to colors.badge
+        else             -> colors.muted.copy(alpha = 0.18f) to colors.subtitle
     }
     val label = when (status.lowercase()) {
         "outfordelivery" -> "Out for Delivery"
@@ -275,10 +326,10 @@ fun OrderStatusBadge(status: String) {
     }
     Box(
         modifier = Modifier
-            .background(bg, RoundedCornerShape(20.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp)
+            .background(bg, RoundedCornerShape(999.dp))
+            .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
-        Text(text = label, color = fg, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+        Text(text = label, color = fg, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -286,8 +337,13 @@ fun OrderStatusBadge(status: String) {
 
 @Composable
 fun LoadingBox(modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.grocery
     Box(modifier = modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = GreenPrimary)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(color = GreenPrimary, strokeWidth = 2.5.dp)
+            Spacer(Modifier.height(12.dp))
+            Text("Loading…", style = MaterialTheme.typography.bodySmall, color = colors.muted)
+        }
     }
 }
 

@@ -65,8 +65,9 @@ fun MainScreen(
     Scaffold(
         bottomBar = {
             NavigationBar(
-                containerColor = colors.card,
+                containerColor = colors.navBar,
                 tonalElevation = 0.dp,
+                modifier = Modifier.navigationBarsPadding(),
             ) {
                 tabs.forEachIndexed { index, tab ->
                     NavigationBarItem(
@@ -90,7 +91,7 @@ fun MainScreen(
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = GreenPrimary,
                             selectedTextColor = GreenPrimary,
-                            indicatorColor = GreenPrimary.copy(alpha = 0.12f),
+                            indicatorColor = GreenPrimary.copy(alpha = if (colors.isDark) 0.22f else 0.12f),
                             unselectedIconColor = colors.muted,
                             unselectedTextColor = colors.muted,
                         )

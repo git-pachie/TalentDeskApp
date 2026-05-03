@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sanshare.groceryapp.ui.components.AppSurfaceCard
 import com.sanshare.groceryapp.ui.theme.GreenPrimary
 import com.sanshare.groceryapp.ui.theme.grocery
 import com.sanshare.groceryapp.ui.viewmodel.AuthViewModel
@@ -255,15 +256,12 @@ fun ProfileScreen(
         Spacer(Modifier.height(14.dp))
 
         // ── Verification card ─────────────────────────────────────────────────
-        Card(
+        AppSurfaceCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = colors.card),
-            border = BorderStroke(1.dp, colors.cardBorder.copy(alpha = 0.9f)),
         ) {
-            Column(modifier = Modifier.padding(18.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 Text(
                     "Verification",
                     style = MaterialTheme.typography.titleMedium,
@@ -302,13 +300,10 @@ fun ProfileScreen(
         Spacer(Modifier.height(14.dp))
 
         // ── Account menu ──────────────────────────────────────────────────────
-        Card(
+        AppSurfaceCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = colors.card),
-            border = BorderStroke(1.dp, colors.cardBorder.copy(alpha = 0.9f)),
         ) {
             Column {
                 ProfileMenuItem(Icons.Default.ShoppingBag, "My Orders", onClick = onNavigateToOrders)
@@ -324,13 +319,10 @@ fun ProfileScreen(
         Spacer(Modifier.height(14.dp))
 
         // ── Sign out ──────────────────────────────────────────────────────────
-        Card(
+        AppSurfaceCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = colors.card),
-            border = BorderStroke(1.dp, colors.cardBorder.copy(alpha = 0.9f)),
         ) {
             ProfileMenuItem(
                 icon = Icons.Default.Logout,
@@ -377,7 +369,7 @@ private fun VerificationRow(
                 overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(4.dp))
-            val verifiedColor = if (isVerified) Color(0xFF22C55E) else Color(0xFFF59E0B)
+            val verifiedColor = if (isVerified) colors.success else colors.warning
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),

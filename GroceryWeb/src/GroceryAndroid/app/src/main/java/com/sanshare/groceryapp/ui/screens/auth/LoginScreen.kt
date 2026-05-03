@@ -1,6 +1,7 @@
 package com.sanshare.groceryapp.ui.screens.auth
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -25,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.BorderStroke
+import com.sanshare.groceryapp.ui.components.AppSurfaceCard
 import com.sanshare.groceryapp.ui.components.GroceryIconView
 import com.sanshare.groceryapp.ui.theme.GreenPrimary
 import com.sanshare.groceryapp.ui.theme.grocery
@@ -95,7 +96,10 @@ fun LoginScreen(
                 .height(260.dp)
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(GreenPrimary.copy(alpha = 0.15f), Color.Transparent)
+                        colors = listOf(
+                            GreenPrimary.copy(alpha = if (colors.isDark) 0.18f else 0.15f),
+                            Color.Transparent
+                        )
                     )
                 )
         )
@@ -107,28 +111,31 @@ fun LoginScreen(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(64.dp))
+            Spacer(Modifier.height(56.dp))
 
             GroceryIconView(size = 72)
-            Spacer(Modifier.height(18.dp))
-            Text("GroceryApp", style = MaterialTheme.typography.headlineMedium, color = colors.title)
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(20.dp))
+            Text("GroceryApp", style = MaterialTheme.typography.displaySmall, color = colors.title)
+            Spacer(Modifier.height(8.dp))
             Text(
-                "Sign in to your account",
+                "Fresh picks, smoother checkout, and delivery that feels effortless.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.muted
             )
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(28.dp))
 
-            Card(
+            AppSurfaceCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.card.copy(alpha = if (colors.isDark) 0.94f else 0.98f)),
-                border = BorderStroke(1.dp, colors.cardBorder.copy(alpha = 0.9f))
+                contentPadding = PaddingValues(22.dp)
             ) {
-                Column(modifier = Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text("Welcome back", style = MaterialTheme.typography.titleLarge, color = colors.title, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Use your email and password to continue.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.muted,
+                    )
 
                     OutlinedTextField(
                         value = email,
@@ -146,9 +153,9 @@ fun LoginScreen(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = GreenPrimary,
                             focusedLabelColor = GreenPrimary,
-                            unfocusedBorderColor = colors.cardBorder.copy(alpha = 1f),
-                            unfocusedContainerColor = colors.background.copy(alpha = if (colors.isDark) 0.6f else 1f),
-                            focusedContainerColor = colors.background.copy(alpha = if (colors.isDark) 0.6f else 1f),
+                            unfocusedBorderColor = colors.cardBorder,
+                            unfocusedContainerColor = colors.inputBackground,
+                            focusedContainerColor = colors.inputBackground,
                         )
                     )
 
@@ -182,9 +189,9 @@ fun LoginScreen(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = GreenPrimary,
                             focusedLabelColor = GreenPrimary,
-                            unfocusedBorderColor = colors.cardBorder.copy(alpha = 1f),
-                            unfocusedContainerColor = colors.background.copy(alpha = if (colors.isDark) 0.6f else 1f),
-                            focusedContainerColor = colors.background.copy(alpha = if (colors.isDark) 0.6f else 1f),
+                            unfocusedBorderColor = colors.cardBorder,
+                            unfocusedContainerColor = colors.inputBackground,
+                            focusedContainerColor = colors.inputBackground,
                         )
                     )
 
