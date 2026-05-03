@@ -34,6 +34,13 @@ class AddressViewModel @Inject constructor(private val apiClient: ApiClient) : V
         }
     }
 
+    fun updateAddress(id: String, request: UpdateAddressRequest) {
+        viewModelScope.launch {
+            val result = apiClient.put<UpdateAddressRequest, AddressDto>("${ApiConfig.ADDRESSES}/$id", request)
+            if (result is ApiResult.Success) loadAddresses()
+        }
+    }
+
     fun deleteAddress(id: String) {
         viewModelScope.launch {
             apiClient.delete("${ApiConfig.ADDRESSES}/$id")

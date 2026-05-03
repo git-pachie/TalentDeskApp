@@ -170,6 +170,34 @@ class ApiClient(
         }
     }
 
+    /** POST with empty JSON body — returns true on 2xx.
+     *  Uses ByteArray body to guarantee Content-Type: application/json is respected by Ktor. */
+    suspend fun postEmpty(path: String): Pair<Boolean, String?> {
+        return try {
+            val response = httpClient.post("${ApiConfig.BASE_URL}$path") {
+                addAuth()
+                contentType(ContentType.Application.Json)
+                setBody("{}".toByteArray(Charsets.UTF_8))
+            }
+            if (response.status == HttpStatusCode.Unauthorized) {
+                _tokenManager.clearToken()
+                _unauthorizedEvent.tryEmit(Unit)
+                return Pair(false, "Session expired. Please log in again.")
+            }
+            if (response.status.isSuccess()) {
+                Pair(true, null)
+            } else {
+                val body = try { response.bodyAsText() } catch (_: Exception) { "" }
+                val msg = extractErrorMessage(body).ifBlank { "Request failed (${response.status.value})" }
+                Log.w("ApiClient", "postEmpty $path → ${response.status.value}: $body")
+                Pair(false, msg)
+            }
+        } catch (e: Exception) {
+            Log.e("ApiClient", "postEmpty $path exception: ${e.message}")
+            Pair(false, e.message ?: "Network error")
+        }
+    }
+
     suspend fun checkConnectivity(): Boolean {
         return try {
             val response = httpClient.get("${ApiConfig.BASE_URL}${ApiConfig.HEALTH}")

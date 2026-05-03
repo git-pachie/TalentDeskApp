@@ -54,6 +54,12 @@ data class VerifyPhoneRequest(val code: String)
 data class VerifyPhoneResponse(val success: Boolean, val error: String? = null)
 
 @Serializable
+class EmptyRequest
+
+@Serializable
+data class SimpleMessageResponse(val message: String? = null)
+
+@Serializable
 data class UserDto(
     val id: String,
     val firstName: String,

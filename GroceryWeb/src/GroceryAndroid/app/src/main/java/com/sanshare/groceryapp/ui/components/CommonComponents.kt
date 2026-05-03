@@ -133,7 +133,7 @@ fun ProductCard(
                         .align(Alignment.TopEnd)
                         .padding(8.dp)
                         .size(36.dp)
-                        .background(colors.card.copy(alpha = 0.92f), CircleShape)
+                        .background(colors.card.copy(alpha = 0.5f), CircleShape)
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,

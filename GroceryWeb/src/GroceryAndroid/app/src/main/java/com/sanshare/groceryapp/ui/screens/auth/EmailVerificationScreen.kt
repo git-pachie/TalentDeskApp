@@ -1,19 +1,19 @@
 package com.sanshare.groceryapp.ui.screens.auth
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -23,29 +23,44 @@ import com.sanshare.groceryapp.ui.theme.GreenPrimary
 import com.sanshare.groceryapp.ui.theme.grocery
 import com.sanshare.groceryapp.ui.viewmodel.AuthViewModel
 
+/**
+ * Full-screen email verification shown after login/register when
+ * requiresEmailVerification = true.
+ *
+ * - Sends a code automatically on first appear.
+ * - Auto-submits when 4 digits are entered.
+ * - Resend Code re-sends via API.
+ * - "Log In Instead" logs out and goes back to login.
+ */
 @Composable
 fun EmailVerificationScreen(
     authViewModel: AuthViewModel,
     onVerified: () -> Unit,
+    onBack: (() -> Unit)? = null,
 ) {
     val state by authViewModel.state.collectAsState()
     val colors = MaterialTheme.grocery
 
-    var code by remember { mutableStateOf("") }
-    val focusRequester = remember { FocusRequester() }
+    var otpValue by remember { mutableStateOf("") }
+    var submitted by remember { mutableStateOf(false) }
+    var statusMessage by remember { mutableStateOf("") }
 
+    // Navigate away once authenticated
     LaunchedEffect(state.isAuthenticated) {
         if (state.isAuthenticated) onVerified()
     }
 
+    // Send code on first appear
     LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
+        authViewModel.resendEmailVerificationCode()
+        statusMessage = "A verification code has been sent to your email."
     }
 
-    // Auto-submit when 4 digits entered
-    LaunchedEffect(code) {
-        if (code.length == 4) {
-            authViewModel.verifyEmail(code)
+    // Reset boxes when error arrives (wrong code — let user retry)
+    LaunchedEffect(state.errorMessage) {
+        if (state.errorMessage != null) {
+            otpValue = ""
+            submitted = false
         }
     }
 
@@ -53,85 +68,161 @@ fun EmailVerificationScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(colors.background)
-            .padding(24.dp),
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(80.dp))
+        Spacer(Modifier.height(72.dp))
 
-        Text("📧", fontSize = 56.sp)
-        Spacer(Modifier.height(16.dp))
-        Text("Verify Your Email", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = colors.title)
+        Box(
+            modifier = Modifier
+                .size(90.dp)
+                .background(GreenPrimary.copy(alpha = 0.12f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Default.Email,
+                contentDescription = null,
+                tint = GreenPrimary,
+                modifier = Modifier.size(42.dp),
+            )
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        Text(
+            "Verify Your Email",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = colors.title,
+        )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Enter the 4-digit code sent to\n${state.pendingVerificationEmail}",
+            "We sent a 4-digit code to",
             fontSize = 14.sp,
             color = colors.subtitle,
             textAlign = TextAlign.Center,
         )
-
-        Spacer(Modifier.height(40.dp))
-
-        // Hidden text field driving the OTP boxes
-        BasicTextField(
-            value = code,
-            onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) code = it },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-            modifier = Modifier
-                .size(0.dp)
-                .focusRequester(focusRequester),
+        Text(
+            state.pendingVerificationEmail.ifBlank { "your email" },
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = GreenPrimary,
+            textAlign = TextAlign.Center,
         )
-
-        // OTP boxes
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            repeat(4) { index ->
-                val digit = code.getOrNull(index)?.toString() ?: ""
-                val isFocused = index == code.length
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .background(colors.card, RoundedCornerShape(12.dp))
-                        .border(
-                            width = if (isFocused) 2.dp else 1.dp,
-                            color = if (isFocused) GreenPrimary else colors.cardBorder,
-                            shape = RoundedCornerShape(12.dp),
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = digit,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colors.title,
-                    )
-                }
-            }
-        }
-
-        state.errorMessage?.let { err ->
-            Spacer(Modifier.height(12.dp))
-            Text(err, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
-        }
 
         Spacer(Modifier.height(32.dp))
 
-        if (state.isLoading) {
-            CircularProgressIndicator(color = GreenPrimary)
-        } else {
-            Button(
-                onClick = { if (code.length == 4) authViewModel.verifyEmail(code) },
-                enabled = code.length == 4,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
-            ) {
+        // OTP input — standard OutlinedTextField, no zero-size hacks
+        OutlinedTextField(
+            value = otpValue,
+            onValueChange = { input ->
+                if (!submitted) {
+                    val digits = input.filter { it.isDigit() }.take(4)
+                    otpValue = digits
+                    if (digits.length == 4) {
+                        submitted = true
+                        authViewModel.verifyEmail(digits)
+                    }
+                }
+            },
+            label = { Text("4-digit code") },
+            placeholder = { Text("_ _ _ _") },
+            singleLine = true,
+            enabled = !state.isLoading && !submitted,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = GreenPrimary,
+                focusedLabelColor = GreenPrimary,
+                unfocusedBorderColor = colors.cardBorder,
+            ),
+        )
+
+        Spacer(Modifier.height(10.dp))
+
+        state.errorMessage?.let { err ->
+            Text(
+                err,
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center,
+            )
+        }
+
+        if (statusMessage.isNotBlank() && state.errorMessage == null) {
+            Text(
+                statusMessage,
+                color = GreenPrimary,
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center,
+            )
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        Button(
+            onClick = {
+                if (otpValue.length == 4 && !submitted) {
+                    submitted = true
+                    authViewModel.verifyEmail(otpValue)
+                }
+            },
+            enabled = otpValue.length == 4 && !state.isLoading && !submitted,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = GreenPrimary,
+                disabledContainerColor = GreenPrimary.copy(alpha = 0.4f),
+            ),
+        ) {
+            if (state.isLoading || submitted) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                )
+            } else {
                 Text("Verify Email", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
-        TextButton(onClick = { /* TODO: resend code */ }) {
-            Text("Resend Code", color = GreenPrimary)
+        TextButton(
+            onClick = {
+                otpValue = ""
+                submitted = false
+                statusMessage = ""
+                authViewModel.clearError()
+                authViewModel.resendEmailVerificationCode()
+                statusMessage = "A new code has been sent."
+            },
+            enabled = !state.isLoading && !state.isSendingEmailCode,
+        ) {
+            if (state.isSendingEmailCode) {
+                CircularProgressIndicator(
+                    color = GreenPrimary,
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                )
+                Spacer(Modifier.width(6.dp))
+            }
+            Text("Resend Code", color = GreenPrimary, fontWeight = FontWeight.Medium)
         }
+
+        if (onBack != null) {
+            TextButton(onClick = {
+                authViewModel.logout()
+                onBack()
+            }) {
+                Text("Log In Instead", color = colors.subtitle)
+            }
+        }
+
+        Spacer(Modifier.height(40.dp))
     }
 }

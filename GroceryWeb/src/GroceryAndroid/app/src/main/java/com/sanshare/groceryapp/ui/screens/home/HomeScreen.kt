@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import com.sanshare.groceryapp.data.remote.ProductDto
 import com.sanshare.groceryapp.data.remote.SpecialOfferDto
 import com.sanshare.groceryapp.ui.components.*
@@ -332,10 +333,10 @@ private fun BannerCard(banner: SpecialOfferDto, onShopNow: () -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(banner.title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
-                Spacer(Modifier.height(4.dp))
-                Text(banner.subtitle, fontSize = 12.sp, color = subtitleColor, lineHeight = 16.sp)
-                Spacer(Modifier.height(12.dp))
+                Text(banner.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                Spacer(Modifier.height(3.dp))
+                Text(banner.subtitle, fontSize = 11.sp, color = subtitleColor, lineHeight = 14.sp, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = onShopNow,
                     colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
@@ -346,14 +347,18 @@ private fun BannerCard(banner: SpecialOfferDto, onShopNow: () -> Unit) {
                 }
             }
             Spacer(Modifier.width(12.dp))
-            if (banner.imageUrl != null) {
-                AsyncImage(
+            if (!banner.imageUrl.isNullOrBlank()) {
+                SubcomposeAsyncImage(
                     model = banner.imageUrl,
                     contentDescription = null,
-                    modifier = Modifier.size(88.dp).clip(RoundedCornerShape(14.dp))
+                    modifier = Modifier.size(88.dp).clip(RoundedCornerShape(14.dp)),
+                    error = {
+                        // Image URL exists but failed to load — show emoji instead
+                        Text(banner.emoji, fontSize = 32.sp)
+                    },
                 )
             } else {
-                Text(banner.emoji, fontSize = 44.sp)
+                Text(banner.emoji, fontSize = 32.sp)
             }
         }
     }

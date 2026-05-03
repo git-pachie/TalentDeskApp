@@ -440,15 +440,53 @@ fun CheckoutScreen(
                                 orderViewModel.selectAddress(addr.id)
                                 showAddressPicker = false
                             }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.Top,
                     ) {
-                        Icon(Icons.Default.LocationOn, null, tint = GreenPrimary)
+                        Icon(
+                            Icons.Default.LocationOn,
+                            null,
+                            tint = GreenPrimary,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(addr.label, fontWeight = FontWeight.SemiBold, color = colors.title)
                             Text(addr.fullAddress, fontSize = 12.sp, color = colors.subtitle)
+                            if (!addr.contactNumber.isNullOrBlank()) {
+                                Spacer(Modifier.height(2.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.Phone,
+                                        null,
+                                        tint = GreenPrimary,
+                                        modifier = Modifier.size(12.dp),
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(addr.contactNumber, fontSize = 12.sp, color = GreenPrimary)
+                                }
+                            }
+                            if (!addr.deliveryInstructions.isNullOrBlank()) {
+                                Spacer(Modifier.height(2.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.Info,
+                                        null,
+                                        tint = colors.muted,
+                                        modifier = Modifier.size(12.dp),
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        addr.deliveryInstructions,
+                                        fontSize = 11.sp,
+                                        color = colors.muted,
+                                        maxLines = 2,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
                         }
+                        Spacer(Modifier.width(8.dp))
                         if (addr.id == cs.selectedAddressId) {
                             Icon(Icons.Default.CheckCircle, null, tint = GreenPrimary)
                         }

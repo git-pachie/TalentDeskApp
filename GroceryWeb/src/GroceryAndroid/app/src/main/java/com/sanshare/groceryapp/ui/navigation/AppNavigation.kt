@@ -95,6 +95,12 @@ fun AppNavigation() {
                     navController.navigate(Screen.Main.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
+                },
+                onBack = {
+                    authViewModel.logout()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.EmailVerify.route) { inclusive = true }
+                    }
                 }
             )
         }

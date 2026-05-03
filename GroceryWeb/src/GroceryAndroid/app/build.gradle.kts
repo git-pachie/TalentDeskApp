@@ -98,9 +98,9 @@ dependencies {
     // Security
     implementation(libs.security.crypto)
 
-    // Maps
-    implementation(libs.maps.compose)
-    implementation(libs.play.services.maps)
+    // Maps — OSMDroid (OpenStreetMap, no API key required)
+    implementation(libs.osmdroid)
+    // Location (FusedLocationProvider — no Maps API key needed)
     implementation(libs.play.services.location)
 
     // Accompanist

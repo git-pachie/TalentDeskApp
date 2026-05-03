@@ -6,8 +6,8 @@ enum APIConfig {
     // Change this to your server's IP/hostname
     // Use "https://192.168.7.136:5002" for iOS Simulator on the same machine
     // Use "https://<your-mac-ip>:5001" for a physical device
-    static let baseURL = "https://127.0.0.1:5001"
-    //static let baseURL = "https://sandboxapi.sansharecab.com"
+    //static let baseURL = "https://127.0.0.1:5001"
+    static let baseURL = "https://sandboxapi.sansharecab.com"
 
     static var base: URL {
         URL(string: baseURL)!

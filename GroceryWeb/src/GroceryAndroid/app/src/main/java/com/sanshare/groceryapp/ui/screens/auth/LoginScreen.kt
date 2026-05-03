@@ -44,13 +44,41 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var showVerificationAlert by remember { mutableStateOf(false) }
 
-    // React to auth state changes
-    LaunchedEffect(state.isAuthenticated, state.requiresEmailVerification) {
-        when {
-            state.isAuthenticated           -> onLoginSuccess()
-            state.requiresEmailVerification -> onNeedsVerification()
-        }
+    // Navigate on successful login
+    LaunchedEffect(state.isAuthenticated) {
+        if (state.isAuthenticated) onLoginSuccess()
+    }
+
+    // Show alert when email verification is required
+    LaunchedEffect(state.requiresEmailVerification) {
+        if (state.requiresEmailVerification) showVerificationAlert = true
+    }
+
+    if (showVerificationAlert) {
+        AlertDialog(
+            onDismissRequest = { /* force user to choose */ },
+            title = { Text("Email Verification Required") },
+            text = {
+                Text(
+                    "Your email address needs to be verified before you can log in. " +
+                    "A 4-digit code will be sent to ${state.pendingVerificationEmail}."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showVerificationAlert = false
+                    onNeedsVerification()
+                }) { Text("Verify Now", color = GreenPrimary, fontWeight = FontWeight.SemiBold) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showVerificationAlert = false
+                    authViewModel.clearError()
+                }) { Text("Cancel") }
+            }
+        )
     }
 
     val colors = MaterialTheme.grocery

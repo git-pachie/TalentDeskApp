@@ -15,6 +15,7 @@ datastore = "1.1.1"
 maps-compose = "4.4.1"
 play-services-maps = "19.0.0"
 play-services-location = "21.3.0"
+osmdroid = "6.1.20"
 accompanist-pager = "0.36.0"
 core-ktx = "1.15.0"
 appcompat = "1.7.0"
@@ -79,6 +80,7 @@ security-crypto = { group = "androidx.security", name = "security-crypto", versi
 maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "maps-compose" }
 play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "play-services-maps" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "play-services-location" }
+osmdroid = { group = "org.osmdroid", name = "osmdroid-android", version.ref = "osmdroid" }
 
 # Accompanist
 accompanist-pager = { group = "com.google.accompanist", name = "accompanist-pager", version.ref = "accompanist-pager" }
