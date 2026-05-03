@@ -33,6 +33,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.sanshare.groceryapp.data.remote.OrderDto
+import com.sanshare.groceryapp.data.remote.OrderReviewDto
 import com.sanshare.groceryapp.data.remote.OrderReviewPhotoDto
 import com.sanshare.groceryapp.ui.components.*
 import com.sanshare.groceryapp.ui.theme.GreenPrimary
@@ -95,6 +96,7 @@ fun OrderDetailScreen(
         }
 
         val o = order!!
+        val existingReview = o.reviews?.firstOrNull()
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -233,7 +235,16 @@ fun OrderDetailScreen(
             }
 
             // Rating (delivered orders)
-            if (o.status.lowercase() == "delivered" && !reviewSubmitted) {
+            if (o.status.lowercase() == "delivered" && reviewSubmitted && existingReview != null) {
+                SubmittedReviewCard(
+                    review = existingReview,
+                    onPhotoClick = { urls, index ->
+                        viewerPhotos = urls
+                        viewerInitialPage = index
+                        showPhotoViewer = true
+                    }
+                )
+            } else if (o.status.lowercase() == "delivered" && !reviewSubmitted) {
                 Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("Rate this Order", fontWeight = FontWeight.Bold, color = colors.title)
@@ -306,19 +317,6 @@ fun OrderDetailScreen(
                                     }
                                 }
                             }
-                        }
-
-                        val reviewPhotos = o.reviews.orEmpty().flatMap { it.photos.orEmpty() }
-                        if (reviewSubmitted && reviewPhotos.isNotEmpty()) {
-                            Spacer(Modifier.height(12.dp))
-                            ReviewPhotosRow(
-                                photos = reviewPhotos,
-                                onPhotoClick = { urls, index ->
-                                    viewerPhotos = urls
-                                    viewerInitialPage = index
-                                    showPhotoViewer = true
-                                }
-                            )
                         }
 
                         Spacer(Modifier.height(12.dp))
@@ -438,6 +436,55 @@ private fun ReviewPhotosRow(
                     .size(76.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .clickable { onPhotoClick(resolvedUrls, index) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun SubmittedReviewCard(
+    review: OrderReviewDto,
+    onPhotoClick: (urls: List<String>, index: Int) -> Unit,
+) {
+    val colors = MaterialTheme.grocery
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.card)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Your Review", fontWeight = FontWeight.Bold, color = colors.title)
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                repeat(5) { index ->
+                    Icon(
+                        imageVector = if (index < review.rating) Icons.Default.Star else Icons.Default.StarBorder,
+                        contentDescription = null,
+                        tint = if (index < review.rating) Color(0xFFFACC15) else Color.Gray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Text("${review.rating}/5", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = colors.title)
+            }
+            if (!review.comment.isNullOrBlank()) {
+                Spacer(Modifier.height(10.dp))
+                Text(review.comment, fontSize = 13.sp, color = colors.subtitle)
+            }
+            if (!review.photos.isNullOrEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                Text("Uploaded Photos", fontSize = 12.sp, color = colors.muted)
+                Spacer(Modifier.height(8.dp))
+                ReviewPhotosRow(
+                    photos = review.photos,
+                    onPhotoClick = onPhotoClick
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "Submitted ${review.createdAt.take(16).replace("T", " ")}",
+                fontSize = 11.sp,
+                color = colors.muted
             )
         }
     }
