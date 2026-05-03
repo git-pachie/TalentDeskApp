@@ -1,6 +1,7 @@
 package com.sanshare.groceryapp.ui.screens.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,8 +18,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.sanshare.groceryapp.ui.theme.GreenPrimary
 import com.sanshare.groceryapp.ui.theme.grocery
 import com.sanshare.groceryapp.ui.viewmodel.AuthViewModel
@@ -62,18 +63,16 @@ fun ProfileScreen(
             .background(colors.background)
             .verticalScroll(rememberScrollState())
     ) {
-        // ── Profile Header ────────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(GreenPrimary.copy(alpha = 0.08f))
-                .padding(24.dp),
+                .background(GreenPrimary.copy(alpha = if (colors.isDark) 0.16f else 0.08f))
+                .padding(horizontal = 20.dp, vertical = 28.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Avatar
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(70.dp)
                         .clip(CircleShape)
                         .background(GreenPrimary),
                     contentAlignment = Alignment.Center,
@@ -82,36 +81,44 @@ fun ProfileScreen(
                         user?.firstName?.firstOrNull()?.let { append(it) }
                         user?.lastName?.firstOrNull()?.let { append(it) }
                     }.ifEmpty { "?" }
-                    Text(initials, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    Text(initials, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 }
                 Spacer(Modifier.width(16.dp))
-                Column {
-                    Text(user?.fullName ?: "Guest", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.title)
-                    Text(user?.email ?: "", fontSize = 13.sp, color = colors.subtitle)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(user?.fullName ?: "Guest", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = colors.title)
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        user?.email ?: "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.subtitle,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     user?.phoneNumber?.let {
-                        Text(it, fontSize = 12.sp, color = colors.muted)
+                        Spacer(Modifier.height(2.dp))
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = colors.muted)
                     }
                 }
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(14.dp))
 
-        // ── Verification Status ───────────────────────────────────────────────
         Card(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = colors.card),
+            border = BorderStroke(1.dp, colors.cardBorder.copy(alpha = 0.9f)),
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Verification", fontWeight = FontWeight.Bold, color = colors.title)
-                Spacer(Modifier.height(10.dp))
+            Column(modifier = Modifier.padding(18.dp)) {
+                Text("Verification", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = colors.title)
+                Spacer(Modifier.height(12.dp))
                 VerificationRow(
                     label = "Email",
                     isVerified = user?.isEmailVerified ?: false,
                     onSendCode = { /* TODO: send email code */ }
                 )
-                Divider(modifier = Modifier.padding(vertical = 8.dp), color = colors.cardBorder)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = colors.cardBorder)
                 VerificationRow(
                     label = "Mobile",
                     isVerified = user?.isPhoneVerified ?: false,
@@ -120,32 +127,32 @@ fun ProfileScreen(
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(14.dp))
 
-        // ── Account Links ─────────────────────────────────────────────────────
         Card(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = colors.card),
+            border = BorderStroke(1.dp, colors.cardBorder.copy(alpha = 0.9f)),
         ) {
             Column {
                 ProfileMenuItem(Icons.Default.ShoppingBag, "My Orders", onClick = onNavigateToOrders)
-                Divider(color = colors.cardBorder)
+                HorizontalDivider(color = colors.cardBorder)
                 ProfileMenuItem(Icons.Default.LocationOn, "Addresses", onClick = onNavigateToAddresses)
-                Divider(color = colors.cardBorder)
+                HorizontalDivider(color = colors.cardBorder)
                 ProfileMenuItem(Icons.Default.CreditCard, "Payment Methods", onClick = onNavigateToPaymentMethods)
-                Divider(color = colors.cardBorder)
+                HorizontalDivider(color = colors.cardBorder)
                 ProfileMenuItem(Icons.Default.LocalOffer, "Vouchers", onClick = onNavigateToVouchers)
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(14.dp))
 
-        // ── Sign Out ──────────────────────────────────────────────────────────
         Card(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = colors.card),
+            border = BorderStroke(1.dp, colors.cardBorder.copy(alpha = 0.9f)),
         ) {
             ProfileMenuItem(
                 icon = Icons.Default.Logout,
@@ -168,10 +175,10 @@ private fun VerificationRow(label: String, isVerified: Boolean, onSendCode: () -
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Column {
-            Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = colors.title)
+            Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = colors.title)
             Text(
                 if (isVerified) "Verified" else "Not verified",
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 color = if (isVerified) GreenPrimary else Color(0xFFF59E0B),
             )
         }
@@ -179,10 +186,11 @@ private fun VerificationRow(label: String, isVerified: Boolean, onSendCode: () -
             if (!isVerified) {
                 OutlinedButton(
                     onClick = onSendCode,
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                    modifier = Modifier.height(34.dp),
+                    shape = RoundedCornerShape(12.dp),
                 ) {
-                    Text("Send Code", fontSize = 11.sp, color = GreenPrimary)
+                    Text("Send Code", style = MaterialTheme.typography.labelMedium, color = GreenPrimary)
                 }
             }
         }
@@ -201,12 +209,20 @@ private fun ProfileMenuItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 18.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp))
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (tint == GreenPrimary) colors.primaryLight else tint.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp))
+        }
         Spacer(Modifier.width(14.dp))
-        Text(label, modifier = Modifier.weight(1f), color = if (tint == GreenPrimary) colors.title else tint, fontSize = 15.sp)
+        Text(label, modifier = Modifier.weight(1f), color = if (tint == GreenPrimary) colors.title else tint, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
         Icon(Icons.Default.ChevronRight, null, tint = colors.muted, modifier = Modifier.size(18.dp))
     }
 }

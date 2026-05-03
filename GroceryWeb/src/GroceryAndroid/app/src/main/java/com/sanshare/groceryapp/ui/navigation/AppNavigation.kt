@@ -19,6 +19,7 @@ sealed class Screen(val route: String) {
     object Register     : Screen("register")
     object EmailVerify  : Screen("email_verify")
     object Main         : Screen("main")
+    object Orders       : Screen("orders")
     object ProductDetail: Screen("product/{productId}") {
         fun createRoute(id: String) = "product/$id"
     }
@@ -109,6 +110,9 @@ fun AppNavigation() {
                 onNavigateToProductDetail = { productId ->
                     navController.navigate(Screen.ProductDetail.createRoute(productId))
                 },
+                onNavigateToOrders = {
+                    navController.navigate(Screen.Orders.route)
+                },
                 onNavigateToOrderDetail = { orderId ->
                     navController.navigate(Screen.OrderDetail.createRoute(orderId))
                 },
@@ -126,6 +130,15 @@ fun AppNavigation() {
                 },
                 onNavigateToSearch = {
                     navController.navigate(Screen.Search.route)
+                }
+            )
+        }
+
+        composable(Screen.Orders.route) {
+            com.sanshare.groceryapp.ui.screens.orders.OrdersScreen(
+                onBack = { navController.popBackStack() },
+                onOrderClick = { orderId ->
+                    navController.navigate(Screen.OrderDetail.createRoute(orderId))
                 }
             )
         }

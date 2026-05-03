@@ -1,7 +1,16 @@
 package com.sanshare.groceryapp.ui.screens.orders
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,16 +24,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.sanshare.groceryapp.data.remote.OrderDto
+import com.sanshare.groceryapp.data.remote.OrderReviewPhotoDto
 import com.sanshare.groceryapp.ui.components.*
 import com.sanshare.groceryapp.ui.theme.GreenPrimary
 import com.sanshare.groceryapp.ui.theme.grocery
 import com.sanshare.groceryapp.ui.viewmodel.OrderViewModel
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,13 +49,34 @@ fun OrderDetailScreen(
     viewModel: OrderViewModel = hiltViewModel(),
 ) {
     val colors = MaterialTheme.grocery
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var order by remember { mutableStateOf<OrderDto?>(null) }
     var rating by remember { mutableIntStateOf(0) }
     var reviewText by remember { mutableStateOf("") }
     var reviewSubmitted by remember { mutableStateOf(false) }
+    var selectedPhotoUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var isSubmittingReview by remember { mutableStateOf(false) }
+    var viewerPhotos by remember { mutableStateOf<List<String>>(emptyList()) }
+    var viewerInitialPage by remember { mutableIntStateOf(0) }
+    var showPhotoViewer by remember { mutableStateOf(false) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 5)
+    ) { uris ->
+        selectedPhotoUris = uris
+    }
 
     LaunchedEffect(orderId) {
-        viewModel.getOrderDetail(orderId).collect { order = it }
+        viewModel.getOrderDetail(orderId).collect { loaded ->
+            order = loaded
+            val existing = loaded?.reviews?.firstOrNull()
+            reviewSubmitted = existing != null
+            if (existing != null) {
+                rating = existing.rating
+                reviewText = existing.comment.orEmpty()
+            }
+        }
     }
 
     Scaffold(
@@ -68,7 +104,7 @@ fun OrderDetailScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Header
-            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -84,7 +120,7 @@ fun OrderDetailScreen(
 
             // Status timeline
             if (!o.statusHistory.isNullOrEmpty()) {
-                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("Order Status", fontWeight = FontWeight.Bold, color = colors.title)
                         Spacer(Modifier.height(12.dp))
@@ -116,7 +152,7 @@ fun OrderDetailScreen(
             }
 
             // Items
-            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Items Ordered", fontWeight = FontWeight.Bold, color = colors.title)
                     Spacer(Modifier.height(10.dp))
@@ -143,7 +179,7 @@ fun OrderDetailScreen(
                             }
                             Text(formatPeso(item.totalPrice), fontWeight = FontWeight.SemiBold, color = colors.title)
                         }
-                        Divider(color = colors.cardBorder)
+                        HorizontalDivider(color = colors.cardBorder)
                     }
                     // Totals
                     Spacer(Modifier.height(8.dp))
@@ -151,7 +187,7 @@ fun OrderDetailScreen(
                     if (o.discountAmount > 0) PriceRow("Discount", "-${formatPeso(o.discountAmount)}", valueColor = GreenPrimary)
                     PriceRow("Delivery Fee", formatPeso(o.deliveryFee))
                     o.platformFee?.let { if (it > 0) PriceRow("Platform Fee", formatPeso(it)) }
-                    Divider(modifier = Modifier.padding(vertical = 6.dp), color = colors.cardBorder)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp), color = colors.cardBorder)
                     PriceRow("Total", formatPeso(o.totalAmount), isTotal = true)
                 }
             }
@@ -198,7 +234,7 @@ fun OrderDetailScreen(
 
             // Rating (delivered orders)
             if (o.status.lowercase() == "delivered" && !reviewSubmitted) {
-                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("Rate this Order", fontWeight = FontWeight.Bold, color = colors.title)
                         Spacer(Modifier.height(10.dp))
@@ -224,24 +260,141 @@ fun OrderDetailScreen(
                             colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GreenPrimary),
                         )
                         Spacer(Modifier.height(10.dp))
+                        Text("Upload Photos", fontSize = 12.sp, color = colors.muted)
+                        Spacer(Modifier.height(8.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            if (!reviewSubmitted) {
+                                item {
+                                    OutlinedButton(
+                                        onClick = {
+                                            photoPickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
+                                        },
+                                        modifier = Modifier.height(76.dp),
+                                        shape = RoundedCornerShape(14.dp),
+                                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Icon(Icons.Default.AddAPhoto, null, tint = GreenPrimary)
+                                            Spacer(Modifier.height(4.dp))
+                                            Text("Add Photos", color = GreenPrimary, fontSize = 12.sp)
+                                        }
+                                    }
+                                }
+                            }
+                            itemsIndexed(selectedPhotoUris) { index, uri ->
+                                Box {
+                                    AsyncImage(
+                                        model = uri,
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(76.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                    )
+                                    IconButton(
+                                        onClick = {
+                                            selectedPhotoUris = selectedPhotoUris.toMutableList().also { it.removeAt(index) }
+                                        },
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .size(22.dp)
+                                            .background(Color.Black.copy(alpha = 0.55f), CircleShape)
+                                    ) {
+                                        Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(12.dp))
+                                    }
+                                }
+                            }
+                        }
+
+                        val reviewPhotos = o.reviews.orEmpty().flatMap { it.photos.orEmpty() }
+                        if (reviewSubmitted && reviewPhotos.isNotEmpty()) {
+                            Spacer(Modifier.height(12.dp))
+                            ReviewPhotosRow(
+                                photos = reviewPhotos,
+                                onPhotoClick = { urls, index ->
+                                    viewerPhotos = urls
+                                    viewerInitialPage = index
+                                    showPhotoViewer = true
+                                }
+                            )
+                        }
+
+                        Spacer(Modifier.height(12.dp))
                         Button(
                             onClick = {
                                 o.items?.firstOrNull()?.let { item ->
-                                    viewModel.submitReview(o.id, item.productId, rating, reviewText)
-                                    reviewSubmitted = true
+                                    scope.launch {
+                                        isSubmittingReview = true
+                                        val photoBytes = selectedPhotoUris.mapNotNull { uri ->
+                                            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                                        }
+                                        val submitted = viewModel.submitReview(o.id, item.productId, rating, reviewText, photoBytes)
+                                        if (submitted) {
+                                            reviewSubmitted = true
+                                            selectedPhotoUris = emptyList()
+                                            order = viewModel.getOrderDetail(orderId).firstOrNull()
+                                        }
+                                        isSubmittingReview = false
+                                    }
                                 }
                             },
-                            enabled = rating > 0,
+                            enabled = rating > 0 && !isSubmittingReview,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
                         ) {
-                            Text("Submit Review")
+                            if (isSubmittingReview) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            } else {
+                                Text("Submit Review")
+                            }
                         }
                     }
                 }
             }
 
             Spacer(Modifier.height(16.dp))
+        }
+    }
+
+    if (showPhotoViewer && viewerPhotos.isNotEmpty()) {
+        Dialog(onDismissRequest = { showPhotoViewer = false }) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = Color.Black
+            ) {
+                val pagerState = rememberPagerState(initialPage = viewerInitialPage, pageCount = { viewerPhotos.size })
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("${pagerState.currentPage + 1} / ${viewerPhotos.size}", color = Color.White)
+                        IconButton(onClick = { showPhotoViewer = false }) {
+                            Icon(Icons.Default.Close, null, tint = Color.White)
+                        }
+                    }
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(360.dp)
+                    ) { page ->
+                        AsyncImage(
+                            model = viewerPhotos[page],
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -253,7 +406,7 @@ private fun InfoCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = MaterialTheme.grocery
-    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = colors.card)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, null, tint = GreenPrimary, modifier = Modifier.size(18.dp))
@@ -262,6 +415,30 @@ private fun InfoCard(
             }
             Spacer(Modifier.height(10.dp))
             content()
+        }
+    }
+}
+
+@Composable
+private fun ReviewPhotosRow(
+    photos: List<OrderReviewPhotoDto>,
+    onPhotoClick: (urls: List<String>, index: Int) -> Unit,
+) {
+    val resolvedUrls = photos.map { photo ->
+        if (photo.photoUrl.startsWith("http")) photo.photoUrl else "${com.sanshare.groceryapp.data.remote.ApiConfig.BASE_URL}${photo.photoUrl}"
+    }
+
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        itemsIndexed(resolvedUrls) { index, url ->
+            AsyncImage(
+                model = url,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(76.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onPhotoClick(resolvedUrls, index) }
+            )
         }
     }
 }

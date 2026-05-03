@@ -1,7 +1,9 @@
 using GroceryApp.Application.DTOs.Favorites;
 using GroceryApp.Application.Interfaces;
+using GroceryApp.Application.Utilities;
 using GroceryApp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace GroceryApp.Application.Services;
 
@@ -9,11 +11,13 @@ public class FavoriteService : IFavoriteService
 {
     private readonly IRepository<Favorite> _favoriteRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly string _appBaseUrl;
 
-    public FavoriteService(IRepository<Favorite> favoriteRepo, IUnitOfWork unitOfWork)
+    public FavoriteService(IRepository<Favorite> favoriteRepo, IUnitOfWork unitOfWork, IConfiguration configuration)
     {
         _favoriteRepo = favoriteRepo;
         _unitOfWork = unitOfWork;
+        _appBaseUrl = (configuration["App:BaseUrl"] ?? string.Empty).TrimEnd('/');
     }
 
     public async Task<IEnumerable<FavoriteDto>> GetUserFavoritesAsync(Guid userId)
@@ -65,7 +69,7 @@ public class FavoriteService : IFavoriteService
         return true;
     }
 
-    private static FavoriteDto MapToDto(Favorite favorite)
+    private FavoriteDto MapToDto(Favorite favorite)
     {
         var primaryImage = favorite.Product.Images.FirstOrDefault(i => i.IsPrimary)
             ?? favorite.Product.Images.FirstOrDefault();
@@ -76,7 +80,7 @@ public class FavoriteService : IFavoriteService
             ProductName = favorite.Product.Name,
             Price = favorite.Product.Price,
             DiscountPrice = favorite.Product.DiscountPrice,
-            ImageUrl = primaryImage?.ImageUrl,
+            ImageUrl = AppUrlBuilder.BuildUploadUrl(_appBaseUrl, "products", primaryImage?.ImageUrl) ?? primaryImage?.ImageUrl,
             AddedAt = favorite.CreatedAt
         };
     }

@@ -257,12 +257,10 @@ class AuthViewModel @Inject constructor(
     }
 
     private suspend fun getOrCreateDeviceGuid(): String {
-        var guid: String? = null
-        userPreferences.deviceGuid.collect { guid = it }
-        if (guid.isNullOrBlank()) {
-            guid = UUID.randomUUID().toString()
-            userPreferences.setDeviceGuid(guid!!)
-        }
-        return guid!!
+        val existing = userPreferences.deviceGuid.first()
+        if (!existing.isNullOrBlank()) return existing
+        val newGuid = UUID.randomUUID().toString()
+        userPreferences.setDeviceGuid(newGuid)
+        return newGuid
     }
 }

@@ -40,6 +40,7 @@ fun MainScreen(
     authViewModel: AuthViewModel,
     onLogout: () -> Unit,
     onNavigateToProductDetail: (String) -> Unit,
+    onNavigateToOrders: () -> Unit,
     onNavigateToOrderDetail: (String) -> Unit,
     onNavigateToCheckout: () -> Unit,
     onNavigateToAddresses: () -> Unit,
@@ -101,6 +102,8 @@ fun MainScreen(
         Box(modifier = Modifier.padding(padding)) {
             when (selectedTab) {
                 0 -> HomeScreen(
+                    cartViewModel = cartViewModel,
+                    favoritesViewModel = favoritesViewModel,
                     onProductClick = onNavigateToProductDetail,
                     onSearchClick = onNavigateToSearch,
                     onCategoryClick = { selectedTab = 1 },
@@ -122,7 +125,7 @@ fun MainScreen(
                 4 -> ProfileScreen(
                     authViewModel = authViewModel,
                     onLogout = onLogout,
-                    onNavigateToOrders = { onNavigateToOrderDetail("") },
+                    onNavigateToOrders = onNavigateToOrders,
                     onNavigateToAddresses = onNavigateToAddresses,
                     onNavigateToPaymentMethods = onNavigateToPaymentMethods,
                     onNavigateToVouchers = onNavigateToVouchers,

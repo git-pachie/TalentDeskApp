@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
@@ -28,22 +29,33 @@ import com.sanshare.groceryapp.data.remote.SpecialOfferDto
 import com.sanshare.groceryapp.ui.components.*
 import com.sanshare.groceryapp.ui.theme.GreenPrimary
 import com.sanshare.groceryapp.ui.theme.grocery
+import com.sanshare.groceryapp.ui.viewmodel.CartViewModel
+import com.sanshare.groceryapp.ui.viewmodel.FavoritesViewModel
 import com.sanshare.groceryapp.ui.viewmodel.HomeViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    cartViewModel: CartViewModel,
+    favoritesViewModel: FavoritesViewModel,
     onProductClick: (String) -> Unit,
     onSearchClick: () -> Unit,
     onCategoryClick: (String?) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val favState by favoritesViewModel.state.collectAsState()
     val colors = MaterialTheme.grocery
     val pagerState = rememberPagerState { maxOf(state.specialOffers.size, 1) }
-    val scope = rememberCoroutineScope()
+    var showAddressSheet by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (state.categories.isEmpty() || state.deals.isEmpty()) {
+            viewModel.loadHome()
+        }
+    }
 
     // Auto-scroll banners
     LaunchedEffect(state.specialOffers.size) {
@@ -56,12 +68,16 @@ fun HomeScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(colors.background)
-            .verticalScroll(rememberScrollState())
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
         // ── Header ────────────────────────────────────────────────────────────
         Row(
             modifier = Modifier
@@ -71,7 +87,11 @@ fun HomeScreen(
         ) {
             GroceryIconView(size = 38)
             Spacer(Modifier.width(10.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { showAddressSheet = true }
+            ) {
                 Text("Delivery to", fontSize = 11.sp, color = colors.muted)
                 val addr = state.addresses.getOrNull(state.selectedAddressIndex)
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -88,7 +108,18 @@ fun HomeScreen(
                     fontSize = 11.sp,
                     color = colors.muted,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
+                addr?.contactNumber?.takeIf { it.isNotBlank() }?.let { contact ->
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = contact,
+                        fontSize = 11.sp,
+                        color = GreenPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
             IconButton(onClick = {}) {
                 Icon(Icons.Default.Notifications, null, tint = colors.title)
@@ -196,16 +227,27 @@ fun HomeScreen(
                 val deals = state.deals
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(bottom = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.height(
-                        ((deals.size / 2 + deals.size % 2) * 240).dp.coerceAtMost(720.dp)
+                        ((deals.size / 2 + deals.size % 2) * 306).dp.coerceAtMost(980.dp)
                     ),
                     userScrollEnabled = false,
                 ) {
                     items(deals) { product ->
                         ProductCard(
                             product = product,
+                            isFavorite = favState.favoriteIds.contains(product.id),
+                            onFavoriteClick = { favoritesViewModel.toggleFavorite(product) },
+                            onAddToCart = {
+                                cartViewModel.addProduct(
+                                    productId = product.id,
+                                    productName = product.name,
+                                    imageUrl = product.primaryImageUrl,
+                                    price = product.displayPrice,
+                                )
+                            },
                             onClick = { onProductClick(product.id) },
                         )
                     }
@@ -213,7 +255,50 @@ fun HomeScreen(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(96.dp))
+        }
+
+        if (showAddressSheet) {
+            ModalBottomSheet(onDismissRequest = { showAddressSheet = false }) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Select Delivery Address", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(12.dp))
+                    if (state.addresses.isEmpty()) {
+                        Text("No saved addresses yet.", color = colors.muted, fontSize = 14.sp)
+                    } else {
+                        state.addresses.forEachIndexed { index, address ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.selectAddress(index)
+                                        showAddressSheet = false
+                                    }
+                                    .padding(vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(Icons.Default.LocationOn, null, tint = GreenPrimary)
+                                Spacer(Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(address.label, color = colors.title, fontWeight = FontWeight.SemiBold)
+                                    Text(address.fullAddress, color = colors.subtitle, fontSize = 12.sp)
+                                }
+                                if (index == state.selectedAddressIndex) {
+                                    Icon(Icons.Default.CheckCircle, null, tint = GreenPrimary)
+                                }
+                            }
+                            HorizontalDivider(color = colors.cardBorder)
+                        }
+                    }
+                    Spacer(Modifier.height(24.dp))
+                }
+            }
+        }
+
+        CartNoticeHost(
+            cartViewModel = cartViewModel,
+            modifier = Modifier.statusBarsPadding()
+        )
     }
 }
 

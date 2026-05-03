@@ -3,6 +3,7 @@ package com.sanshare.groceryapp.ui.screens.checkout
 import android.app.DatePickerDialog
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,12 +14,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.sanshare.groceryapp.ui.components.*
 import com.sanshare.groceryapp.ui.theme.GreenPrimary
 import com.sanshare.groceryapp.ui.theme.grocery
@@ -62,7 +68,10 @@ fun CheckoutScreen(
     var showVoucherSheet by remember { mutableStateOf(false) }
     var showTimeSlotPicker by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { orderViewModel.initCheckout() }
+    LaunchedEffect(Unit) {
+        cartViewModel.loadFromServer()
+        orderViewModel.initCheckout()
+    }
 
     // Navigate on success
     LaunchedEffect(cs.orderPlaced, cs.placedOrder) {
@@ -77,6 +86,17 @@ fun CheckoutScreen(
         AlertDialog(
             onDismissRequest = { orderViewModel.clearCheckoutError() },
             title = { Text("Verification Required") },
+            text = { Text(err) },
+            confirmButton = {
+                TextButton(onClick = { orderViewModel.clearCheckoutError() }) { Text("OK") }
+            }
+        )
+    }
+
+    cs.error?.let { err ->
+        AlertDialog(
+            onDismissRequest = { orderViewModel.clearCheckoutError() },
+            title = { Text("Checkout") },
             text = { Text(err) },
             confirmButton = {
                 TextButton(onClick = { orderViewModel.clearCheckoutError() }) { Text("OK") }
@@ -104,13 +124,66 @@ fun CheckoutScreen(
         ) {
             // ── Order Summary ─────────────────────────────────────────────────
             SectionCard(title = "Order Summary", icon = Icons.Default.ShoppingBag) {
-                cartState.items.forEach { item ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text("${item.productName} x${item.quantity}", fontSize = 13.sp, color = colors.subtitle, modifier = Modifier.weight(1f))
-                        Text(formatPeso(item.unitPrice * item.quantity), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = colors.title)
+                if (cartState.isLoading) {
+                    CircularProgressIndicator(color = GreenPrimary, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                } else if (cartState.items.isEmpty()) {
+                    Text("No items in cart yet.", fontSize = 13.sp, color = colors.muted)
+                } else {
+                    cartState.items.forEach { item ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFF5F5F5)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (!item.productImageUrl.isNullOrBlank()) {
+                                    AsyncImage(
+                                        model = item.productImageUrl,
+                                        contentDescription = item.productName,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                } else {
+                                    Text(
+                                        text = "🛒",
+                                        fontSize = 24.sp,
+                                    )
+                                }
+                            }
+
+                            Spacer(Modifier.width(12.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    item.productName,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = colors.title,
+                                    maxLines = 2,
+                                )
+                                Text(
+                                    "Qty: ${item.quantity}",
+                                    fontSize = 12.sp,
+                                    color = colors.subtitle,
+                                )
+                            }
+
+                            Spacer(Modifier.width(8.dp))
+
+                            Text(
+                                formatPeso(item.unitPrice * item.quantity),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = colors.title,
+                            )
+                        }
                     }
                 }
             }
@@ -144,6 +217,70 @@ fun CheckoutScreen(
                 Text(cs.paymentMethod, fontWeight = FontWeight.SemiBold, color = colors.title)
             }
 
+            AnimatedVisibility(
+                visible = cs.paymentMethod == "Credit Card" || cs.paymentMethod == "Debit Card",
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                SectionCard(title = "Card Details", icon = Icons.Default.CreditCard) {
+                    CardPreview(
+                        cardHolderName = cs.cardHolderName,
+                        cardNumber = cs.cardNumber,
+                        cardExpiry = cs.cardExpiry,
+                        cardType = cs.paymentMethod,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = cs.cardHolderName,
+                        onValueChange = { orderViewModel.setCardHolderName(it) },
+                        label = { Text("Cardholder Name") },
+                        placeholder = { Text("Juan Dela Cruz") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GreenPrimary),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = formatCardNumber(cs.cardNumber),
+                        onValueChange = { orderViewModel.setCardNumber(it.filter(Char::isDigit).take(19)) },
+                        label = { Text("Card Number") },
+                        placeholder = { Text("1234 5678 9012 3456") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GreenPrimary),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedTextField(
+                            value = cs.cardExpiry,
+                            onValueChange = { orderViewModel.setCardExpiry(formatExpiry(it)) },
+                            label = { Text("Expiry") },
+                            placeholder = { Text("MM/YY") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GreenPrimary),
+                        )
+                        OutlinedTextField(
+                            value = cs.cardCvv,
+                            onValueChange = { orderViewModel.setCardCvv(it.filter(Char::isDigit).take(4)) },
+                            label = { Text("CVV") },
+                            placeholder = { Text("123") },
+                            modifier = Modifier.width(112.dp),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                            visualTransformation = PasswordVisualTransformation(),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GreenPrimary),
+                        )
+                    }
+                }
+            }
+
             // ── Voucher ───────────────────────────────────────────────────────
             SectionCard(
                 title = "Voucher",
@@ -151,8 +288,9 @@ fun CheckoutScreen(
                 trailingIcon = Icons.Default.ChevronRight,
                 onClick = { showVoucherSheet = true },
             ) {
-                if (cs.appliedVoucher != null) {
-                    Text(cs.appliedVoucher.code, fontWeight = FontWeight.Bold, color = GreenPrimary)
+                val appliedVoucher = cs.appliedVoucher
+                if (appliedVoucher != null) {
+                    Text(appliedVoucher.code, fontWeight = FontWeight.Bold, color = GreenPrimary)
                     Text("-${formatPeso(cs.voucherDiscount)} applied", fontSize = 12.sp, color = GreenPrimary)
                 } else {
                     Text("Apply a voucher code", color = colors.muted)
@@ -401,6 +539,72 @@ fun CheckoutScreen(
                 Spacer(Modifier.height(32.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun CardPreview(
+    cardHolderName: String,
+    cardNumber: String,
+    cardExpiry: String,
+    cardType: String,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(Color(0xFF23643A), Color(0xFF3B9457), Color(0xFF62B96C))
+                )
+            )
+            .padding(16.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.CreditCard, contentDescription = null, tint = Color.White.copy(alpha = 0.95f))
+                Spacer(Modifier.weight(1f))
+                Text(cardType, color = Color.White.copy(alpha = 0.92f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            }
+            Text(
+                text = formatCardNumber(cardNumber).ifBlank { "•••• •••• •••• ••••" },
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 1.sp,
+            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text("CARDHOLDER", color = Color.White.copy(alpha = 0.72f), fontSize = 10.sp)
+                    Text(
+                        cardHolderName.ifBlank { "YOUR NAME" },
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("EXPIRES", color = Color.White.copy(alpha = 0.72f), fontSize = 10.sp)
+                    Text(
+                        cardExpiry.ifBlank { "MM/YY" },
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun formatCardNumber(raw: String): String =
+    raw.filter(Char::isDigit).chunked(4).joinToString(" ").take(23)
+
+private fun formatExpiry(raw: String): String {
+    val digits = raw.filter(Char::isDigit).take(4)
+    return when {
+        digits.length <= 2 -> digits
+        else -> "${digits.take(2)}/${digits.drop(2)}"
     }
 }
 

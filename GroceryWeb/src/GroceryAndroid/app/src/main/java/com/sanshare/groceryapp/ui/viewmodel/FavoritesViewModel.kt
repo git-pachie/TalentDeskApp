@@ -37,7 +37,12 @@ class FavoritesViewModel @Inject constructor(
                             categoryId = "",
                             categoryName = "",
                             images = if (fav.imageUrl != null) listOf(
-                                ProductImageDto(id = "", imageUrl = fav.imageUrl, isPrimary = true)
+                                ProductImageDto(
+                                    id = "",
+                                    imageUrl = fav.imageUrl,
+                                    fullUrl = fav.imageUrl,
+                                    isPrimary = true
+                                )
                             ) else emptyList(),
                         )
                     } else null

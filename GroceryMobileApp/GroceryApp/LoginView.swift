@@ -194,6 +194,8 @@ struct LoginView: View {
                     SecureField(placeholder, text: text)
                         .font(.system(.body, design: .rounded, weight: .medium))
                         .textContentType(.password)
+                        .foregroundStyle(Color.black.opacity(0.82))
+                        .tint(GroceryTheme.primary)
                 } else {
                     TextField(placeholder, text: text)
                         .font(.system(.body, design: .rounded, weight: .medium))
@@ -201,6 +203,8 @@ struct LoginView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .keyboardType(.emailAddress)
+                        .foregroundStyle(Color.black.opacity(0.82))
+                        .tint(GroceryTheme.primary)
                 }
             }
             .padding(.horizontal, 18)

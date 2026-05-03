@@ -1,6 +1,7 @@
 package com.sanshare.groceryapp.data.remote
 
 import android.util.Log
+import com.sanshare.groceryapp.data.local.TokenManager
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.android.*
@@ -9,27 +10,27 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.serialization.json.Json
-import javax.inject.Inject
-import javax.inject.Singleton
 
 sealed class ApiResult<out T> {
     data class Success<T>(val data: T) : ApiResult<T>()
     data class Error(val message: String, val code: Int = 0) : ApiResult<Nothing>()
 }
 
-@Singleton
-class ApiClient @Inject constructor(
-    private val tokenManager: TokenManager,
+class ApiClient(
+    tokenManager: TokenManager,
 ) {
-    private val _unauthorizedEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    @PublishedApi internal val _tokenManager = tokenManager
+    @PublishedApi internal val _unauthorizedEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val unauthorizedEvent = _unauthorizedEvent.asSharedFlow()
 
-    private val json = Json {
+    @PublishedApi
+    internal val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
         coerceInputValues = true
@@ -69,13 +70,15 @@ class ApiClient @Inject constructor(
         }
     }
 
-    private fun HttpRequestBuilder.addAuth() {
-        tokenManager.getToken()?.let { token ->
+    @PublishedApi
+    internal fun HttpRequestBuilder.addAuth() {
+        _tokenManager.getToken()?.let { token ->
             header(HttpHeaders.Authorization, "Bearer $token")
         }
     }
 
-    private fun HttpRequestBuilder.addCacheControl() {
+    @PublishedApi
+    internal fun HttpRequestBuilder.addCacheControl() {
         header("Cache-Control", "no-cache, no-store, must-revalidate")
         header("Pragma", "no-cache")
     }
@@ -131,7 +134,8 @@ class ApiClient @Inject constructor(
         }
     }
 
-    suspend inline fun <reified T> handleResponse(response: HttpResponse): ApiResult<T> {
+    @PublishedApi
+    internal suspend inline fun <reified T> handleResponse(response: HttpResponse): ApiResult<T> {
         return when {
             response.status.isSuccess() -> {
                 try {
@@ -141,7 +145,7 @@ class ApiClient @Inject constructor(
                 }
             }
             response.status == HttpStatusCode.Unauthorized -> {
-                tokenManager.clearToken()
+                _tokenManager.clearToken()
                 _unauthorizedEvent.tryEmit(Unit)
                 ApiResult.Error("Session expired. Please log in again.", 401)
             }
@@ -156,7 +160,8 @@ class ApiClient @Inject constructor(
         }
     }
 
-    private fun extractErrorMessage(body: String): String {
+    @PublishedApi
+    internal fun extractErrorMessage(body: String): String {
         return try {
             val parsed = json.decodeFromString<Map<String, String>>(body)
             parsed["error"] ?: parsed["message"] ?: "Bad request"
@@ -171,6 +176,37 @@ class ApiClient @Inject constructor(
             response.status.isSuccess()
         } catch (e: Exception) {
             false
+        }
+    }
+
+    suspend fun uploadReviewPhotos(files: List<ByteArray>): ApiResult<List<String>> {
+        return try {
+            val response = httpClient.submitFormWithBinaryData(
+                url = "${ApiConfig.BASE_URL}/api/reviews/upload",
+                formData = formData {
+                    files.forEachIndexed { index, bytes ->
+                        append(
+                            key = "files",
+                            value = bytes,
+                            headers = Headers.build {
+                                append(HttpHeaders.ContentDisposition, "filename=\"review_$index.jpg\"")
+                                append(HttpHeaders.ContentType, "image/jpeg")
+                            }
+                        )
+                    }
+                }
+            ) {
+                addAuth()
+            }
+
+            if (response.status.isSuccess()) {
+                val payload = response.body<UploadReviewPhotosResponse>()
+                ApiResult.Success(payload.urls)
+            } else {
+                ApiResult.Error("Upload failed: ${response.status.value}", response.status.value)
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(e.message ?: "Photo upload failed")
         }
     }
 }

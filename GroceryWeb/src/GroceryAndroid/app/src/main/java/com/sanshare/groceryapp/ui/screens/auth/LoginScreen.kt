@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.BorderStroke
 import com.sanshare.groceryapp.ui.components.GroceryIconView
 import com.sanshare.groceryapp.ui.theme.GreenPrimary
 import com.sanshare.groceryapp.ui.theme.grocery
@@ -78,114 +79,127 @@ fun LoginScreen(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(72.dp))
+            Spacer(Modifier.height(64.dp))
 
-            GroceryIconView(size = 64)
-            Spacer(Modifier.height(16.dp))
-            Text("GroceryApp", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = colors.title)
-            Text("Sign in to your account", fontSize = 14.sp, color = colors.muted)
-
-            Spacer(Modifier.height(40.dp))
-
-            // Email field
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
-                leadingIcon = { Icon(Icons.Default.Email, null, tint = colors.muted) },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next,
-                ),
-                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = GreenPrimary,
-                    focusedLabelColor = GreenPrimary,
-                )
+            GroceryIconView(size = 72)
+            Spacer(Modifier.height(18.dp))
+            Text("GroceryApp", style = MaterialTheme.typography.headlineMedium, color = colors.title)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Sign in to your account",
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.muted
             )
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(32.dp))
 
-            // Password field
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                leadingIcon = { Icon(Icons.Default.Lock, null, tint = colors.muted) },
-                trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            null, tint = colors.muted
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = colors.card.copy(alpha = if (colors.isDark) 0.94f else 0.98f)),
+                border = BorderStroke(1.dp, colors.cardBorder.copy(alpha = 0.9f))
+            ) {
+                Column(modifier = Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text("Welcome back", style = MaterialTheme.typography.titleLarge, color = colors.title, fontWeight = FontWeight.Bold)
+
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        leadingIcon = { Icon(Icons.Default.Email, null, tint = colors.muted) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next,
+                        ),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = GreenPrimary,
+                            focusedLabelColor = GreenPrimary,
+                            unfocusedBorderColor = colors.cardBorder.copy(alpha = 1f),
+                            unfocusedContainerColor = colors.background.copy(alpha = if (colors.isDark) 0.6f else 1f),
+                            focusedContainerColor = colors.background.copy(alpha = if (colors.isDark) 0.6f else 1f),
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = colors.muted) },
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    null, tint = colors.muted
+                                )
+                            }
+                        },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done,
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            focusManager.clearFocus()
+                            if (email.isNotBlank() && password.isNotBlank()) {
+                                authViewModel.login(email, password)
+                            }
+                        }),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = GreenPrimary,
+                            focusedLabelColor = GreenPrimary,
+                            unfocusedBorderColor = colors.cardBorder.copy(alpha = 1f),
+                            unfocusedContainerColor = colors.background.copy(alpha = if (colors.isDark) 0.6f else 1f),
+                            focusedContainerColor = colors.background.copy(alpha = if (colors.isDark) 0.6f else 1f),
+                        )
+                    )
+
+                    state.errorMessage?.let { err ->
+                        Text(err, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+
+                    Button(
+                        onClick = {
+                            focusManager.clearFocus()
+                            authViewModel.login(email, password)
+                        },
+                        enabled = email.isNotBlank() && password.isNotBlank() && !state.isLoading,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
+                    ) {
+                        if (state.isLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text("Sign In", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text("Don't have an account? ", color = colors.subtitle, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "Sign Up",
+                            color = GreenPrimary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.clickable { onNavigateToRegister() }
                         )
                     }
-                },
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done,
-                ),
-                keyboardActions = KeyboardActions(onDone = {
-                    focusManager.clearFocus()
-                    if (email.isNotBlank() && password.isNotBlank()) {
-                        authViewModel.login(email, password)
-                    }
-                }),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = GreenPrimary,
-                    focusedLabelColor = GreenPrimary,
-                )
-            )
-
-            // Error message
-            state.errorMessage?.let { err ->
-                Spacer(Modifier.height(8.dp))
-                Text(err, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            // Sign In button
-            Button(
-                onClick = {
-                    focusManager.clearFocus()
-                    authViewModel.login(email, password)
-                },
-                enabled = email.isNotBlank() && password.isNotBlank() && !state.isLoading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
-            ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                } else {
-                    Text("Sign In", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
-
-            // Register link
-            Row {
-                Text("Don't have an account? ", color = colors.subtitle, fontSize = 14.sp)
-                Text(
-                    "Sign Up",
-                    color = GreenPrimary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable { onNavigateToRegister() }
-                )
-            }
-
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(28.dp))
         }
     }
 }

@@ -130,7 +130,10 @@ private fun CartItemRow(
         elevation = CardDefaults.cardElevation(2.dp),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
+            ) {
                 // Image
                 Box(
                     modifier = Modifier
@@ -153,7 +156,11 @@ private fun CartItemRow(
 
                 Spacer(Modifier.width(12.dp))
 
-                Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 10.dp)
+                ) {
                     Text(item.productName, fontWeight = FontWeight.SemiBold, color = colors.title, maxLines = 2)
                     Text("₱${item.unitPrice.toInt()} each", fontSize = 12.sp, color = colors.muted)
 
@@ -173,40 +180,57 @@ private fun CartItemRow(
                     }
                 }
 
-                // Quantity controls
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = { if (item.quantity == 1) onRemove() else onDecrement() },
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Row(
                         modifier = Modifier
-                            .size(28.dp)
-                            .background(
-                                if (item.quantity == 1) com.sanshare.groceryapp.ui.theme.RedBadge.copy(alpha = 0.12f)
-                                else GreenPrimary.copy(alpha = 0.12f),
-                                CircleShape
-                            )
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(Color(0xFFF6F7F8))
+                            .padding(horizontal = 4.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        Icon(
-                            if (item.quantity == 1) Icons.Default.Delete else Icons.Default.Remove,
-                            null,
-                            tint = if (item.quantity == 1) com.sanshare.groceryapp.ui.theme.RedBadge else GreenPrimary,
-                            modifier = Modifier.size(14.dp)
+                        FilledTonalIconButton(
+                            onClick = { if (item.quantity == 1) onRemove() else onDecrement() },
+                            modifier = Modifier.size(28.dp),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = if (item.quantity == 1) com.sanshare.groceryapp.ui.theme.RedBadge.copy(alpha = 0.14f)
+                                else GreenPrimary.copy(alpha = 0.12f),
+                                contentColor = if (item.quantity == 1) com.sanshare.groceryapp.ui.theme.RedBadge else GreenPrimary,
+                            )
+                        ) {
+                            Icon(
+                                if (item.quantity == 1) Icons.Default.Delete else Icons.Default.Remove,
+                                null,
+                                modifier = Modifier.size(14.dp),
+                            )
+                        }
+
+                        Text(
+                            "${item.quantity}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.title,
+                            modifier = Modifier.widthIn(min = 18.dp),
                         )
+
+                        FilledIconButton(
+                            onClick = onIncrement,
+                            modifier = Modifier.size(28.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = GreenPrimary)
+                        ) {
+                            Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                        }
                     }
+
                     Text(
-                        "${item.quantity}",
-                        fontSize = 16.sp,
+                        formatPeso(item.unitPrice * item.quantity),
                         fontWeight = FontWeight.Bold,
                         color = colors.title,
-                        modifier = Modifier.padding(horizontal = 10.dp)
+                        fontSize = 15.sp,
                     )
-                    IconButton(
-                        onClick = onIncrement,
-                        modifier = Modifier
-                            .size(28.dp)
-                            .background(GreenPrimary, CircleShape)
-                    ) {
-                        Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(14.dp))
-                    }
                 }
             }
 
@@ -227,19 +251,6 @@ private fun CartItemRow(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = GreenPrimary,
                     )
-                )
-            }
-
-            // Line total
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                Text(
-                    formatPeso(item.unitPrice * item.quantity),
-                    fontWeight = FontWeight.Bold,
-                    color = colors.title,
-                    fontSize = 15.sp,
                 )
             }
         }

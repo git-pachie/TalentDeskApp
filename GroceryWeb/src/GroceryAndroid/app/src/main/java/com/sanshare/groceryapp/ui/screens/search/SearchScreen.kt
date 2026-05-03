@@ -97,7 +97,6 @@ fun SearchScreen(
         }
 
         if (state.searchQuery.isBlank()) {
-            // Popular searches
             LazyColumn(contentPadding = PaddingValues(16.dp)) {
                 item {
                     Text("Popular Searches", fontWeight = FontWeight.Bold, color = colors.title, fontSize = 15.sp)
@@ -116,7 +115,32 @@ fun SearchScreen(
                         Text(label, fontSize = 14.sp, color = colors.title, modifier = Modifier.weight(1f))
                         Icon(Icons.Default.NorthWest, null, tint = colors.muted, modifier = Modifier.size(16.dp))
                     }
-                    Divider(color = colors.cardBorder)
+                    HorizontalDivider(color = colors.cardBorder)
+                }
+                if (state.products.isNotEmpty()) {
+                    item {
+                        Spacer(Modifier.height(20.dp))
+                        Text("Browse Products", fontWeight = FontWeight.Bold, color = colors.title, fontSize = 15.sp)
+                        Spacer(Modifier.height(12.dp))
+                    }
+                    items(state.products, key = { it.id }) { product ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onProductClick(product.id) }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(emojiForCategory(product.categoryName), fontSize = 22.sp)
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(product.name, fontSize = 14.sp, color = colors.title, fontWeight = FontWeight.Medium)
+                                Text(product.categoryName, fontSize = 12.sp, color = colors.muted)
+                            }
+                            Text(formatPeso(product.displayPrice), fontSize = 13.sp, color = GreenPrimary, fontWeight = FontWeight.SemiBold)
+                        }
+                        HorizontalDivider(color = colors.cardBorder)
+                    }
                 }
             }
         } else if (state.isLoading) {

@@ -48,99 +48,107 @@ fun ProductsScreen(
         if (shouldLoadMore) viewModel.loadMore()
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(colors.background)
     ) {
-        // Search bar
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(colors.card)
-                .padding(horizontal = 14.dp, vertical = 12.dp)
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Search, null, tint = colors.muted, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                BasicSearchField(
-                    value = state.searchQuery,
-                    onValueChange = { viewModel.search(it) },
-                    placeholder = "Search products...",
-                )
-            }
-        }
-
-        // Category filter chips
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            item {
-                FilterChip(
-                    selected = state.selectedCategoryId == null,
-                    onClick = { viewModel.selectCategory(null) },
-                    label = { Text("All") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = GreenPrimary,
-                        selectedLabelColor = androidx.compose.ui.graphics.Color.White,
-                    )
-                )
-            }
-            items(state.categories) { cat ->
-                FilterChip(
-                    selected = state.selectedCategoryId == cat.id,
-                    onClick = { viewModel.selectCategory(cat.id) },
-                    label = { Text("${cat.emoji ?: emojiForCategory(cat.name)} ${cat.name}") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = GreenPrimary,
-                        selectedLabelColor = androidx.compose.ui.graphics.Color.White,
-                    )
-                )
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        if (state.isLoading) {
-            LoadingBox()
-        } else if (state.products.isEmpty()) {
-            EmptyState("🛒", "No products found", "Try a different search or category")
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                state = gridState,
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+            // Search bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(colors.card)
+                    .padding(horizontal = 14.dp, vertical = 12.dp)
             ) {
-                items(state.products, key = { it.id }) { product ->
-                    ProductCard(
-                        product = product,
-                        isFavorite = favState.favoriteIds.contains(product.id),
-                        onFavoriteClick = { favoritesViewModel.toggleFavorite(product) },
-                        onAddToCart = {
-                            cartViewModel.addProduct(
-                                productId = product.id,
-                                productName = product.name,
-                                imageUrl = product.primaryImageUrl,
-                                price = product.displayPrice,
-                            )
-                        },
-                        onClick = { onProductClick(product.id) },
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Search, null, tint = colors.muted, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    BasicSearchField(
+                        value = state.searchQuery,
+                        onValueChange = { viewModel.search(it) },
+                        placeholder = "Search products...",
                     )
                 }
-                if (state.isLoadingMore) {
-                    item(span = { GridItemSpan(2) }) {
-                        Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = GreenPrimary, modifier = Modifier.size(24.dp))
+            }
+
+            // Category filter chips
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                item {
+                    FilterChip(
+                        selected = state.selectedCategoryId == null,
+                        onClick = { viewModel.selectCategory(null) },
+                        label = { Text("All") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = GreenPrimary,
+                            selectedLabelColor = androidx.compose.ui.graphics.Color.White,
+                        )
+                    )
+                }
+                items(state.categories) { cat ->
+                    FilterChip(
+                        selected = state.selectedCategoryId == cat.id,
+                        onClick = { viewModel.selectCategory(cat.id) },
+                        label = { Text("${cat.emoji ?: emojiForCategory(cat.name)} ${cat.name}") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = GreenPrimary,
+                            selectedLabelColor = androidx.compose.ui.graphics.Color.White,
+                        )
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            if (state.isLoading) {
+                LoadingBox()
+            } else if (state.products.isEmpty()) {
+                EmptyState("🛒", "No products found", "Try a different search or category")
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    state = gridState,
+                    contentPadding = PaddingValues(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(state.products, key = { it.id }) { product ->
+                        ProductCard(
+                            product = product,
+                            isFavorite = favState.favoriteIds.contains(product.id),
+                            onFavoriteClick = { favoritesViewModel.toggleFavorite(product) },
+                            onAddToCart = {
+                                cartViewModel.addProduct(
+                                    productId = product.id,
+                                    productName = product.name,
+                                    imageUrl = product.primaryImageUrl,
+                                    price = product.displayPrice,
+                                )
+                            },
+                            onClick = { onProductClick(product.id) },
+                        )
+                    }
+                    if (state.isLoadingMore) {
+                        item(span = { GridItemSpan(2) }) {
+                            Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = GreenPrimary, modifier = Modifier.size(24.dp))
+                            }
                         }
                     }
                 }
             }
         }
+        CartNoticeHost(
+            cartViewModel = cartViewModel,
+            modifier = Modifier.statusBarsPadding()
+        )
     }
 }
 

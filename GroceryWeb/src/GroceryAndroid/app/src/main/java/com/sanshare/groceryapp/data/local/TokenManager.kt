@@ -4,17 +4,10 @@ import android.content.Context
 import android.util.Base64
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import dagger.hilt.android.qualifiers.ApplicationContext
 import org.json.JSONObject
-import javax.inject.Inject
-import javax.inject.Singleton
 
-// Re-export as TokenManager for ApiClient
-typealias TokenManager = com.sanshare.groceryapp.data.local.SecureTokenManager
-
-@Singleton
-class SecureTokenManager @Inject constructor(
-    @ApplicationContext private val context: Context,
+class TokenManager(
+    context: Context,
 ) {
     private val masterKey = MasterKey.Builder(context)
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)

@@ -18,6 +18,10 @@ data class CheckoutState(
     val addresses: List<AddressDto> = emptyList(),
     val selectedAddressId: String? = null,
     val paymentMethod: String = "Credit Card",
+    val cardHolderName: String = "",
+    val cardNumber: String = "",
+    val cardExpiry: String = "",
+    val cardCvv: String = "",
     val vouchers: List<VoucherDto> = emptyList(),
     val appliedVoucher: VoucherDto? = null,
     val voucherDiscount: Double = 0.0,
@@ -61,18 +65,25 @@ class OrderViewModel @Inject constructor(
         emit(if (result is ApiResult.Success) result.data else null)
     }
 
-    fun submitReview(orderId: String, productId: String, rating: Int, comment: String) {
-        viewModelScope.launch {
-            apiClient.post<CreateReviewRequest, Any>(
-                "${ApiConfig.ORDERS}/$orderId/reviews",
-                CreateReviewRequest(
-                    productId = productId,
-                    orderId = orderId,
-                    rating = rating,
-                    comment = comment.ifBlank { null },
-                )
+    suspend fun submitReview(orderId: String, productId: String, rating: Int, comment: String, photos: List<ByteArray> = emptyList()): Boolean {
+        val photoUrls = if (photos.isNotEmpty()) {
+            when (val upload = apiClient.uploadReviewPhotos(photos)) {
+                is ApiResult.Success -> upload.data
+                is ApiResult.Error -> return false
+            }
+        } else emptyList()
+
+        val result = apiClient.post<CreateReviewRequest, Any>(
+            "/api/reviews",
+            CreateReviewRequest(
+                productId = productId,
+                orderId = orderId,
+                rating = rating,
+                comment = comment.ifBlank { null },
+                photoUrls = photoUrls.ifEmpty { null },
             )
-        }
+        )
+        return result is ApiResult.Success
     }
 
     // ── Checkout ──────────────────────────────────────────────────────────────
@@ -113,6 +124,22 @@ class OrderViewModel @Inject constructor(
         _checkoutState.update { it.copy(paymentMethod = method) }
     }
 
+    fun setCardHolderName(name: String) {
+        _checkoutState.update { it.copy(cardHolderName = name) }
+    }
+
+    fun setCardNumber(number: String) {
+        _checkoutState.update { it.copy(cardNumber = number) }
+    }
+
+    fun setCardExpiry(expiry: String) {
+        _checkoutState.update { it.copy(cardExpiry = expiry) }
+    }
+
+    fun setCardCvv(cvv: String) {
+        _checkoutState.update { it.copy(cardCvv = cvv) }
+    }
+
     fun setOrderRemarks(remarks: String) {
         _checkoutState.update { it.copy(orderRemarks = remarks) }
     }
@@ -146,6 +173,16 @@ class OrderViewModel @Inject constructor(
     fun validateAndPlaceOrder(cartTotal: Double, onSuccess: (OrderDto) -> Unit) {
         viewModelScope.launch {
             _checkoutState.update { it.copy(isValidatingCheckout = true, verificationError = null) }
+            val paymentValidationMessage = validatePaymentDetails(_checkoutState.value)
+            if (paymentValidationMessage != null) {
+                _checkoutState.update {
+                    it.copy(
+                        isValidatingCheckout = false,
+                        error = paymentValidationMessage,
+                    )
+                }
+                return@launch
+            }
 
             // Validate email & phone verification
             val userResult = apiClient.get<com.sanshare.groceryapp.data.remote.UserDto>(ApiConfig.AUTH_ME)
@@ -232,5 +269,31 @@ class OrderViewModel @Inject constructor(
 
     fun resetCheckout() {
         _checkoutState.update { CheckoutState() }
+    }
+
+    private fun validatePaymentDetails(state: CheckoutState): String? {
+        if (state.paymentMethod != "Credit Card" && state.paymentMethod != "Debit Card") return null
+
+        val digitsOnlyCard = state.cardNumber.filter(Char::isDigit)
+        if (state.cardHolderName.isBlank()) return "Please enter the cardholder name."
+        if (digitsOnlyCard.length !in 13..19) return "Please enter a valid card number."
+        if (!isValidExpiry(state.cardExpiry)) return "Please enter a valid expiry date in MM/YY format."
+        if (state.cardCvv.length !in 3..4 || !state.cardCvv.all(Char::isDigit)) return "Please enter a valid CVV."
+        return null
+    }
+
+    private fun isValidExpiry(expiry: String): Boolean {
+        val parts = expiry.split("/")
+        if (parts.size != 2) return false
+        val month = parts[0].toIntOrNull() ?: return false
+        val year = parts[1].toIntOrNull() ?: return false
+        if (month !in 1..12) return false
+
+        val now = java.util.Calendar.getInstance()
+        val currentYear = now.get(java.util.Calendar.YEAR) % 100
+        val currentMonth = now.get(java.util.Calendar.MONTH) + 1
+        if (year < currentYear) return false
+        if (year == currentYear && month < currentMonth) return false
+        return true
     }
 }

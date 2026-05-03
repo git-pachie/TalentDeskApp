@@ -23,6 +23,11 @@ data class CartState(
     val isLoading: Boolean = false,
 )
 
+data class CartNotice(
+    val message: String,
+    val isError: Boolean = false,
+)
+
 @HiltViewModel
 class CartViewModel @Inject constructor(
     private val apiClient: ApiClient,
@@ -30,6 +35,8 @@ class CartViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(CartState())
     val state: StateFlow<CartState> = _state.asStateFlow()
+    private val _notices = MutableSharedFlow<CartNotice>(extraBufferCapacity = 1)
+    val notices = _notices.asSharedFlow()
 
     val totalItems: Int get() = _state.value.items.sumOf { it.quantity }
     val totalPrice: Double get() = _state.value.items.sumOf { it.unitPrice * it.quantity }
@@ -62,6 +69,7 @@ class CartViewModel @Inject constructor(
         if (existing >= 0) {
             val newQty = _state.value.items[existing].quantity + quantity
             updateQuantity(productId, newQty)
+            _notices.tryEmit(CartNotice("$productName quantity updated"))
         } else {
             val newItem = CartItem(
                 serverId = null,
@@ -84,6 +92,10 @@ class CartViewModel @Inject constructor(
                         updated[idx] = updated[idx].copy(serverId = result.data.id)
                         _state.update { it.copy(items = updated) }
                     }
+                    _notices.tryEmit(CartNotice("$productName added to cart"))
+                } else if (result is ApiResult.Error) {
+                    _state.update { it.copy(items = it.items.filter { cartItem -> cartItem.productId != productId }) }
+                    _notices.tryEmit(CartNotice(result.message.ifBlank { "Failed to add item to cart" }, isError = true))
                 }
             }
         }
@@ -96,16 +108,26 @@ class CartViewModel @Inject constructor(
             removeProduct(productId)
             return
         }
+        val previousQuantity = _state.value.items[idx].quantity
         val updated = _state.value.items.toMutableList()
         val item = updated[idx].copy(quantity = quantity)
         updated[idx] = item
         _state.update { it.copy(items = updated) }
         item.serverId?.let { serverId ->
             viewModelScope.launch {
-                apiClient.put<UpdateCartItemRequest, CartItemDto>(
+                val result = apiClient.put<UpdateCartItemRequest, CartItemDto>(
                     "${ApiConfig.CART}/$serverId",
                     UpdateCartItemRequest(quantity = quantity, remarks = item.remarks)
                 )
+                if (result is ApiResult.Error) {
+                    val reverted = _state.value.items.toMutableList()
+                    val revertIdx = reverted.indexOfFirst { it.productId == productId }
+                    if (revertIdx >= 0) {
+                        reverted[revertIdx] = reverted[revertIdx].copy(quantity = previousQuantity)
+                        _state.update { it.copy(items = reverted) }
+                    }
+                    _notices.tryEmit(CartNotice(result.message.ifBlank { "Failed to update cart" }, isError = true))
+                }
             }
         }
     }

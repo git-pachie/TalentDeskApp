@@ -101,10 +101,10 @@ data class ProductDto(
     val createdAt: String? = null,
 ) {
     val displayPrice: Double get() = discountPrice ?: price
-    val primaryImageUrl: String? get() = images.firstOrNull { it.isPrimary }?.fullUrl
-        ?: images.firstOrNull()?.fullUrl
-        ?: images.firstOrNull { it.isPrimary }?.imageUrl
-        ?: images.firstOrNull()?.imageUrl
+    val primaryImageUrl: String? get() = resolveApiUrl(
+        images.firstOrNull { it.isPrimary }?.displayUrl
+            ?: images.firstOrNull()?.displayUrl
+    )
     val discountPercent: Int? get() {
         if (discountPrice == null || discountPrice >= price) return null
         return ((price - discountPrice) / price * 100).toInt()
@@ -124,7 +124,15 @@ data class ProductImageDto(
     val dateCreated: String? = null,
     val dateModified: String? = null,
 ) {
-    val displayUrl: String get() = fullUrl ?: imageUrl
+    val displayUrl: String get() = resolveApiUrl(fullUrl ?: imageUrl) ?: imageUrl
+}
+
+private fun resolveApiUrl(url: String?): String? {
+    if (url.isNullOrBlank()) return null
+    if (url.startsWith("http", ignoreCase = true)) return url
+    val normalizedBase = ApiConfig.BASE_URL.trimEnd('/')
+    val normalizedPath = if (url.startsWith("/")) url else "/$url"
+    return "$normalizedBase$normalizedPath"
 }
 
 @Serializable
@@ -441,4 +449,9 @@ data class CreateReviewRequest(
     val rating: Int,
     val comment: String? = null,
     val photoUrls: List<String>? = null,
+)
+
+@Serializable
+data class UploadReviewPhotosResponse(
+    val urls: List<String>,
 )

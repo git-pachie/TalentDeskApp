@@ -1,10 +1,8 @@
 package com.sanshare.groceryapp.data.remote
 
 object ApiConfig {
-    // Change to your server IP/hostname
-    // For emulator: "http://10.0.2.2:5000" (maps to localhost on host machine)
-    // For physical device: "http://192.168.7.136:5000" or your server IP
-    const val BASE_URL = "http://127.0.0.1:5000"
+    // Set this manually depending on how you want the app to connect.
+    const val BASE_URL = "https://192.168.6.161:5001"
 
     // Endpoints
     const val AUTH_LOGIN           = "/api/auth/login"
