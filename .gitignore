@@ -33,3 +33,6 @@ obj/
 **/GroceryAndroid/local.properties
 **/GroceryAndroid/build/
 **/GroceryAndroid/app/build/
+
+# Published build output — not source code
+GroceryWeb/publish/
