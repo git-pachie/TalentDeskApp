@@ -1,0 +1,4 @@
+-keep class com.sanshare.groceryapp.data.remote.** { *; }
+-keepattributes *Annotation*
+-dontwarn okhttp3.**
+-dontwarn io.ktor.**
