@@ -21,6 +21,7 @@ core-ktx = "1.15.0"
 appcompat = "1.7.0"
 material = "1.12.0"
 security-crypto = "1.1.0-alpha06"
+palette = "1.0.0"
 
 [libraries]
 # AndroidX Core
@@ -75,6 +76,7 @@ datastore-preferences = { group = "androidx.datastore", name = "datastore-prefer
 
 # Security
 security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "security-crypto" }
+palette = { group = "androidx.palette", name = "palette-ktx", version.ref = "palette" }
 
 # Maps
 maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "maps-compose" }

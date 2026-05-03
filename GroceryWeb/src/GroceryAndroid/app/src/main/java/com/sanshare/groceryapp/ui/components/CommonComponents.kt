@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,21 +52,15 @@ fun GroceryIconView(size: Int = 44) {
             .clip(RoundedCornerShape((size * 0.26).dp))
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(GreenPrimary.copy(alpha = 0.95f), GreenPrimary.copy(alpha = 0.78f))
+                    colors = listOf(
+                        Color(0xFF388E3C),  // rich green top
+                        Color(0xFF2E7D32),  // forest green bottom
+                    )
                 )
             ),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding((size * 0.12f).dp)
-                .clip(RoundedCornerShape((size * 0.18f).dp))
-                .background(Color.White.copy(alpha = 0.12f)),
-        contentAlignment = Alignment.Center
-        ) {
-            Text(text = "🛒", fontSize = (size * 0.44).sp)
-        }
+        Text(text = "🛒", fontSize = (size * 0.44).sp)
     }
 }
 
@@ -81,74 +76,97 @@ fun ProductCard(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.grocery
+    val imageUrl = product.primaryImageUrl
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(292.dp)
-            .shadow(10.dp, RoundedCornerShape(18.dp), ambientColor = Color.Black.copy(alpha = 0.08f))
+            .height(288.dp)
+            .shadow(
+                elevation = if (colors.isDark) 0.dp else 4.dp,
+                shape = RoundedCornerShape(16.dp),
+                ambientColor = Color.Black.copy(alpha = 0.06f),
+                spotColor = Color.Black.copy(alpha = 0.08f),
+            )
             .clickable { onClick() },
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = colors.card),
-        border = androidx.compose.foundation.BorderStroke(1.dp, colors.cardBorder.copy(alpha = 0.7f)),
+        border = androidx.compose.foundation.BorderStroke(
+            width = if (colors.isDark) 1.dp else 0.5.dp,
+            color = colors.cardBorder,
+        ),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
+            // ── Image area ────────────────────────────────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(146.dp)
-                    .background(Color.White)
-                    .padding(10.dp),
-                contentAlignment = Alignment.Center
+                    .height(148.dp)
+                    .background(if (colors.isDark) Color(0xFF1E1E1E) else Color.White),
+                contentAlignment = Alignment.Center,
             ) {
-                val imageUrl = product.primaryImageUrl
                 if (imageUrl != null) {
                     AsyncImage(
                         model = imageUrl,
                         contentDescription = product.name,
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(10.dp),
                     )
                 } else {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = emojiForCategory(product.categoryName), fontSize = 40.sp)
-                    }
+                    Text(text = emojiForCategory(product.categoryName), fontSize = 42.sp)
                 }
 
-                // Discount badge
+                // Discount badge — top left
                 product.discountPercent?.let { pct ->
                     Box(
                         modifier = Modifier
-                            .padding(10.dp)
+                            .padding(8.dp)
                             .align(Alignment.TopStart)
-                            .background(RedBadge, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .background(colors.badge, RoundedCornerShape(6.dp))
+                            .padding(horizontal = 7.dp, vertical = 3.dp),
                     ) {
-                        Text(text = "$pct% off", color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "-$pct%",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                        )
                     }
                 }
 
+                // Favorite button — top right, semi-transparent
                 IconButton(
                     onClick = onFavoriteClick,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(8.dp)
-                        .size(36.dp)
-                        .background(colors.card.copy(alpha = 0.5f), CircleShape)
+                        .padding(6.dp)
+                        .size(34.dp)
+                        .background(
+                            color = if (colors.isDark)
+                                Color(0xFF000000).copy(alpha = 0.45f)
+                            else
+                                Color(0xFFFFFFFF).copy(alpha = 0.5f),
+                            shape = CircleShape,
+                        ),
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                         contentDescription = "Favorite",
-                        tint = if (isFavorite) RedBadge else colors.muted,
-                        modifier = Modifier.size(20.dp)
+                        tint = if (isFavorite) colors.badge else colors.muted,
+                        modifier = Modifier.size(18.dp),
                     )
                 }
             }
 
+            // ── Info area ─────────────────────────────────────────────────────
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 12.dp, vertical = 12.dp)
+                    .padding(horizontal = 12.dp)
+                    .padding(top = 10.dp, bottom = 10.dp),
             ) {
                 Text(
                     text = product.name,
@@ -157,8 +175,9 @@ fun ProductCard(
                     color = colors.title,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
+                    lineHeight = 18.sp,
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(3.dp))
                 Text(
                     text = product.categoryName,
                     style = MaterialTheme.typography.labelMedium,
@@ -170,7 +189,7 @@ fun ProductCard(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column {
                         Text(
@@ -182,24 +201,25 @@ fun ProductCard(
                         if (product.discountPrice != null) {
                             Text(
                                 text = formatPeso(product.price),
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelSmall,
                                 color = colors.muted,
                                 textDecoration = TextDecoration.LineThrough,
                             )
                         }
                     }
+                    // Add to cart button
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(36.dp)
                             .background(colors.primary, CircleShape)
                             .clickable { onAddToCart() },
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Filled.ShoppingCart,
                             contentDescription = "Add to cart",
                             tint = Color.White,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(16.dp),
                         )
                     }
                 }

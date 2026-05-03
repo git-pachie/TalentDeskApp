@@ -98,6 +98,9 @@ dependencies {
     // Security
     implementation(libs.security.crypto)
 
+    // Palette — dynamic image color extraction
+    implementation(libs.palette)
+
     // Maps — OSMDroid (OpenStreetMap, no API key required)
     implementation(libs.osmdroid)
     // Location (FusedLocationProvider — no Maps API key needed)
