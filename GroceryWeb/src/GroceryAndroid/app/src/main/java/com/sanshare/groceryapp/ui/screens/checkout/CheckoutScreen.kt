@@ -163,8 +163,8 @@ fun CheckoutScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     item.productName,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Normal,
                                     color = colors.title,
                                     maxLines = 2,
                                 )
@@ -179,8 +179,8 @@ fun CheckoutScreen(
 
                             Text(
                                 formatPeso(item.unitPrice * item.quantity),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Normal,
                                 color = colors.title,
                             )
                         }

@@ -161,7 +161,7 @@ private fun CartItemRow(
                         .weight(1f)
                         .padding(end = 10.dp)
                 ) {
-                    Text(item.productName, fontWeight = FontWeight.SemiBold, color = colors.title, maxLines = 2)
+                    Text(item.productName, fontWeight = FontWeight.Normal, fontSize = 13.sp, color = colors.title, maxLines = 2)
                     Text("₱${item.unitPrice.toInt()} each", fontSize = 12.sp, color = colors.muted)
 
                     // Add note button
@@ -227,9 +227,9 @@ private fun CartItemRow(
 
                     Text(
                         formatPeso(item.unitPrice * item.quantity),
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Normal,
                         color = colors.title,
-                        fontSize = 15.sp,
+                        fontSize = 13.sp,
                     )
                 }
             }

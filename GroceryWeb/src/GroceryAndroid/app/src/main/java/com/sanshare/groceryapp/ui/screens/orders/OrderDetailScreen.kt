@@ -113,8 +113,8 @@ fun OrderDetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column {
-                        Text(o.orderNumber, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = colors.title)
-                        Text(o.createdAt.take(10), fontSize = 12.sp, color = colors.muted)
+                        Text(o.orderNumber, fontWeight = FontWeight.Normal, fontSize = 18.sp, color = colors.title)
+                        Text(formatLocalDate(o.createdAt), fontSize = 12.sp, color = colors.muted)
                     }
                     OrderStatusBadge(o.status)
                 }
@@ -175,11 +175,11 @@ fun OrderDetailScreen(
                             }
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(item.productName, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = colors.title)
+                                Text(item.productName, fontSize = 12.sp, fontWeight = FontWeight.Normal, color = colors.title)
                                 Text("x${item.quantity} @ ₱${item.unitPrice.toInt()}", fontSize = 11.sp, color = colors.muted)
                                 item.remarks?.let { if (it.isNotBlank()) Text(it, fontSize = 11.sp, color = GreenPrimary) }
                             }
-                            Text(formatPeso(item.totalPrice), fontWeight = FontWeight.SemiBold, color = colors.title)
+                            Text(formatPeso(item.totalPrice), fontWeight = FontWeight.Normal, fontSize = 12.sp, color = colors.title)
                         }
                         HorizontalDivider(color = colors.cardBorder)
                     }
@@ -199,7 +199,7 @@ fun OrderDetailScreen(
                 InfoCard(title = "Delivery Schedule", icon = Icons.Default.CalendarMonth) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Date", fontSize = 13.sp, color = colors.subtitle)
-                        Text(o.deliveryDate, fontWeight = FontWeight.SemiBold, color = colors.title)
+                        Text(formatDeliveryDate(o.deliveryDate), fontWeight = FontWeight.SemiBold, color = colors.title)
                     }
                     Spacer(Modifier.height(4.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -487,5 +487,41 @@ private fun SubmittedReviewCard(
                 color = colors.muted
             )
         }
+    }
+}
+
+// ── Date helpers ──────────────────────────────────────────────────────────────
+
+/**
+ * Converts a UTC ISO-8601 string (e.g. "2026-05-03T12:00:00Z") to the device's
+ * local timezone and returns a readable date string like "May 3, 2026".
+ */
+private fun formatLocalDate(utcString: String): String {
+    return try {
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
+        sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+        val date = sdf.parse(utcString.take(19)) ?: return utcString.take(10)
+        val out = java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault())
+        out.timeZone = java.util.TimeZone.getDefault()  // device local timezone
+        out.format(date)
+    } catch (_: Exception) {
+        utcString.take(10)
+    }
+}
+
+/**
+ * Formats a plain date string "yyyy-MM-dd" (no timezone) into "MMM d, yyyy".
+ * No timezone conversion — the date is already in local time.
+ */
+private fun formatDeliveryDate(dateStr: String?): String {
+    if (dateStr.isNullOrBlank()) return "—"
+    return try {
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+        sdf.timeZone = java.util.TimeZone.getDefault()  // treat as local date
+        val date = sdf.parse(dateStr) ?: return dateStr
+        val out = java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault())
+        out.format(date)
+    } catch (_: Exception) {
+        dateStr
     }
 }
