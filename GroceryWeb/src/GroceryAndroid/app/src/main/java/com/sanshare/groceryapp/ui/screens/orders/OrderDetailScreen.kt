@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.sanshare.groceryapp.data.remote.ApiConfig
 import com.sanshare.groceryapp.data.remote.OrderDto
 import com.sanshare.groceryapp.data.remote.OrderReviewDto
 import com.sanshare.groceryapp.data.remote.OrderReviewPhotoDto
@@ -225,16 +227,55 @@ fun OrderDetailScreen(
                     icon = Icons.Default.DeliveryDining,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        val riderPhotoUrl = remember(o.riderImageUrl) {
+                            val raw = o.riderImageUrl?.trim().orEmpty()
+                            if (raw.isBlank()) null
+                            else if (raw.startsWith("http://", ignoreCase = true) || raw.startsWith("https://", ignoreCase = true)) raw
+                            else {
+                                val base = ApiConfig.BASE_URL.trimEnd('/')
+                                val path = if (raw.startsWith("/")) raw else "/$raw"
+                                "$base$path"
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (!riderPhotoUrl.isNullOrBlank()) {
+                                AsyncImage(
+                                    model = riderPhotoUrl,
+                                    contentDescription = "Rider photo",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(RoundedCornerShape(28.dp))
+                                        .border(1.dp, colors.cardBorder, RoundedCornerShape(28.dp)),
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(RoundedCornerShape(28.dp))
+                                        .background(colors.card)
+                                        .border(1.dp, colors.cardBorder, RoundedCornerShape(28.dp)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(Icons.Default.Person, null, tint = colors.muted, modifier = Modifier.size(28.dp))
+                                }
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Column {
+                                Text("Rider Photo", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = colors.title)
+                                Text("Verify before handing over", fontSize = 11.sp, color = colors.subtitle)
+                            }
+                        }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Person, null, tint = GreenPrimary, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text(o.riderName, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = colors.title)
+                            Text(o.riderName, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = colors.title)
                         }
                         if (!o.riderContact.isNullOrBlank()) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Phone, null, tint = GreenPrimary, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(o.riderContact, fontSize = 13.sp, color = colors.subtitle)
+                                Text(o.riderContact, fontSize = 12.sp, color = colors.subtitle)
                             }
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -243,7 +284,7 @@ fun OrderDetailScreen(
                             if (!o.actualDeliveryDate.isNullOrBlank()) {
                                 Text(
                                     formatLocalDate(o.actualDeliveryDate),
-                                    fontSize = 13.sp,
+                                    fontSize = 12.sp,
                                     color = colors.subtitle,
                                 )
                             } else {

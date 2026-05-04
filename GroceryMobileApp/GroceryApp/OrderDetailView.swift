@@ -465,6 +465,28 @@ struct OrderDetailView: View {
     private var riderDeliverySection: some View {
         infoCard(title: "Delivery Details", icon: "bicycle") {
             VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    if let urlString = orderDetail?.riderImageUrl, !urlString.isEmpty, let url = URL(string: urlString) {
+                        CachedAsyncImage(url: url, emoji: "🛵", displayMode: .fill)
+                            .frame(width: 48, height: 48)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.black.opacity(0.06), lineWidth: 1))
+                    } else {
+                        Image(systemName: "person.crop.circle.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .foregroundStyle(GroceryTheme.muted)
+                            .frame(width: 48, height: 48)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Rider Photo")
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundStyle(GroceryTheme.muted)
+                        Text("Verify before handing over your items")
+                            .font(.system(.caption2, design: .rounded))
+                            .foregroundStyle(GroceryTheme.muted.opacity(0.9))
+                    }
+                }
                 // Rider name
                 HStack(spacing: 8) {
                     Image(systemName: "person.fill")

@@ -460,4 +460,5 @@ public class RiderModel
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public int DeliveredOrderCount { get; set; }
+    public string? ProfileImageUrl { get; set; }
 }

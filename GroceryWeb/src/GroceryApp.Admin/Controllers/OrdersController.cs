@@ -95,6 +95,23 @@ public class OrdersController : Controller
         return RedirectToAction(nameof(Detail), new { id });
     }
 
+    // JSON endpoint for rider assignment modal
+    [HttpGet]
+    public async Task<IActionResult> Riders()
+    {
+        var riders = await _apiClient.GetAsync<List<RiderModel>>("/api/orders/riders") ?? [];
+
+        return Json(riders.Select(r => new
+        {
+            id = r.Id,
+            fullName = r.FullName,
+            email = r.Email,
+            phoneNumber = r.PhoneNumber,
+            deliveredOrderCount = r.DeliveredOrderCount,
+            profileImageUrl = r.ProfileImageUrl
+        }));
+    }
+
     // ── Export PDF ─────────────────────────────────────────────────────────────
 
     public async Task<IActionResult> ExportPdf(Guid id)

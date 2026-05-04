@@ -174,7 +174,9 @@ public class OrderService : IOrderService
 
         var reviewsByOrder = reviews.GroupBy(r => r.OrderId).ToDictionary(g => g.Key, g => g.AsEnumerable());
 
-        return orders.Select(o => MapToDto(o, reviewsByOrder.GetValueOrDefault(o.Id)));
+        var items = orders.Select(o => MapToDto(o, reviewsByOrder.GetValueOrDefault(o.Id))).ToList();
+        await PopulateRiderImagesAsync(items);
+        return items;
     }
 
     public async Task<OrderDto?> GetOrderByIdAsync(Guid userId, Guid orderId)
@@ -196,7 +198,9 @@ public class OrderService : IOrderService
             .Where(r => r.OrderId == orderId)
             .ToListAsync();
 
-        return MapToDto(order, reviews);
+        var dto = MapToDto(order, reviews);
+        await PopulateRiderImagesAsync([dto]);
+        return dto;
     }
 
     public async Task<OrderDto?> GetOrderByIdAdminAsync(Guid orderId)
@@ -219,7 +223,9 @@ public class OrderService : IOrderService
             .Where(r => r.OrderId == orderId)
             .ToListAsync();
 
-        return MapToDto(order, reviews);
+        var dto = MapToDto(order, reviews);
+        await PopulateRiderImagesAsync([dto]);
+        return dto;
     }
 
     public async Task<OrderDto?> UpdateOrderStatusAsync(Guid orderId, string status)
@@ -296,7 +302,9 @@ public class OrderService : IOrderService
             .Where(r => r.OrderId == orderId)
             .ToListAsync();
 
-        return MapToDto(order, reviews);
+        var dto = MapToDto(order, reviews);
+        await PopulateRiderImagesAsync([dto]);
+        return dto;
     }
 
     public async Task<OrderDto?> AssignRiderAsync(Guid orderId, Guid riderId)
@@ -319,7 +327,9 @@ public class OrderService : IOrderService
         _orderRepo.Update(order);
         await _unitOfWork.SaveChangesAsync();
 
-        return MapToDto(order);
+        var dto = MapToDto(order);
+        await PopulateRiderImagesAsync([dto]);
+        return dto;
     }
 
     public async Task<IEnumerable<RiderDto>> GetRidersAsync()
@@ -336,7 +346,8 @@ public class OrderService : IOrderService
                 FullName = $"{rider.FirstName} {rider.LastName}".Trim(),
                 Email = rider.Email ?? string.Empty,
                 PhoneNumber = rider.PhoneNumber,
-                DeliveredOrderCount = deliveredCount
+                DeliveredOrderCount = deliveredCount,
+                ProfileImageUrl = AppUrlBuilder.BuildUploadUrl(_appBaseUrl, "riders", rider.ProfileImageUrl)
             });
         }
         return result;
@@ -353,7 +364,9 @@ public class OrderService : IOrderService
             .Where(o => o.RiderId == riderId)
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
-        return orders.Select(o => MapToDto(o));
+        var items = orders.Select(o => MapToDto(o)).ToList();
+        await PopulateRiderImagesAsync(items);
+        return items;
     }
 
     public async Task<IEnumerable<OrderDto>> GetAllOrdersAsync(int page, int pageSize)    {
@@ -377,7 +390,9 @@ public class OrderService : IOrderService
 
         var reviewsByOrder = reviews.GroupBy(r => r.OrderId).ToDictionary(g => g.Key, g => g.AsEnumerable());
 
-        return orders.Select(o => MapToDto(o, reviewsByOrder.GetValueOrDefault(o.Id)));
+        var items = orders.Select(o => MapToDto(o, reviewsByOrder.GetValueOrDefault(o.Id))).ToList();
+        await PopulateRiderImagesAsync(items);
+        return items;
     }
 
     public async Task<OrderListResult> SearchOrdersAsync(
@@ -425,6 +440,7 @@ public class OrderService : IOrderService
             .ToListAsync();
 
         var items = orders.Select(o => MapToDto(o)).ToList();
+        await PopulateRiderImagesAsync(items);
 
         return new OrderListResult
         {
@@ -460,6 +476,7 @@ public class OrderService : IOrderService
             RiderId = order.RiderId,
             RiderName = order.RiderName,
             RiderContact = order.RiderContact,
+            RiderImageUrl = null,
             ActualDeliveryDate = order.ActualDeliveryDate,
             Items = order.Items.Select(i =>
             {
@@ -520,6 +537,33 @@ public class OrderService : IOrderService
                 }).ToList()
             }).ToList()
         };
+    }
+
+    private async Task PopulateRiderImagesAsync(IEnumerable<OrderDto> orders)
+    {
+        var list = orders as IList<OrderDto> ?? orders.ToList();
+
+        var riderIds = list
+            .Where(o => o.RiderId.HasValue)
+            .Select(o => o.RiderId!.Value)
+            .Distinct()
+            .ToList();
+
+        if (riderIds.Count == 0) return;
+
+        var riders = await _userManager.Users
+            .Where(u => riderIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.ProfileImageUrl })
+            .ToListAsync();
+
+        var map = riders.ToDictionary(r => r.Id, r => r.ProfileImageUrl);
+
+        foreach (var order in list)
+        {
+            if (!order.RiderId.HasValue) continue;
+            map.TryGetValue(order.RiderId.Value, out var imageUrl);
+            order.RiderImageUrl = AppUrlBuilder.BuildUploadUrl(_appBaseUrl, "riders", imageUrl);
+        }
     }
 
     private string? BuildFullImageUrl(string? imageUrl)

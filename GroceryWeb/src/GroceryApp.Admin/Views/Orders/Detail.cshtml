@@ -795,9 +795,8 @@ async function loadRidersAndShowModal() {
     const modal = new bootstrap.Modal(document.getElementById('assignRiderModal'));
     modal.show();
     try {
-        const res = await fetch('/api/orders/riders', {
-            headers: { 'Authorization': 'Bearer ' + (document.cookie.match(/jwt=([^;]+)/)?.[1] ?? '') }
-        });
+        const res = await fetch('/Orders/Riders');
+        if (!res.ok) throw new Error('Failed to load riders');
         const riders = await res.json();
         if (!riders.length) {
             listEl.innerHTML = '<p class="text-muted text-center py-3">No riders available. Add users with the Rider role first.</p>';

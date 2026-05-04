@@ -224,6 +224,7 @@ struct OrderDTO: Decodable, Identifiable {
     let riderId: UUID?
     let riderName: String?
     let riderContact: String?
+    let riderImageUrl: String?
     let actualDeliveryDate: Date?
     let items: [OrderItemDTO]?
     let payment: PaymentSummaryDTO?

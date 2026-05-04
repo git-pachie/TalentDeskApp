@@ -220,6 +220,7 @@ data class OrderDto(
     val riderId: String? = null,
     val riderName: String? = null,
     val riderContact: String? = null,
+    val riderImageUrl: String? = null,
     val actualDeliveryDate: String? = null,
     val items: List<OrderItemDto>? = null,
     val payment: PaymentSummaryDto? = null,

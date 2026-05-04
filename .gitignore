@@ -30,6 +30,7 @@ obj/
 .gradle/
 **/GroceryAndroid/.gradle/
 **/GroceryAndroid/.idea/
+**/GroceryAndroid/.kotlin/
 **/GroceryAndroid/local.properties
 **/GroceryAndroid/build/
 **/GroceryAndroid/app/build/

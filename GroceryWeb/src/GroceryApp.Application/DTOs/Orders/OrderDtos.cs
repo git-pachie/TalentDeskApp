@@ -24,6 +24,7 @@ public class OrderDto
     public Guid? RiderId { get; set; }
     public string? RiderName { get; set; }
     public string? RiderContact { get; set; }
+    public string? RiderImageUrl { get; set; }
     public DateTime? ActualDeliveryDate { get; set; }
     public IEnumerable<OrderItemDto> Items { get; set; } = [];
     public PaymentSummaryDto? Payment { get; set; }
@@ -126,4 +127,5 @@ public class RiderDto
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public int DeliveredOrderCount { get; set; }
+    public string? ProfileImageUrl { get; set; }
 }

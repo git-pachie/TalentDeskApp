@@ -1,14 +1,34 @@
 @model List<OrderModel>
 @{
     var rider = ViewBag.Rider as RiderModel;
+    var apiBase = (ViewBag.ApiBaseUrl as string ?? "").TrimEnd('/');
     ViewData["Title"] = $"Orders — {rider?.FullName}";
 }
 
 <div class="page-header">
     <div>
-        <h2 class="mb-0">
-            <i class="bi bi-bicycle me-2 text-primary"></i>@rider?.FullName
-        </h2>
+        <div class="d-flex align-items-center gap-3">
+            @{
+                var photo = rider?.ProfileImageUrl;
+                var photoUrl = string.IsNullOrWhiteSpace(photo)
+                    ? null
+                    : (photo.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? photo : $"{apiBase}{photo}");
+                var fallbackUrl = Url.Content("~/images/default-rider.svg");
+            }
+            @if (!string.IsNullOrWhiteSpace(photoUrl))
+            {
+                <img src="@photoUrl" alt="Rider photo" class="rounded-circle border"
+                     style="width:44px;height:44px;object-fit:cover;" />
+            }
+            else
+            {
+                <img src="@fallbackUrl" alt="Default rider photo" class="rounded-circle border"
+                     style="width:44px;height:44px;object-fit:cover;" />
+            }
+            <h2 class="mb-0">
+                <i class="bi bi-bicycle me-2 text-primary"></i>@rider?.FullName
+            </h2>
+        </div>
         <p class="text-muted mb-0 mt-1" style="font-size:0.85rem;">
             @rider?.Email
             @if (!string.IsNullOrEmpty(rider?.PhoneNumber))
@@ -20,6 +40,24 @@
     <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>Back to Riders
     </a>
+</div>
+
+<div class="card form-card mb-3">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <div class="fw-semibold">Rider Photo</div>
+                <div class="text-muted" style="font-size:0.85rem;">Upload a clear face photo for customer verification.</div>
+            </div>
+            <form asp-action="UploadPhoto" asp-route-id="@rider?.Id" method="post" enctype="multipart/form-data"
+                  class="d-flex align-items-center gap-2">
+                <input class="form-control form-control-sm" type="file" name="file" accept="image/*" required />
+                <button class="btn btn-sm btn-primary" type="submit">
+                    <i class="bi bi-upload me-1"></i>Upload
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <div class="row g-3 mb-3">

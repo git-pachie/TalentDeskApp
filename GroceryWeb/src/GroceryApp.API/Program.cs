@@ -72,6 +72,7 @@ var uploadPath = app.Configuration["Storage:UploadPath"] ?? "wwwroot/uploads";
 if (!Path.IsPathRooted(uploadPath))
     uploadPath = Path.Combine(app.Environment.ContentRootPath, uploadPath);
 Directory.CreateDirectory(Path.Combine(uploadPath, "products"));
+Directory.CreateDirectory(Path.Combine(uploadPath, "riders"));
 
 if (swaggerEnabled)
 {
