@@ -37,3 +37,4 @@ obj/
 
 # Published build output — not source code
 GroceryWeb/publish/
+publish/

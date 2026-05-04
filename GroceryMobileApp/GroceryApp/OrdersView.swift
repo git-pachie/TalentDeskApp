@@ -138,11 +138,11 @@ struct OrdersView: View {
 
     private func orderCard(_ order: OrderItem) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(order.orderNumber)
                     .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(GroceryTheme.title)
-                Spacer()
+
                 HStack(spacing: 4) {
                     Image(systemName: order.status.icon)
                         .font(.caption2)

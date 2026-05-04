@@ -76,15 +76,12 @@ fun OrdersScreen(
                             modifier = Modifier.fillMaxWidth().clickable { onOrderClick(order.id) },
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
                                     Text(order.orderNumber, fontWeight = FontWeight.Bold, color = colors.title)
+                                    Spacer(Modifier.height(6.dp))
                                     OrderStatusBadge(order.status)
                                 }
-                                Spacer(Modifier.height(4.dp))
+                                Spacer(Modifier.height(6.dp))
                                 Text(order.createdAt.take(10), fontSize = 12.sp, color = colors.muted)
                                 Spacer(Modifier.height(6.dp))
                                 Row(

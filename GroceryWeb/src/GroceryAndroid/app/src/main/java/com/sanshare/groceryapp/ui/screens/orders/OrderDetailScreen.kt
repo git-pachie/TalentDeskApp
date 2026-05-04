@@ -116,9 +116,11 @@ fun OrderDetailScreen(
                 ) {
                     Column {
                         Text(o.orderNumber, fontWeight = FontWeight.Normal, fontSize = 18.sp, color = colors.title)
+                        Spacer(Modifier.height(8.dp))
+                        OrderStatusBadge(o.status)
+                        Spacer(Modifier.height(6.dp))
                         Text(formatLocalDate(o.createdAt), fontSize = 12.sp, color = colors.muted)
                     }
-                    OrderStatusBadge(o.status)
                 }
             }
 

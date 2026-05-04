@@ -219,16 +219,11 @@ struct OrderDetailView: View {
     // MARK: - Order Header
 
     private var orderHeader: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(order.orderNumber)
-                    .font(.system(.title3, design: .rounded, weight: .bold))
-                    .foregroundStyle(GroceryTheme.title)
-                Text(order.date)
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(GroceryTheme.muted)
-            }
-            Spacer()
+        VStack(alignment: .leading, spacing: 6) {
+            Text(order.orderNumber)
+                .font(.system(.title3, design: .rounded, weight: .bold))
+                .foregroundStyle(GroceryTheme.title)
+
             HStack(spacing: 4) {
                 Image(systemName: order.status.icon)
                     .font(.caption)
@@ -240,6 +235,10 @@ struct OrderDetailView: View {
             .padding(.vertical, 6)
             .background(order.status.color.opacity(0.12))
             .clipShape(Capsule())
+
+            Text(order.date)
+                .font(.system(.caption, design: .rounded))
+                .foregroundStyle(GroceryTheme.muted)
         }
     }
 
