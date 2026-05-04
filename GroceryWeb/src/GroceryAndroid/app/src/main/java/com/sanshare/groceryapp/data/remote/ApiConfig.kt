@@ -2,8 +2,8 @@ package com.sanshare.groceryapp.data.remote
 
 object ApiConfig {
     // Set this manually depending on how you want the app to connect.
-    const val BASE_URL = "https://192.168.6.161:5001"
-    //const val BASE_URL = "https://sandboxapi.sansharecab.com"
+    //const val BASE_URL = "https://192.168.6.161:5001"
+    const val BASE_URL = "https://sandboxapi.sansharecab.com"
 
     // Endpoints
     const val AUTH_LOGIN           = "/api/auth/login"

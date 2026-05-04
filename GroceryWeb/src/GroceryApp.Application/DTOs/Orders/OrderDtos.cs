@@ -20,6 +20,11 @@ public class OrderDto
     public DateTime CreatedAt { get; set; }
     public DateTime? DeliveryDate { get; set; }
     public string? DeliveryTimeSlot { get; set; }
+    // Rider delivery info
+    public Guid? RiderId { get; set; }
+    public string? RiderName { get; set; }
+    public string? RiderContact { get; set; }
+    public DateTime? ActualDeliveryDate { get; set; }
     public IEnumerable<OrderItemDto> Items { get; set; } = [];
     public PaymentSummaryDto? Payment { get; set; }
     public OrderAddressDto? Address { get; set; }
@@ -107,4 +112,18 @@ public class OrderReviewPhotoDto
     public Guid Id { get; set; }
     public string PhotoUrl { get; set; } = string.Empty;
     public int SortOrder { get; set; }
+}
+
+public class AssignRiderRequest
+{
+    public Guid RiderId { get; set; }
+}
+
+public class RiderDto
+{
+    public Guid Id { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public int DeliveredOrderCount { get; set; }
 }

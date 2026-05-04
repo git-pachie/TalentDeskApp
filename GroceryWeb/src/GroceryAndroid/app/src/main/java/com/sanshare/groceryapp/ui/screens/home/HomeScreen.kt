@@ -53,9 +53,7 @@ fun HomeScreen(
     var showAddressSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        if (state.categories.isEmpty() || state.deals.isEmpty()) {
-            viewModel.loadHome()
-        }
+        viewModel.loadHome()
     }
 
     // Auto-scroll banners
@@ -230,13 +228,17 @@ fun HomeScreen(
                 LoadingBox(modifier = Modifier.height(200.dp))
             } else {
                 val deals = state.deals
+                val rows = (deals.size + 1) / 2
+                val cardHeight = 288 // ProductCard height in dp
+                val spacing = 12    // verticalArrangement spacing
+                val bottomPad = 8   // extra bottom breathing room
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(bottom = 20.dp),
+                    contentPadding = PaddingValues(bottom = bottomPad.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(spacing.dp),
                     modifier = Modifier.height(
-                        ((deals.size / 2 + deals.size % 2) * 306).dp.coerceAtMost(980.dp)
+                        (rows * cardHeight + (rows - 1).coerceAtLeast(0) * spacing + bottomPad).dp
                     ),
                     userScrollEnabled = false,
                 ) {

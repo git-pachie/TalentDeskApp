@@ -1,0 +1,115 @@
+@model List<OrderModel>
+@{
+    var rider = ViewBag.Rider as RiderModel;
+    ViewData["Title"] = $"Orders — {rider?.FullName}";
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="mb-0">
+            <i class="bi bi-bicycle me-2 text-primary"></i>@rider?.FullName
+        </h2>
+        <p class="text-muted mb-0 mt-1" style="font-size:0.85rem;">
+            @rider?.Email
+            @if (!string.IsNullOrEmpty(rider?.PhoneNumber))
+            {
+                <span class="ms-2">· @rider.PhoneNumber</span>
+            }
+        </p>
+    </div>
+    <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Riders
+    </a>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-sm-4">
+        <div class="card form-card text-center py-3">
+            <div class="fs-2 fw-bold text-primary">@Model.Count</div>
+            <div class="text-muted" style="font-size:0.82rem;">Total Assigned</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card form-card text-center py-3">
+            <div class="fs-2 fw-bold text-success">@Model.Count(o => o.Status == "Delivered")</div>
+            <div class="text-muted" style="font-size:0.82rem;">Delivered</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card form-card text-center py-3">
+            <div class="fs-2 fw-bold text-warning">@Model.Count(o => o.Status == "OutForDelivery")</div>
+            <div class="text-muted" style="font-size:0.82rem;">Out for Delivery</div>
+        </div>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card form-card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-box-seam text-muted" style="font-size:3rem;"></i>
+            <p class="text-muted mt-3 mb-0">No orders assigned to this rider yet.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card data-card">
+        <div class="card-header">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Assigned Orders</h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table data-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Delivered At</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold" style="font-size:0.88rem;">@order.OrderNumber</td>
+                            <td style="font-size:0.88rem;">@order.CustomerName</td>
+                            <td class="text-muted" style="font-size:0.82rem;">@order.CreatedAt.ToString("MMM dd, yyyy")</td>
+                            <td class="text-end fw-semibold" style="font-size:0.88rem;">₱@order.TotalAmount.ToString("N2")</td>
+                            <td class="text-center">
+                                <span class="badge @GetStatusBadge(order.Status)">@order.Status</span>
+                            </td>
+                            <td class="text-center text-muted" style="font-size:0.82rem;">
+                                @(order.ActualDeliveryDate.HasValue
+                                    ? order.ActualDeliveryDate.Value.ToString("MMM dd, yyyy hh:mm tt")
+                                    : "In Progress")
+                            </td>
+                            <td class="text-end">
+                                <a asp-controller="Orders" asp-action="Detail" asp-route-id="@order.Id"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@functions {
+    string GetStatusBadge(string status) => status switch
+    {
+        "Pending"        => "bg-secondary",
+        "Paid"           => "bg-info text-dark",
+        "Processing"     => "bg-warning text-dark",
+        "OutForDelivery" => "bg-primary",
+        "Delivered"      => "bg-success",
+        "Cancelled"      => "bg-danger",
+        _                => "bg-secondary"
+    };
+}

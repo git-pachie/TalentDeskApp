@@ -27,6 +27,11 @@ public class Order
     public string? Notes { get; set; }
     public DateTime? DeliveryDate { get; set; }
     public string? DeliveryTimeSlot { get; set; }
+    // Rider assignment
+    public Guid? RiderId { get; set; }
+    public string? RiderName { get; set; }
+    public string? RiderContact { get; set; }
+    public DateTime? ActualDeliveryDate { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 

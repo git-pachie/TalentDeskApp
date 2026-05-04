@@ -1006,3 +1006,21 @@ END;
 COMMIT;
 GO
 
+
+-- ── Migration: AddRiderFieldsToOrders ─────────────────────────────────────────
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260504000001_AddRiderFieldsToOrders'
+)
+BEGIN
+    ALTER TABLE [Orders] ADD [RiderId] uniqueidentifier NULL;
+    ALTER TABLE [Orders] ADD [RiderName] nvarchar(200) NULL;
+    ALTER TABLE [Orders] ADD [RiderContact] nvarchar(50) NULL;
+    ALTER TABLE [Orders] ADD [ActualDeliveryDate] datetime2 NULL;
+
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260504000001_AddRiderFieldsToOrders', N'9.0.0');
+END;
+COMMIT;
+GO

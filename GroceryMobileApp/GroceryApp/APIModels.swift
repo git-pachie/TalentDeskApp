@@ -220,6 +220,11 @@ struct OrderDTO: Decodable, Identifiable {
     let createdAt: Date
     let deliveryDate: Date?
     let deliveryTimeSlot: String?
+    // Rider delivery info
+    let riderId: UUID?
+    let riderName: String?
+    let riderContact: String?
+    let actualDeliveryDate: Date?
     let items: [OrderItemDTO]?
     let payment: PaymentSummaryDTO?
     let address: OrderAddressDTO?

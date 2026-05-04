@@ -81,9 +81,17 @@ public class OrdersController : Controller
     [HttpPost]
     public async Task<IActionResult> UpdateStatus(Guid id, string status, string? returnUrl = null)
     {
+        // If changing to OutForDelivery, rider assignment is handled separately via AssignRider
         await _apiClient.PutAsync<object, object>($"/api/orders/{id}/status", new { status });
         if (!string.IsNullOrEmpty(returnUrl) && returnUrl == "index")
             return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Detail), new { id });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AssignRider(Guid id, Guid riderId)
+    {
+        await _apiClient.PutAsync<object, object>($"/api/orders/{id}/assign-rider", new { riderId });
         return RedirectToAction(nameof(Detail), new { id });
     }
 

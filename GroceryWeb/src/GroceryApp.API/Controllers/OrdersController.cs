@@ -85,9 +85,38 @@ public class OrdersController : ControllerBase
         var order = await _orderService.UpdateOrderStatusAsync(id, request.Status);
         return order is null ? NotFound() : Ok(order);
     }
+
+    [HttpPut("{id:guid}/assign-rider")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AssignRider(Guid id, [FromBody] AssignRiderRequest request)
+    {
+        var order = await _orderService.AssignRiderAsync(id, request.RiderId);
+        return order is null ? NotFound() : Ok(order);
+    }
+
+    [HttpGet("riders")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetRiders()
+    {
+        var riders = await _orderService.GetRidersAsync();
+        return Ok(riders);
+    }
+
+    [HttpGet("riders/{riderId:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetRiderOrders(Guid riderId)
+    {
+        var orders = await _orderService.GetOrdersByRiderAsync(riderId);
+        return Ok(orders);
+    }
 }
 
 public class UpdateOrderStatusRequest
 {
     public string Status { get; set; } = string.Empty;
+}
+
+public class AssignRiderRequest
+{
+    public Guid RiderId { get; set; }
 }

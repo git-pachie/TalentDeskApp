@@ -201,8 +201,10 @@ fun OrderDetailScreen(
                 }
             }
 
-            // Delivery schedule
-            if (!o.deliveryDate.isNullOrBlank()) {
+            // Delivery schedule — hide when OutForDelivery or Delivered (rider handles it)
+            val isOutForDelivery = o.status.equals("OutForDelivery", ignoreCase = true)
+            val isDelivered = o.status.equals("Delivered", ignoreCase = true)
+            if (!o.deliveryDate.isNullOrBlank() && !isOutForDelivery && !isDelivered) {
                 InfoCard(title = "Delivery Schedule", icon = Icons.Default.CalendarMonth) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Date", fontSize = 13.sp, color = colors.subtitle)
@@ -212,6 +214,50 @@ fun OrderDetailScreen(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Time Slot", fontSize = 13.sp, color = colors.subtitle)
                         Text(o.deliveryTimeSlot ?: "Anytime", fontWeight = FontWeight.SemiBold, color = colors.title)
+                    }
+                }
+            }
+
+            // Delivery Details — shown when rider is assigned (OutForDelivery or Delivered)
+            if ((isOutForDelivery || isDelivered) && !o.riderName.isNullOrBlank()) {
+                InfoCard(
+                    title = "Delivery Details",
+                    icon = Icons.Default.DeliveryDining,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Person, null, tint = GreenPrimary, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(o.riderName, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = colors.title)
+                        }
+                        if (!o.riderContact.isNullOrBlank()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Phone, null, tint = GreenPrimary, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(o.riderContact, fontSize = 13.sp, color = colors.subtitle)
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Schedule, null, tint = GreenPrimary, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            if (!o.actualDeliveryDate.isNullOrBlank()) {
+                                Text(
+                                    formatLocalDate(o.actualDeliveryDate),
+                                    fontSize = 13.sp,
+                                    color = colors.subtitle,
+                                )
+                            } else {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Box(
+                                        modifier = Modifier
+                                            .background(Color(0xFFF59E0B).copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                                    ) {
+                                        Text("In Progress", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFF59E0B))
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

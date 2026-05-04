@@ -104,6 +104,18 @@ fun CheckoutScreen(
         )
     }
 
+    // Voucher not applicable dialog
+    cs.voucherError?.let { err ->
+        AlertDialog(
+            onDismissRequest = { orderViewModel.clearVoucherError() },
+            title = { Text("Voucher Not Applicable") },
+            text = { Text(err) },
+            confirmButton = {
+                TextButton(onClick = { orderViewModel.clearVoucherError() }) { Text("OK") }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(

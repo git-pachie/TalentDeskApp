@@ -237,6 +237,8 @@ public class OrderService : IOrderService
         {
             order.Status = newStatus;
             order.UpdatedAt = DateTime.UtcNow;
+            if (newStatus == OrderStatus.Delivered)
+                order.ActualDeliveryDate = DateTime.UtcNow;
             _orderRepo.Update(order);
 
             // Record status change
@@ -297,8 +299,64 @@ public class OrderService : IOrderService
         return MapToDto(order, reviews);
     }
 
-    public async Task<IEnumerable<OrderDto>> GetAllOrdersAsync(int page, int pageSize)
+    public async Task<OrderDto?> AssignRiderAsync(Guid orderId, Guid riderId)
     {
+        var order = await _orderRepo.Query()
+            .Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
+            .Include(o => o.Payment)
+            .Include(o => o.Address)
+            .Include(o => o.StatusHistory)
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+        if (order is null) return null;
+
+        var rider = await _userManager.FindByIdAsync(riderId.ToString());
+        if (rider is null) return null;
+
+        order.RiderId = riderId;
+        order.RiderName = $"{rider.FirstName} {rider.LastName}".Trim();
+        order.RiderContact = rider.PhoneNumber;
+        order.UpdatedAt = DateTime.UtcNow;
+        _orderRepo.Update(order);
+        await _unitOfWork.SaveChangesAsync();
+
+        return MapToDto(order);
+    }
+
+    public async Task<IEnumerable<RiderDto>> GetRidersAsync()
+    {
+        var riders = await _userManager.GetUsersInRoleAsync("Rider");
+        var result = new List<RiderDto>();
+        foreach (var rider in riders.OrderBy(r => r.FirstName))
+        {
+            var deliveredCount = await _orderRepo.Query()
+                .CountAsync(o => o.RiderId == rider.Id && o.Status == OrderStatus.Delivered);
+            result.Add(new RiderDto
+            {
+                Id = rider.Id,
+                FullName = $"{rider.FirstName} {rider.LastName}".Trim(),
+                Email = rider.Email ?? string.Empty,
+                PhoneNumber = rider.PhoneNumber,
+                DeliveredOrderCount = deliveredCount
+            });
+        }
+        return result;
+    }
+
+    public async Task<IEnumerable<OrderDto>> GetOrdersByRiderAsync(Guid riderId)
+    {
+        var orders = await _orderRepo.Query()
+            .Include(o => o.User)
+            .Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
+            .Include(o => o.Payment)
+            .Include(o => o.Address)
+            .Include(o => o.StatusHistory)
+            .Where(o => o.RiderId == riderId)
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync();
+        return orders.Select(o => MapToDto(o));
+    }
+
+    public async Task<IEnumerable<OrderDto>> GetAllOrdersAsync(int page, int pageSize)    {
         var orders = await _orderRepo.Query()
             .Include(o => o.Items).ThenInclude(i => i.Product).ThenInclude(p => p.Images)
             .Include(o => o.Payment)
@@ -399,6 +457,10 @@ public class OrderService : IOrderService
             CreatedAt = order.CreatedAt,
             DeliveryDate = order.DeliveryDate,
             DeliveryTimeSlot = order.DeliveryTimeSlot,
+            RiderId = order.RiderId,
+            RiderName = order.RiderName,
+            RiderContact = order.RiderContact,
+            ActualDeliveryDate = order.ActualDeliveryDate,
             Items = order.Items.Select(i =>
             {
                 var primaryImage = i.Product?.Images?.FirstOrDefault(img => img.IsPrimary)

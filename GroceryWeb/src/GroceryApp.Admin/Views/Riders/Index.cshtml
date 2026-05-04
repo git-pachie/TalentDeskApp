@@ -1,0 +1,75 @@
+@model List<RiderModel>
+@{
+    ViewData["Title"] = "Riders";
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="mb-0"><i class="bi bi-bicycle me-2 text-primary"></i>Riders</h2>
+        <p class="text-muted mb-0 mt-1" style="font-size:0.85rem;">Users with the Rider role</p>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card form-card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-bicycle text-muted" style="font-size:3rem;"></i>
+            <p class="text-muted mt-3 mb-0">No riders found. Assign the <strong>Rider</strong> role to a user to see them here.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card data-card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-people me-2 text-primary"></i>Rider List</h6>
+            <span class="badge bg-secondary">@Model.Count rider(s)</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table data-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Contact</th>
+                        <th class="text-center">Delivered Orders</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rider in Model)
+                    {
+                        var initials = string.Concat(
+                            rider.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                                .Take(2).Select(w => w[0]));
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
+                                         style="width:36px;height:36px;font-size:0.8rem;background:linear-gradient(135deg,#059669,#047857);">
+                                        @initials
+                                    </div>
+                                    <span class="fw-semibold">@rider.FullName</span>
+                                </div>
+                            </td>
+                            <td class="text-muted" style="font-size:0.88rem;">@rider.Email</td>
+                            <td class="text-muted" style="font-size:0.88rem;">@(rider.PhoneNumber ?? "—")</td>
+                            <td class="text-center">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2">
+                                    @rider.DeliveredOrderCount
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <a asp-action="Orders" asp-route-id="@rider.Id"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-box-seam me-1"></i>View Orders
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

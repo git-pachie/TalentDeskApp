@@ -34,6 +34,7 @@ data class CheckoutState(
     val placedOrder: OrderDto? = null,
     val error: String? = null,
     val verificationError: String? = null,
+    val voucherError: String? = null,
 )
 
 @HiltViewModel
@@ -158,12 +159,26 @@ class OrderViewModel @Inject constructor(
                 ApiConfig.VOUCHERS_APPLY,
                 ApplyVoucherRequest(code = voucher.code, cartTotal = cartTotal)
             )
-            if (result is ApiResult.Success && result.data.isValid) {
+            if (result is ApiResult.Success) {
+                if (result.data.isValid) {
+                    _checkoutState.update {
+                        it.copy(appliedVoucher = voucher, voucherDiscount = result.data.discountAmount, voucherError = null)
+                    }
+                } else {
+                    _checkoutState.update {
+                        it.copy(voucherError = "Unable to use this voucher. Please check the applicable terms and conditions.")
+                    }
+                }
+            } else if (result is ApiResult.Error) {
                 _checkoutState.update {
-                    it.copy(appliedVoucher = voucher, voucherDiscount = result.data.discountAmount)
+                    it.copy(voucherError = "Unable to use this voucher. Please check the applicable terms and conditions.")
                 }
             }
         }
+    }
+
+    fun clearVoucherError() {
+        _checkoutState.update { it.copy(voucherError = null) }
     }
 
     fun removeVoucher() {
@@ -264,7 +279,7 @@ class OrderViewModel @Inject constructor(
     }
 
     fun clearCheckoutError() {
-        _checkoutState.update { it.copy(error = null, verificationError = null) }
+        _checkoutState.update { it.copy(error = null, verificationError = null, voucherError = null) }
     }
 
     fun resetCheckout() {

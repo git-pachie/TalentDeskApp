@@ -299,6 +299,10 @@ public class OrderModel
     public DateTime CreatedAt { get; set; }
     public DateTime? DeliveryDate { get; set; }
     public string? DeliveryTimeSlot { get; set; }
+    public Guid? RiderId { get; set; }
+    public string? RiderName { get; set; }
+    public string? RiderContact { get; set; }
+    public DateTime? ActualDeliveryDate { get; set; }
     public List<OrderItemModel> Items { get; set; } = [];
     public OrderPaymentModel? Payment { get; set; }
     public OrderAddressModel? Address { get; set; }
@@ -447,4 +451,13 @@ public class RecentOrderModel
 public class UploadResultModel
 {
     public List<string> Urls { get; set; } = [];
+}
+
+public class RiderModel
+{
+    public Guid Id { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public int DeliveredOrderCount { get; set; }
 }

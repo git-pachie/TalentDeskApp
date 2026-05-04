@@ -88,8 +88,16 @@ struct OrderDetailView: View {
                 // Delivery address
                 addressSection
 
-                // Delivery schedule
-                deliveryScheduleSection
+                // Delivery schedule — hidden when rider is out for delivery
+                if order.status != .outForDelivery && order.status != .delivered {
+                    deliveryScheduleSection
+                }
+
+                // Delivery Details — shown when rider assigned
+                if (order.status == .outForDelivery || order.status == .delivered),
+                   let riderName = orderDetail?.riderName, !riderName.isEmpty {
+                    riderDeliverySection
+                }
 
                 // Payment method
                 paymentSection
@@ -451,6 +459,65 @@ struct OrderDetailView: View {
             }
         }
     }
+
+    // MARK: - Rider Delivery Section
+
+    private var riderDeliverySection: some View {
+        infoCard(title: "Delivery Details", icon: "bicycle") {
+            VStack(alignment: .leading, spacing: 10) {
+                // Rider name
+                HStack(spacing: 8) {
+                    Image(systemName: "person.fill")
+                        .font(.caption)
+                        .foregroundStyle(GroceryTheme.primary)
+                        .frame(width: 16)
+                    Text(orderDetail?.riderName ?? "—")
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                        .foregroundStyle(GroceryTheme.title)
+                }
+                // Contact
+                if let contact = orderDetail?.riderContact, !contact.isEmpty {
+                    HStack(spacing: 8) {
+                        Image(systemName: "phone.fill")
+                            .font(.caption)
+                            .foregroundStyle(GroceryTheme.primary)
+                            .frame(width: 16)
+                        Text(contact)
+                            .font(.system(.subheadline, design: .rounded))
+                            .foregroundStyle(GroceryTheme.subtitle)
+                    }
+                }
+                // Delivered date
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.fill")
+                        .font(.caption)
+                        .foregroundStyle(GroceryTheme.primary)
+                        .frame(width: 16)
+                    if let actualDate = orderDetail?.actualDeliveryDate {
+                        Text(Self.localDateTimeFormatter.string(from: actualDate))
+                            .font(.system(.subheadline, design: .rounded))
+                            .foregroundStyle(GroceryTheme.subtitle)
+                    } else {
+                        Text("In Progress")
+                            .font(.system(.caption, design: .rounded, weight: .semibold))
+                            .foregroundStyle(.orange)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.orange.opacity(0.12))
+                            .clipShape(Capsule())
+                    }
+                }
+            }
+        }
+    }
+
+    private static let localDateTimeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM dd, yyyy, hh:mm a"
+        f.timeZone = TimeZone.current
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
 
     /// DateFormatter fixed to UTC so the stored UTC-midnight date displays
     /// the same calendar date the user originally picked (no local-time shift).
