@@ -9,8 +9,15 @@ public class ApnsSettings
 
     /// <summary>
     /// Path to the .p8 private key file from Apple Developer portal.
+    /// If relative, it is resolved against the app content root.
     /// </summary>
-    public required string P8PrivateKeyPath { get; set; }
+    public string? P8PrivateKeyPath { get; set; }
+
+    /// <summary>
+    /// Raw .p8 private key contents (PEM). Prefer setting this via user-secrets or env vars.
+    /// If provided, <see cref="P8PrivateKeyPath"/> is not required.
+    /// </summary>
+    public string? P8PrivateKey { get; set; }
 
     /// <summary>
     /// The 10-character Key ID from Apple Developer portal.

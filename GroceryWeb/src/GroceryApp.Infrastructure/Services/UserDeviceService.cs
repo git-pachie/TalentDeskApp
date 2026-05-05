@@ -19,7 +19,9 @@ public class UserDeviceService : IUserDeviceService
         string email,
         string? deviceGuid,
         string? osVersion,
-        string? hardwareVersion)
+        string? hardwareVersion,
+        string? pushToken,
+        string? platform)
     {
         if (string.IsNullOrWhiteSpace(deviceGuid)) return;
 
@@ -39,6 +41,8 @@ public class UserDeviceService : IUserDeviceService
                 DeviceGuid = normalizedDeviceGuid,
                 OSVersion = string.IsNullOrWhiteSpace(osVersion) ? null : osVersion.Trim(),
                 HardwareVersion = string.IsNullOrWhiteSpace(hardwareVersion) ? null : hardwareVersion.Trim(),
+                PushToken = string.IsNullOrWhiteSpace(pushToken) ? null : pushToken.Trim(),
+                Platform = string.IsNullOrWhiteSpace(platform) ? null : platform.Trim(),
                 CreatedAt = now,
                 LastLoginAt = now
             });
@@ -49,6 +53,8 @@ public class UserDeviceService : IUserDeviceService
             device.Email = normalizedEmail;
             device.OSVersion = string.IsNullOrWhiteSpace(osVersion) ? device.OSVersion : osVersion.Trim();
             device.HardwareVersion = string.IsNullOrWhiteSpace(hardwareVersion) ? device.HardwareVersion : hardwareVersion.Trim();
+            device.PushToken = string.IsNullOrWhiteSpace(pushToken) ? device.PushToken : pushToken.Trim();
+            device.Platform = string.IsNullOrWhiteSpace(platform) ? device.Platform : platform.Trim();
             device.LastLoginAt = now;
             device.UpdatedAt = now;
         }

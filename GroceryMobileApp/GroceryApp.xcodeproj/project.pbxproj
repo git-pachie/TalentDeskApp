@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		00D7CF3A5B463F37B1D962A5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6FBAE2F7518394ED96E13E8E /* Assets.xcassets */; };
+		01EE9417776AF19FAB775EE5 /* PushNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69DFD1CF680C34F92734C38E /* PushNotifications.swift */; };
 		09E83913754A95E0C951CAF0 /* GroceryIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C57BC52CF69CC2813EAAA6 /* GroceryIconView.swift */; };
 		0B59749A1C16B7C77668A66B /* ApplePayButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA04E4C9AD7135174B7295F /* ApplePayButton.swift */; };
 		0ED7C45036FC88C5219CE034 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FC3DE4A5DD01BFB62F63F4B /* HomeView.swift */; };
@@ -65,6 +66,7 @@
 		5055B54F270580C552514F1F /* CardPaymentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardPaymentView.swift; sourceTree = "<group>"; };
 		5210D0584F3E13A6B46771EE /* OrdersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrdersView.swift; sourceTree = "<group>"; };
 		6063FD5F60A7660C2E856304 /* VouchersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchersView.swift; sourceTree = "<group>"; };
+		69DFD1CF680C34F92734C38E /* PushNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotifications.swift; sourceTree = "<group>"; };
 		6E58E5D3B62AD6BE1681CBE9 /* GroceryApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryApp.swift; sourceTree = "<group>"; };
 		6FBAE2F7518394ED96E13E8E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		716800607EF6CC44CA4654A8 /* CartStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartStore.swift; sourceTree = "<group>"; };
@@ -134,6 +136,7 @@
 				D29FCF736824A4DD768FC67B /* ProductsTabView.swift */,
 				97ED26316A9AFEA3E2B4455E /* ProductStore.swift */,
 				3F78C7A0EC42D20B90652CB3 /* ProfileView.swift */,
+				69DFD1CF680C34F92734C38E /* PushNotifications.swift */,
 				0592BBB696803D14DF1EBF01 /* RootTabView.swift */,
 				E6D618AF3AEBC2B719B9550E /* SearchView.swift */,
 				A1483E779A0296AD806C4D15 /* ShareSheet.swift */,
@@ -188,7 +191,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					A52F30AADC332DA522748A0F = {
 						ProvisioningStyle = Automatic;
@@ -261,6 +264,7 @@
 				80FEE4CCEBC850AA0C1A052D /* ProductStore.swift in Sources */,
 				FA3914EBC5949E67E64829D8 /* ProductsTabView.swift in Sources */,
 				3D6E178A422C87E0050B6DB3 /* ProfileView.swift in Sources */,
+				01EE9417776AF19FAB775EE5 /* PushNotifications.swift in Sources */,
 				973E91AF2A91386FF35DB7D0 /* RootTabView.swift in Sources */,
 				E1D895F0F6712F44E4C94FA8 /* SearchView.swift in Sources */,
 				DD80E3784F74EFC02E02BE9B /* ShareSheet.swift in Sources */,
@@ -276,6 +280,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -308,8 +313,10 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = R3F22UC8DK;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -332,6 +339,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.sanshare.GroceryApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -346,7 +354,6 @@
 				CODE_SIGN_ENTITLEMENTS = GroceryApp/GroceryApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = R3F22UC8DK;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = GroceryApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -368,7 +375,6 @@
 				CODE_SIGN_ENTITLEMENTS = GroceryApp/GroceryApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = R3F22UC8DK;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = GroceryApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -386,6 +392,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -418,8 +425,10 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = R3F22UC8DK;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -435,6 +444,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.sanshare.GroceryApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;

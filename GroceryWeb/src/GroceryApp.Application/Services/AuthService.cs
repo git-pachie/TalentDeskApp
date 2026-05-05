@@ -61,7 +61,9 @@ public class AuthService : IAuthService
             user.Email!,
             request.DeviceGuid,
             request.OSVersion,
-            request.HardwareVersion);
+            request.HardwareVersion,
+            request.PushToken,
+            request.Platform);
 
         var roles = await _userManager.GetRolesAsync(user);
         if (!roles.Contains("Admin"))
@@ -114,7 +116,9 @@ public class AuthService : IAuthService
             user.Email!,
             request.DeviceGuid,
             request.OSVersion,
-            request.HardwareVersion);
+            request.HardwareVersion,
+            request.PushToken,
+            request.Platform);
         return await GenerateAuthResponse(user);
     }
 

@@ -381,6 +381,8 @@ public class UserService : IUserService
                 DeviceGuid = d.DeviceGuid,
                 OSVersion = d.OSVersion,
                 HardwareVersion = d.HardwareVersion,
+                PushToken = d.PushToken,
+                Platform = d.Platform,
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt,
                 LastLoginAt = d.LastLoginAt

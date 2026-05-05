@@ -89,7 +89,9 @@ final class AuthStore {
                     password: password,
                     deviceGuid: deviceGuid,
                     osVersion: osVersion,
-                    hardwareVersion: hardwareVersion
+                    hardwareVersion: hardwareVersion,
+                    pushToken: PushNotificationManager.shared.deviceToken,
+                    platform: "iOS"
                 )
             )
 
@@ -107,6 +109,7 @@ final class AuthStore {
                 saveUser(response.user)
                 isAuthenticated = true
                 requiresEmailVerification = false
+                Task { await syncDeviceRegistration() }
                 print("✅ [Login] SUCCESS — token saved, user: \(response.user?.fullName ?? "nil")")
                 return true
             } else if response.requiresEmailVerification == true {
@@ -153,7 +156,9 @@ final class AuthStore {
                     phoneNumber: phone,
                     deviceGuid: deviceGuid,
                     osVersion: osVersion,
-                    hardwareVersion: hardwareVersion
+                    hardwareVersion: hardwareVersion,
+                    pushToken: PushNotificationManager.shared.deviceToken,
+                    platform: "iOS"
                 )
             )
 
@@ -162,6 +167,7 @@ final class AuthStore {
                 currentUser = response.user
                 saveUser(response.user)
                 isAuthenticated = true
+                Task { await syncDeviceRegistration() }
                 return true
             } else if response.requiresEmailVerification == true {
                 pendingVerificationEmail = email
@@ -329,6 +335,25 @@ final class AuthStore {
         guard let user else { return }
         if let data = try? JSONEncoder().encode(user) {
             UserDefaults.standard.set(data, forKey: "current_user")
+        }
+    }
+
+    private func syncDeviceRegistration() async {
+        guard APIClient.shared.isAuthenticated else { return }
+        do {
+            struct Resp: Decodable { let success: Bool? }
+            let _: Resp = try await APIClient.shared.post(
+                "/api/user-devices/register",
+                body: RegisterDeviceRequest(
+                    deviceGuid: deviceGuid,
+                    osVersion: osVersion,
+                    hardwareVersion: hardwareVersion,
+                    pushToken: PushNotificationManager.shared.deviceToken,
+                    platform: "iOS"
+                )
+            )
+        } catch {
+            // best-effort
         }
     }
 

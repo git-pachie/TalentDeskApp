@@ -8,6 +8,8 @@ struct LoginRequest: Encodable {
     let deviceGuid: String?
     let osVersion: String?
     let hardwareVersion: String?
+    let pushToken: String?
+    let platform: String?
 }
 
 struct RegisterRequest: Encodable {
@@ -19,6 +21,16 @@ struct RegisterRequest: Encodable {
     let deviceGuid: String?
     let osVersion: String?
     let hardwareVersion: String?
+    let pushToken: String?
+    let platform: String?
+}
+
+struct RegisterDeviceRequest: Encodable {
+    let deviceGuid: String?
+    let osVersion: String?
+    let hardwareVersion: String?
+    let pushToken: String?
+    let platform: String?
 }
 
 struct AuthResponse: Decodable {

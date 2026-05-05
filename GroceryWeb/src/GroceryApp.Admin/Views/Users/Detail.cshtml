@@ -622,8 +622,12 @@
                                             <div class="text-muted" style="font-size:0.76rem;">Linked to this user</div>
                                         </td>
                                         <td>
-                                            <div class="fw-semibold" style="font-size:0.85rem;">@(device.OSVersion ?? "Unknown OS")</div>
-                                            <div class="text-muted" style="font-size:0.76rem;">@(device.HardwareVersion ?? "Unknown hardware")</div>
+                                            <div class="fw-semibold" style="font-size:0.85rem;">@(device.Platform ?? device.OSVersion ?? "Unknown")</div>
+                                            <div class="text-muted" style="font-size:0.76rem;">@(device.OSVersion ?? "Unknown OS") · @(device.HardwareVersion ?? "Unknown hardware")</div>
+                                            @if (!string.IsNullOrWhiteSpace(device.PushToken))
+                                            {
+                                                <code class="text-muted text-break d-block mt-1" style="font-size:0.72rem;line-height:1.35;">@device.PushToken</code>
+                                            }
                                         </td>
                                         <td class="text-muted text-nowrap" style="font-size:0.82rem;">@device.CreatedAt.ToString("MMM dd, yyyy HH:mm")</td>
                                         <td class="text-muted text-nowrap" style="font-size:0.82rem;">@device.LastLoginAt.ToString("MMM dd, yyyy HH:mm")</td>

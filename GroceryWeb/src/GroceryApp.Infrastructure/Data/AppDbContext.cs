@@ -51,6 +51,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
             e.Property(d => d.DeviceGuid).HasMaxLength(100);
             e.Property(d => d.OSVersion).HasMaxLength(100);
             e.Property(d => d.HardwareVersion).HasMaxLength(100);
+            e.Property(d => d.PushToken).HasMaxLength(512);
+            e.Property(d => d.Platform).HasMaxLength(50);
             e.HasOne(d => d.User).WithMany(u => u.Devices).HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.SetNull);
         });
 

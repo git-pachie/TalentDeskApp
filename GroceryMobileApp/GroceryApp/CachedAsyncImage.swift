@@ -94,8 +94,13 @@ actor ProductImageDiskCache {
     private var didLoadMetadata = false
 
     init() {
-        let baseDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
-            ?? fileManager.temporaryDirectory
+        let caches = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)
+        let baseDirectory: URL
+        if let first = caches.first {
+            baseDirectory = first
+        } else {
+            baseDirectory = fileManager.temporaryDirectory
+        }
         cacheDirectory = baseDirectory.appendingPathComponent("ProductImageCache", isDirectory: true)
         metadataURL = cacheDirectory.appendingPathComponent("metadata.json")
     }

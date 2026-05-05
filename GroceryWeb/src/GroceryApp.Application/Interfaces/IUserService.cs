@@ -79,6 +79,8 @@ public class UserDeviceDto
     public string DeviceGuid { get; set; } = string.Empty;
     public string? OSVersion { get; set; }
     public string? HardwareVersion { get; set; }
+    public string? PushToken { get; set; }
+    public string? Platform { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public DateTime LastLoginAt { get; set; }

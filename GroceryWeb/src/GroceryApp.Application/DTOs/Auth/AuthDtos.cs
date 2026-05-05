@@ -10,6 +10,8 @@ public class RegisterRequest
     public string? DeviceGuid { get; set; }
     public string? OSVersion { get; set; }
     public string? HardwareVersion { get; set; }
+    public string? PushToken { get; set; }
+    public string? Platform { get; set; }
 }
 
 public class LoginRequest
@@ -19,6 +21,8 @@ public class LoginRequest
     public string? DeviceGuid { get; set; }
     public string? OSVersion { get; set; }
     public string? HardwareVersion { get; set; }
+    public string? PushToken { get; set; }
+    public string? Platform { get; set; }
 }
 
 public class AuthResponse

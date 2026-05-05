@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct GroceryApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var settingsStore = GrocerySettingsStore()
     @State private var favoritesStore = FavoritesStore()
     @State private var cartStore = CartStore()
@@ -59,6 +60,7 @@ struct ThemeRoot: View {
         .environment(navigationStore)
         .task {
             await bootstrapApplication()
+            await PushNotificationManager.shared.requestAuthorizationAndRegister()
         }
         .task(id: settingsStore.appearance) {
             setWindowStyle(settingsStore.appearance.uiStyle)

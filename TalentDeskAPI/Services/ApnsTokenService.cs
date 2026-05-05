@@ -13,14 +13,19 @@ namespace TalentDeskAPI.Services;
 public class ApnsTokenService
 {
     private readonly ApnsSettings _settings;
+    private readonly IWebHostEnvironment _env;
     private readonly ILogger<ApnsTokenService> _logger;
     private readonly Lock _lock = new();
     private string? _cachedToken;
     private DateTime _tokenExpiry = DateTime.MinValue;
 
-    public ApnsTokenService(IOptions<ApnsSettings> settings, ILogger<ApnsTokenService> logger)
+    public ApnsTokenService(
+        IOptions<ApnsSettings> settings,
+        IWebHostEnvironment env,
+        ILogger<ApnsTokenService> logger)
     {
         _settings = settings.Value;
+        _env = env;
         _logger = logger;
     }
 
@@ -40,7 +45,7 @@ public class ApnsTokenService
 
     private string GenerateToken()
     {
-        var p8Text = File.ReadAllText(_settings.P8PrivateKeyPath).Trim();
+        var p8Text = LoadPrivateKeyText().Trim();
 
         // Strip PEM headers if present
         p8Text = p8Text
@@ -72,5 +77,26 @@ public class ApnsTokenService
         token.Header["kid"] = _settings.KeyId;
 
         return handler.WriteToken(token);
+    }
+
+    private string LoadPrivateKeyText()
+    {
+        if (!string.IsNullOrWhiteSpace(_settings.P8PrivateKey))
+            return _settings.P8PrivateKey;
+
+        if (string.IsNullOrWhiteSpace(_settings.P8PrivateKeyPath))
+            throw new InvalidOperationException(
+                "APNs private key is not configured. Set Apns:P8PrivateKey (preferred) or Apns:P8PrivateKeyPath.");
+
+        var path = _settings.P8PrivateKeyPath!;
+        if (!Path.IsPathRooted(path))
+            path = Path.Combine(_env.ContentRootPath, path);
+
+        if (!File.Exists(path))
+            throw new FileNotFoundException(
+                $"APNs private key file not found at '{path}'. Update Apns:P8PrivateKeyPath or set Apns:P8PrivateKey via user-secrets/env vars.",
+                path);
+
+        return File.ReadAllText(path);
     }
 }
