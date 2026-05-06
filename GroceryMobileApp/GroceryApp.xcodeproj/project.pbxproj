@@ -77,7 +77,7 @@
 		9AD09A1387052CAF55476046 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		9DCB37DDB7A6222F39330CB2 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		A1483E779A0296AD806C4D15 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
-		C2B2F306173B9522B893756F /* GroceryApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GroceryApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C2B2F306173B9522B893756F /* SheraMart.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SheraMart.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA04ED4688EAB3DE330CD298 /* OrderDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderDetailView.swift; sourceTree = "<group>"; };
 		CD40762CD495853F71D478B4 /* GCashPaymentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GCashPaymentView.swift; sourceTree = "<group>"; };
 		CEE3DB089C5E749112202AC8 /* GroceryTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryTheme.swift; sourceTree = "<group>"; };
@@ -95,7 +95,7 @@
 		71A32D21A3750582EE59E0BE /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				C2B2F306173B9522B893756F /* GroceryApp.app */,
+				C2B2F306173B9522B893756F /* SheraMart.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -181,7 +181,7 @@
 			packageProductDependencies = (
 			);
 			productName = GroceryApp;
-			productReference = C2B2F306173B9522B893756F /* GroceryApp.app */;
+			productReference = C2B2F306173B9522B893756F /* SheraMart.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -361,7 +361,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_NAME = GroceryApp;
+				PRODUCT_NAME = SheraMart;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -382,7 +382,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_NAME = GroceryApp;
+				PRODUCT_NAME = SheraMart;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
