@@ -4,7 +4,7 @@ import PassKit
 struct CheckoutView: View {
     @Environment(CartStore.self) private var cartStore
     let onOrderPlaced: ((OrderItem) -> Void)?
-    @State private var paymentMethod = "Credit Card"
+    @State private var paymentMethod = "Cash on Delivery"
     @State private var showingConfirmation = false
     @State private var showingAddressPicker = false
     @State private var showingPaymentPicker = false
@@ -22,9 +22,6 @@ struct CheckoutView: View {
     @State private var navigateToOrder = false
     @State private var orderRemarks = ""
     @State private var applePayCoordinator = ApplePayCoordinator()
-    @State private var showingGCashPayment = false
-    @State private var showingCardPayment = false
-    @State private var cardPaymentDetail = ""
     @State private var deliveryAddresses: [AddressDTO] = []
     @State private var selectedAddressId: UUID?
     @State private var isPlacingOrder = false
@@ -47,10 +44,7 @@ struct CheckoutView: View {
     }
 
     private let paymentMethods = [
-        ("Credit Card", "creditcard.fill"),
-        ("Debit Card", "creditcard"),
         ("Apple Pay", "apple.logo"),
-        ("GCash", "g.circle.fill"),
         ("Cash on Delivery", "banknote.fill"),
     ]
 
@@ -83,14 +77,8 @@ struct CheckoutView: View {
     private var total: Double { max(0, subtotal + deliveryFee + platformFee + otherCharges - voucherDiscount) }
 
     private var paymentDetailText: String {
-        if !cardPaymentDetail.isEmpty && (paymentMethod == "Credit Card" || paymentMethod == "Debit Card") {
-            return cardPaymentDetail
-        }
         switch paymentMethod {
-        case "GCash": return "+63 9XX XXX XXXX"
         case "Apple Pay": return "Apple ID: guest@icloud.com"
-        case "Credit Card": return "•••• •••• •••• 4242"
-        case "Debit Card": return "•••• •••• •••• 8910"
         case "Cash on Delivery": return "Pay when delivered"
         default: return ""
         }
@@ -330,47 +318,6 @@ struct CheckoutView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
 
-                    // GCash button
-                    if paymentMethod == "GCash" {
-                        Button {
-                            showingGCashPayment = true
-                        } label: {
-                            HStack {
-                                Text("G")
-                                    .font(.system(.title3, design: .rounded, weight: .bold))
-                                Text("Pay with GCash — \(CurrencyFormatter.peso(Int(total)))")
-                                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color(red: 0.0, green: 0.44, blue: 0.87))
-                            .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        }
-                        .disabled(isPlacingOrder || orderPlaced)
-                    }
-
-                    // Credit/Debit Card button
-                    if paymentMethod == "Credit Card" || paymentMethod == "Debit Card" {
-                        Button {
-                            showingCardPayment = true
-                        } label: {
-                            HStack {
-                                Image(systemName: "creditcard.fill")
-                                Text("Pay with \(paymentMethod) — \(CurrencyFormatter.peso(Int(total)))")
-                                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(paymentMethod == "Credit Card"
-                                ? Color(red: 0.15, green: 0.15, blue: 0.20)
-                                : Color(red: 0.0, green: 0.35, blue: 0.55))
-                            .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        }
-                        .disabled(isPlacingOrder || orderPlaced)
-                    }
-
                     // Cash on Delivery — direct place order
                     if paymentMethod == "Cash on Delivery" {
                         Button {
@@ -388,31 +335,6 @@ struct CheckoutView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                         .disabled(isPlacingOrder || orderPlaced)
-                    }
-                }
-                .sheet(isPresented: $showingGCashPayment) {
-                    GCashPaymentView(
-                        amount: total,
-                        orderDescription: "\(cartStore.totalItems) items from GroceryApp"
-                    ) {
-                        showingGCashPayment = false
-                        placeOrder()
-                    } onCancel: {
-                        showingGCashPayment = false
-                    }
-                }
-                .sheet(isPresented: $showingCardPayment) {
-                    CardPaymentView(
-                        cardType: paymentMethod,
-                        amount: total,
-                        orderDescription: "\(cartStore.totalItems) items"
-                    ) { maskedCard in
-                        showingCardPayment = false
-                        // Update payment detail with the actual card used
-                        cardPaymentDetail = maskedCard
-                        placeOrder()
-                    } onCancel: {
-                        showingCardPayment = false
                     }
                 }
             }
@@ -509,9 +431,7 @@ struct CheckoutView: View {
 
     private func paymentMethodToInt(_ method: String) -> Int {
         switch method {
-        case "Credit Card", "Debit Card": return 0  // Card
         case "Apple Pay": return 1
-        case "GCash": return 2
         case "Cash on Delivery": return 4
         default: return 0
         }

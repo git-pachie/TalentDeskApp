@@ -38,9 +38,6 @@ private val DELIVERY_TIME_SLOTS = listOf(
 )
 
 private val PAYMENT_METHODS = listOf(
-    "Credit Card" to Icons.Default.CreditCard,
-    "Debit Card"  to Icons.Default.CreditCard,
-    "GCash"       to Icons.Default.PhoneAndroid,
     "Cash on Delivery" to Icons.Default.Money,
 )
 
@@ -357,69 +354,7 @@ fun CheckoutScreen(
                 Text(cs.paymentMethod, fontWeight = FontWeight.SemiBold, color = colors.title)
             }
 
-            AnimatedVisibility(
-                visible = cs.paymentMethod == "Credit Card" || cs.paymentMethod == "Debit Card",
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically(),
-            ) {
-                SectionCard(title = "Card Details", icon = Icons.Default.CreditCard) {
-                    CardPreview(
-                        cardHolderName = cs.cardHolderName,
-                        cardNumber = cs.cardNumber,
-                        cardExpiry = cs.cardExpiry,
-                        cardType = cs.paymentMethod,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = cs.cardHolderName,
-                        onValueChange = { orderViewModel.setCardHolderName(it) },
-                        label = { Text("Cardholder Name") },
-                        placeholder = { Text("Juan Dela Cruz") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(8.dp),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GreenPrimary),
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(
-                        value = formatCardNumber(cs.cardNumber),
-                        onValueChange = { orderViewModel.setCardNumber(it.filter(Char::isDigit).take(19)) },
-                        label = { Text("Card Number") },
-                        placeholder = { Text("1234 5678 9012 3456") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GreenPrimary),
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedTextField(
-                            value = cs.cardExpiry,
-                            onValueChange = { orderViewModel.setCardExpiry(formatExpiry(it)) },
-                            label = { Text("Expiry") },
-                            placeholder = { Text("MM/YY") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GreenPrimary),
-                        )
-                        OutlinedTextField(
-                            value = cs.cardCvv,
-                            onValueChange = { orderViewModel.setCardCvv(it.filter(Char::isDigit).take(4)) },
-                            label = { Text("CVV") },
-                            placeholder = { Text("123") },
-                            modifier = Modifier.width(112.dp),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                            visualTransformation = PasswordVisualTransformation(),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = GreenPrimary),
-                        )
-                    }
-                }
-            }
+            // Card/GCash methods removed in mobile app — only COD remains.
 
             // ── Voucher ───────────────────────────────────────────────────────
             SectionCard(

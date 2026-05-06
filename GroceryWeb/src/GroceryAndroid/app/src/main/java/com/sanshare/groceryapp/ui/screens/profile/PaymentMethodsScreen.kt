@@ -77,41 +77,46 @@ fun PaymentMethodsScreen(
         containerColor = colors.background,
     ) { padding ->
         if (loading) LoadingBox()
-        else if (methods.isEmpty()) EmptyState("💳", "No Payment Methods", "Add a payment method to speed up checkout.")
-        else LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            items(methods, key = { it.id }) { pm ->
-                Card(
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = colors.card),
-                    elevation = CardDefaults.cardElevation(2.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+        else {
+            val filtered = methods.filterNot { pm ->
+                val type = pm.paymentType.lowercase()
+                type.contains("gcash") || type.contains("card") || type.contains("credit") || type.contains("debit")
+            }
+            if (filtered.isEmpty()) EmptyState("💳", "No Payment Methods", "No supported payment methods available.")
+            else LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                items(filtered, key = { it.id }) { pm ->
+                    Card(
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = colors.card),
+                        elevation = CardDefaults.cardElevation(2.dp),
                     ) {
-                        val icon = when (pm.paymentType.lowercase()) {
-                            "gcash" -> Icons.Default.PhoneAndroid
-                            "cashondelivery" -> Icons.Default.Money
-                            else -> Icons.Default.CreditCard
-                        }
-                        Icon(icon, null, tint = GreenPrimary, modifier = Modifier.size(24.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(pm.name, fontWeight = FontWeight.SemiBold, color = colors.title)
-                                if (pm.isDefault) {
-                                    Spacer(Modifier.width(6.dp))
-                                    Text("Default", fontSize = 10.sp, color = GreenPrimary)
-                                }
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            val icon = when (pm.paymentType.lowercase()) {
+                                "cashondelivery" -> Icons.Default.Money
+                                else -> Icons.Default.Money
                             }
-                            pm.detail?.let { Text(it, fontSize = 12.sp, color = colors.muted) }
-                        }
-                        IconButton(onClick = { viewModel.delete(pm.id) }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.Delete, null, tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                            Icon(icon, null, tint = GreenPrimary, modifier = Modifier.size(24.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(pm.name, fontWeight = FontWeight.SemiBold, color = colors.title)
+                                    if (pm.isDefault) {
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("Default", fontSize = 10.sp, color = GreenPrimary)
+                                    }
+                                }
+                                pm.detail?.let { Text(it, fontSize = 12.sp, color = colors.muted) }
+                            }
+                            IconButton(onClick = { viewModel.delete(pm.id) }, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Default.Delete, null, tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                            }
                         }
                     }
                 }

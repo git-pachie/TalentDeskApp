@@ -10,11 +10,8 @@ struct PaymentItem: Identifiable {
 
 struct PaymentMethodsView: View {
     @State private var methods: [PaymentItem] = [
-        PaymentItem(name: "Credit Card", detail: "•••• •••• •••• 4242", icon: "creditcard.fill", isDefault: true),
-        PaymentItem(name: "Debit Card", detail: "•••• •••• •••• 8910", icon: "creditcard", isDefault: false),
         PaymentItem(name: "Apple Pay", detail: "Connected", icon: "apple.logo", isDefault: false),
-        PaymentItem(name: "GCash", detail: "+63 9XX XXX XXXX", icon: "g.circle.fill", isDefault: false),
-        PaymentItem(name: "Cash on Delivery", detail: "Pay when delivered", icon: "banknote.fill", isDefault: false),
+        PaymentItem(name: "Cash on Delivery", detail: "Pay when delivered", icon: "banknote.fill", isDefault: true),
     ]
     @State private var editingMethod: PaymentItem?
     @State private var showingAddSheet = false
@@ -72,16 +69,7 @@ struct PaymentMethodsView: View {
         .background(GroceryTheme.background)
         .navigationTitle("Payment Methods")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showingAddSheet = true
-                } label: {
-                    Image(systemName: "plus")
-                        .foregroundStyle(GroceryTheme.primary)
-                }
-            }
-        }
+        .toolbar { }
         .sheet(item: $editingMethod) { method in
             PaymentEditSheet(method: method) { updated in
                 if let index = methods.firstIndex(where: { $0.id == updated.id }) {
@@ -94,14 +82,7 @@ struct PaymentMethodsView: View {
                 methods.removeAll { $0.id == toDelete.id }
             }
         }
-        .sheet(isPresented: $showingAddSheet) {
-            PaymentEditSheet(method: nil) { newMethod in
-                if newMethod.isDefault {
-                    for i in methods.indices { methods[i].isDefault = false }
-                }
-                methods.append(newMethod)
-            }
-        }
+        .sheet(isPresented: $showingAddSheet) { EmptyView() }
     }
 }
 
@@ -121,10 +102,7 @@ struct PaymentEditSheet: View {
     private let isNew: Bool
 
     private let iconOptions = [
-        ("creditcard.fill", "Credit Card"),
-        ("creditcard", "Debit Card"),
         ("apple.logo", "Apple Pay"),
-        ("g.circle.fill", "GCash"),
         ("banknote.fill", "Cash"),
     ]
     @State private var selectedIcon: String
@@ -135,7 +113,7 @@ struct PaymentEditSheet: View {
         self._name = State(initialValue: method?.name ?? "")
         self._detail = State(initialValue: method?.detail ?? "")
         self._isDefault = State(initialValue: method?.isDefault ?? false)
-        self._selectedIcon = State(initialValue: method?.icon ?? "creditcard.fill")
+        self._selectedIcon = State(initialValue: method?.icon ?? "banknote.fill")
         self.onSave = onSave
         self.onDelete = onDelete
     }

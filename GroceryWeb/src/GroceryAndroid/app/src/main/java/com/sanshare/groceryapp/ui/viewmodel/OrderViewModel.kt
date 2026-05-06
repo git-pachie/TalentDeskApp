@@ -17,7 +17,7 @@ data class OrdersState(
 data class CheckoutState(
     val addresses: List<AddressDto> = emptyList(),
     val selectedAddressId: String? = null,
-    val paymentMethod: String = "Credit Card",
+    val paymentMethod: String = "Cash on Delivery",
     val cardHolderName: String = "",
     val cardNumber: String = "",
     val cardExpiry: String = "",
@@ -260,10 +260,8 @@ class OrderViewModel @Inject constructor(
                 val order = result.data
                 // Record payment
                 val paymentMethod = when (cs.paymentMethod) {
-                    "Credit Card", "Debit Card" -> 0
-                    "GCash" -> 2
                     "Cash on Delivery" -> 4
-                    else -> 0
+                    else -> 4
                 }
                 apiClient.post<CheckoutPaymentRequest, PaymentResultDto>(
                     ApiConfig.PAYMENTS_CHECKOUT,
@@ -287,13 +285,6 @@ class OrderViewModel @Inject constructor(
     }
 
     private fun validatePaymentDetails(state: CheckoutState): String? {
-        if (state.paymentMethod != "Credit Card" && state.paymentMethod != "Debit Card") return null
-
-        val digitsOnlyCard = state.cardNumber.filter(Char::isDigit)
-        if (state.cardHolderName.isBlank()) return "Please enter the cardholder name."
-        if (digitsOnlyCard.length !in 13..19) return "Please enter a valid card number."
-        if (!isValidExpiry(state.cardExpiry)) return "Please enter a valid expiry date in MM/YY format."
-        if (state.cardCvv.length !in 3..4 || !state.cardCvv.all(Char::isDigit)) return "Please enter a valid CVV."
         return null
     }
 

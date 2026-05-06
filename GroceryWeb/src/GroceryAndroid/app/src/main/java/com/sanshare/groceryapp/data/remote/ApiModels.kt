@@ -420,7 +420,7 @@ data class VoucherValidationResult(
 @Serializable
 data class CheckoutPaymentRequest(
     val orderId: String,
-    val method: Int,   // 0=Card, 2=GCash, 4=COD
+    val method: Int,   // 4=COD
     val stripeToken: String? = null,
     val returnUrl: String? = null,
 )

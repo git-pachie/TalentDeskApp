@@ -11,7 +11,7 @@ struct OrderItem: Identifiable, Hashable {
     let paymentMethod: String
     let paymentDetail: String
 
-    init(id: UUID = UUID(), orderNumber: String, date: String, items: Int, total: Double, status: OrderStatus, orderRemarks: String = "", paymentMethod: String = "Credit Card", paymentDetail: String = "") {
+    init(id: UUID = UUID(), orderNumber: String, date: String, items: Int, total: Double, status: OrderStatus, orderRemarks: String = "", paymentMethod: String = "Cash on Delivery", paymentDetail: String = "") {
         self.id = id
         self.orderNumber = orderNumber
         self.date = date
