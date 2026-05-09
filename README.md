@@ -8,7 +8,7 @@ A full-stack grocery shopping platform consisting of an iOS mobile app, a REST A
 
 | Project | Technology | Description |
 |---------|-----------|-------------|
-| `GroceryMobileApp` | iOS 17+, Swift 5, SwiftUI | Customer-facing mobile app |
+| `SheraMart` | iOS 17+, Swift 5, SwiftUI | Customer-facing mobile app |
 | `GroceryWeb/src/GroceryApp.API` | ASP.NET Core 9 | REST API backend |
 | `GroceryWeb/src/GroceryApp.Admin` | ASP.NET Core 9 MVC | Admin management panel |
 | `GroceryWeb/src/GroceryApp.Application` | .NET 9 | Business logic layer |
@@ -17,7 +17,7 @@ A full-stack grocery shopping platform consisting of an iOS mobile app, a REST A
 
 ---
 
-## Mobile App (GroceryMobileApp)
+## Mobile App (SheraMart)
 
 ### Requirements
 - Xcode 15+
@@ -26,7 +26,7 @@ A full-stack grocery shopping platform consisting of an iOS mobile app, a REST A
 
 ### Setup
 ```bash
-cd GroceryMobileApp
+cd SheraMart
 xcodegen generate
 open GroceryApp.xcodeproj
 ```
@@ -251,7 +251,7 @@ If SMTP is not configured, the verification code is logged to the API console fo
 ## Architecture
 
 ```
-GroceryMobileApp (iOS)
+SheraMart (iOS)
         │
         │ HTTP/HTTPS (JWT)
         ▼
