@@ -115,7 +115,7 @@ fun LoginScreen(
 
             GroceryIconView(size = 72)
             Spacer(Modifier.height(20.dp))
-            Text("GroceryApp", style = MaterialTheme.typography.displaySmall, color = colors.title)
+            Text("SheraMart", style = MaterialTheme.typography.displaySmall, color = colors.title)
             Spacer(Modifier.height(8.dp))
             Text(
                 "Fresh picks, smoother checkout, and delivery that feels effortless.",

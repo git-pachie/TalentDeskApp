@@ -1,6 +1,7 @@
 package com.sanshare.groceryapp.ui.screens.splash
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
@@ -10,10 +11,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sanshare.groceryapp.R
 import com.sanshare.groceryapp.ui.components.GroceryIconView
 import com.sanshare.groceryapp.ui.theme.GreenPrimary
 import com.sanshare.groceryapp.ui.viewmodel.AuthViewModel
@@ -34,18 +38,27 @@ fun SplashScreen(
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF2D7A2A),
-                        GreenPrimary,
-                        Color(0xFF7DC97A),
-                    )
-                )
-            ),
+            .fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.launch_loading),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f)),
+                        startY = 0f,
+                        endY = Float.POSITIVE_INFINITY,
+                    )
+                )
+        )
+
         AnimatedVisibility(
             visible = visible,
             enter = fadeIn() + scaleIn(initialScale = 0.8f),
@@ -54,7 +67,7 @@ fun SplashScreen(
                 GroceryIconView(size = 80)
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = "GroceryApp",
+                    text = "SheraMart",
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,

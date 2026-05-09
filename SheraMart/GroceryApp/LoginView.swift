@@ -20,7 +20,7 @@ struct LoginView: View {
                         VStack(spacing: 14) {
                             GroceryIconView(size: 92)
 
-                            Text("GroceryApp")
+                            Text("SheraMart")
                                 .font(.system(size: 38, weight: .black, design: .rounded))
                                 .foregroundStyle(Color(red: 0.11, green: 0.23, blue: 0.14))
 

@@ -79,7 +79,7 @@ private suspend fun nominatimSearch(query: String, countryCode: String?): GeoPoi
             android.util.Log.d("Geocode", "Querying: $urlStr")
             val url = java.net.URL(urlStr)
             val conn = (url.openConnection() as java.net.HttpURLConnection).apply {
-                setRequestProperty("User-Agent", "GroceryApp Android/1.0 (sanshare.groceryapp@gmail.com)")
+                setRequestProperty("User-Agent", "SheraMart Android/1.0 (sanshare.groceryapp@gmail.com)")
                 setRequestProperty("Accept-Language", "en")
                 connectTimeout = 10_000
                 readTimeout = 10_000

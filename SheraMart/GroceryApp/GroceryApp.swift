@@ -110,79 +110,47 @@ struct ThemeRoot: View {
 private struct LaunchSplashView: View {
     let apiReachable: Bool
     @State private var pulse = false
-    @State private var drift = false
-    @State private var rotateRing = false
 
     var body: some View {
         ZStack {
+            Image("LaunchLoading")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+
             LinearGradient(
-                colors: [
-                    Color(red: 0.99, green: 0.95, blue: 0.86),
-                    Color(red: 0.90, green: 0.97, blue: 0.88),
-                    Color(red: 0.83, green: 0.95, blue: 0.92)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                colors: [Color.black.opacity(0.15), Color.black.opacity(0.55)],
+                startPoint: .top,
+                endPoint: .bottom
             )
             .ignoresSafeArea()
 
-            Image(systemName: "leaf.fill")
-                .font(.system(size: 170))
-                .foregroundStyle(Color.white.opacity(0.24))
-                .rotationEffect(.degrees(drift ? -14 : -5))
-                .offset(x: -118, y: -220)
+            VStack(spacing: 18) {
+                Spacer()
 
-            Image(systemName: "carrot.fill")
-                .font(.system(size: 150))
-                .foregroundStyle(Color.orange.opacity(0.18))
-                .rotationEffect(.degrees(drift ? 12 : 20))
-                .offset(x: 128, y: -170)
+                Text("SheraMart")
+                    .font(.system(size: 38, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                    .shadow(radius: 12)
 
-            Image(systemName: "basket.fill")
-                .font(.system(size: 220))
-                .foregroundStyle(Color(red: 0.24, green: 0.50, blue: 0.26).opacity(0.10))
-                .offset(x: -110, y: 245)
-
-            VStack(spacing: 24) {
-                ZStack {
-                    Circle()
-                        .fill(Color.white.opacity(0.30))
-                        .frame(width: 150, height: 150)
-                        .scaleEffect(pulse ? 1.08 : 0.92)
-
-                    Circle()
-                        .stroke(Color.white.opacity(0.60), lineWidth: 3)
-                        .frame(width: 178, height: 178)
-                        .rotationEffect(.degrees(rotateRing ? 360 : 0))
-
-                    GroceryIconView(size: 108)
-                }
-
-                VStack(spacing: 8) {
-                    Text("GroceryApp")
-                        .font(.system(size: 36, weight: .black, design: .rounded))
-                        .foregroundStyle(Color(red: 0.11, green: 0.22, blue: 0.13))
-
-                    Text(apiReachable ? "Connection confirmed. Preparing your groceries..." : "Checking API connectivity...")
-                        .font(.system(.headline, design: .rounded))
-                        .foregroundStyle(Color(red: 0.25, green: 0.34, blue: 0.22).opacity(0.86))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-                }
+                Text(apiReachable ? "Connection confirmed. Preparing your groceries..." : "Checking API connectivity...")
+                    .font(.system(.headline, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
 
                 ProgressView()
-                    .tint(Color(red: 0.20, green: 0.50, blue: 0.24))
-                    .scaleEffect(1.25)
+                    .tint(.white)
+                    .scaleEffect(1.2)
+                    .opacity(pulse ? 1.0 : 0.55)
+
+                Spacer()
+                    .frame(height: 40)
             }
-            .padding(.horizontal, 24)
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
                 pulse = true
-                drift = true
-            }
-            withAnimation(.linear(duration: 10).repeatForever(autoreverses: false)) {
-                rotateRing = true
             }
         }
     }

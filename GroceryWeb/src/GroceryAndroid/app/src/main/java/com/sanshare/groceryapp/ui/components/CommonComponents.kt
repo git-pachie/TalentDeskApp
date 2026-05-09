@@ -27,12 +27,15 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Image
 import coil.compose.AsyncImage
+import com.sanshare.groceryapp.R
 import com.sanshare.groceryapp.data.remote.ProductDto
 import com.sanshare.groceryapp.ui.theme.GreenPrimary
 import com.sanshare.groceryapp.ui.theme.RedBadge
@@ -45,22 +48,15 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun GroceryIconView(size: Int = 44) {
-    Box(
+    Image(
+        painter = painterResource(id = R.drawable.sheramart_icon),
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
         modifier = Modifier
             .size(size.dp)
             .clip(RoundedCornerShape((size * 0.26).dp))
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF388E3C),  // rich green top
-                        Color(0xFF2E7D32),  // forest green bottom
-                    )
-                )
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text = "🛒", fontSize = (size * 0.44).sp)
-    }
+            .border(1.dp, Color.Black.copy(alpha = 0.06f), RoundedCornerShape((size * 0.26).dp)),
+    )
 }
 
 @Composable

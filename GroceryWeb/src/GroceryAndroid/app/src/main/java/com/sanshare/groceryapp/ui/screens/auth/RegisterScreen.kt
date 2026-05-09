@@ -76,7 +76,7 @@ fun RegisterScreen(
         ) {
             Spacer(Modifier.height(12.dp))
 
-            Text("Join GroceryApp", style = MaterialTheme.typography.headlineMedium, color = colors.title)
+            Text("Join SheraMart", style = MaterialTheme.typography.headlineMedium, color = colors.title)
             Spacer(Modifier.height(6.dp))
             Text(
                 "Create your account to start ordering fresh groceries.",
